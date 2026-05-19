@@ -1,6 +1,7 @@
 package com.codexceed.xmusic.gui.render;
 
 import com.codexceed.xmusic.gui.theme.GuiTheme;
+import com.codexceed.xmusic.gui.util.AnimationHelper;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
@@ -98,6 +99,73 @@ public final class GuiRender {
         g.fill(x + w - 3, y + 3, x + w - 2, y + h - 3, GuiTheme.FRAME_EDGE);
     }
 
+    // ── Premium Depth & Gradient Effects ─────────────────────────────────
+
+    /**
+     * Vertical gradient fill using multiple horizontal strips.
+     * Creates a smooth gradient between two colors across the height.
+     */
+    public static void gradientV(GuiGraphics g, int x, int y, int w, int h, int colorTop, int colorBottom) {
+        int steps = Math.min(h, 16); // 16-step gradient for efficiency
+        if (steps <= 0) return;
+        int stripH = h / steps;
+        int remainder = h - stripH * steps;
+        int cy = y;
+        for (int i = 0; i < steps; i++) {
+            float t = (float) i / (steps - 1);
+            int color = AnimationHelper.lerpColor(colorTop, colorBottom, t);
+            int sh = stripH + (i < remainder ? 1 : 0);
+            g.fill(x, cy, x + w, cy + sh, color);
+            cy += sh;
+        }
+    }
+
+    /**
+     * MC panel with vertical gradient fill for premium depth feel.
+     */
+    public static void mcPanelGradient(GuiGraphics g, int x, int y, int w, int h) {
+        gradientV(g, x, y, w, h, GuiTheme.PANEL_GRAD_TOP, GuiTheme.PANEL_GRAD_BOTTOM);
+        bevel(g, x, y, w, h, false);
+    }
+
+    /**
+     * Inter-panel depth shadow: 2px dark strip on top edge to separate stacked panels.
+     */
+    public static void depthShadow(GuiGraphics g, int x, int y, int w) {
+        g.fill(x, y, x + w, y + 1, GuiTheme.DEPTH_SHADOW);
+        g.fill(x, y + 1, x + w, y + 2, AnimationHelper.withAlpha(GuiTheme.DEPTH_SHADOW, 0.5f));
+    }
+
+    /**
+     * Vignette effect: darkens edges of a rectangular area for visual depth.
+     */
+    public static void vignette(GuiGraphics g, int x, int y, int w, int h, int thickness) {
+        for (int i = 0; i < thickness; i++) {
+            float alpha = (1f - (float) i / thickness) * 0.12f;
+            int color = AnimationHelper.withAlpha(0xFF000000, alpha);
+            // top
+            g.fill(x + i, y + i, x + w - i, y + i + 1, color);
+            // bottom
+            g.fill(x + i, y + h - i - 1, x + w - i, y + h - i, color);
+            // left
+            g.fill(x + i, y + i + 1, x + i + 1, y + h - i - 1, color);
+            // right
+            g.fill(x + w - i - 1, y + i + 1, x + w - i, y + h - i - 1, color);
+        }
+    }
+
+    /**
+     * Inner shadow gradient at the top of a panel (gives inset depth feel).
+     */
+    public static void innerShadowTop(GuiGraphics g, int x, int y, int w, int height) {
+        for (int i = 0; i < height; i++) {
+            float alpha = (1f - (float) i / height) * 0.2f;
+            g.fill(x, y + i, x + w, y + i + 1, AnimationHelper.withAlpha(0xFF000000, alpha));
+        }
+    }
+
+    // ── Premium Glow Effects ─────────────────────────────────────────────
+
     /** Accent glow: 2px semi-transparent accent halo around a rect. */
     public static void glowRect(GuiGraphics g, int x, int y, int w, int h) {
         g.fill(x - 2, y - 2, x + w + 2, y, GuiTheme.GLOW_ACCENT);       // top
@@ -109,6 +177,11 @@ public final class GuiRender {
     /** 1px accent outer border (for active/playing indicators). */
     public static void accentGlow(GuiGraphics g, int x, int y, int w, int h) {
         // Premium multi-layer glow: outer soft → mid → inner bright
+        // Layer 4: deepest halo (4px)
+        g.fill(x - 4, y - 4, x + w + 4, y - 2, GuiTheme.GLOW_ACCENT_DEEP);
+        g.fill(x - 4, y + h + 2, x + w + 4, y + h + 4, GuiTheme.GLOW_ACCENT_DEEP);
+        g.fill(x - 4, y - 2, x - 2, y + h + 2, GuiTheme.GLOW_ACCENT_DEEP);
+        g.fill(x + w + 2, y - 2, x + w + 4, y + h + 2, GuiTheme.GLOW_ACCENT_DEEP);
         // Layer 3: outermost soft halo (3px)
         g.fill(x - 3, y - 3, x + w + 3, y - 1, GuiTheme.GLOW_ACCENT_SOFT);
         g.fill(x - 3, y + h + 1, x + w + 3, y + h + 3, GuiTheme.GLOW_ACCENT_SOFT);
@@ -126,6 +199,52 @@ public final class GuiRender {
         g.fill(x + w, y, x + w + 1, y + h, GuiTheme.GLOW_ACCENT);
     }
 
+    /**
+     * Smooth hover glow: interpolated glow intensity based on hover factor (0→1).
+     * Much smoother than the on/off glowRect — fades in and out with the hover.
+     */
+    public static void smoothHoverGlow(GuiGraphics g, int x, int y, int w, int h, float hoverFactor) {
+        if (hoverFactor <= 0.01f) return;
+        // Smooth background tint
+        int bgTint = AnimationHelper.withAlpha(GuiTheme.HOVER_GLOW, hoverFactor);
+        g.fill(x, y, x + w, y + h, bgTint);
+        // Edge glow (fades with hover factor)
+        int edgeGlow = AnimationHelper.withAlpha(GuiTheme.GLOW_ACCENT_SOFT, hoverFactor);
+        g.fill(x - 1, y - 1, x + w + 1, y, edgeGlow);
+        g.fill(x - 1, y + h, x + w + 1, y + h + 1, edgeGlow);
+        g.fill(x - 1, y, x, y + h, edgeGlow);
+        g.fill(x + w, y, x + w + 1, y + h, edgeGlow);
+    }
+
+    /**
+     * Smooth button rendering with hover interpolation.
+     * Provides silky-smooth transitions between normal/hover/active states.
+     */
+    public static void mcButtonSmooth(GuiGraphics g, int x, int y, int w, int h, float hoverFactor, boolean active) {
+        int normalFill = active ? GuiTheme.PANEL_DARK : GuiTheme.PANEL;
+        int hoverFill = active ? GuiTheme.PANEL_DARK : GuiTheme.PANEL_HOVER;
+        int fill = AnimationHelper.lerpColor(normalFill, hoverFill, hoverFactor);
+        g.fill(x, y, x + w, y + h, fill);
+
+        // Bevel intensity follows hover
+        int normalTl = active ? GuiTheme.BEVEL_HIGHLIGHT_INSET : GuiTheme.BEVEL_HIGHLIGHT;
+        int hoverTl = active ? GuiTheme.BEVEL_HIGHLIGHT_INSET : GuiTheme.BEVEL_HIGHLIGHT_HOVER;
+        int tl = AnimationHelper.lerpColor(normalTl, hoverTl, hoverFactor);
+        int br = active ? GuiTheme.BEVEL_SHADOW_INSET : GuiTheme.BEVEL_SHADOW;
+
+        g.fill(x, y, x + w, y + 1, tl);
+        g.fill(x, y + 1, x + 1, y + h - 1, tl);
+        g.fill(x, y + h - 1, x + w, y + h, br);
+        g.fill(x + w - 1, y + 1, x + w, y + h - 1, br);
+
+        // Subtle hover glow
+        if (hoverFactor > 0.01f && !active) {
+            smoothHoverGlow(g, x, y, w, h, hoverFactor * 0.5f);
+        }
+    }
+
+    // ── MC-style tooltip ─────────────────────────────────────────────────
+
     /** MC-style tooltip: dark bg + bevel border + shadow text, positioned near cursor. */
     public static void tooltip(GuiGraphics g, Font font, String text, int mouseX, int mouseY, int screenWidth, int screenHeight) {
         int tw = font.width(text) + 8;
@@ -137,11 +256,29 @@ public final class GuiRender {
         if (ty < 4) ty = mouseY + 12;
         if (ty + th > screenHeight - 4) ty = screenHeight - th - 4;
 
+        // Subtle outer shadow for depth
+        g.fill(tx + 1, ty + 1, tx + tw + 1, ty + th + 1, 0x30000000);
+
         g.fill(tx, ty, tx + tw, ty + th, GuiTheme.TOOLTIP_BG);
         bevel(g, tx, ty, tw, th, false);
         // Override bevel with tooltip border
         outline(g, tx, ty, tw, th, GuiTheme.TOOLTIP_BORDER);
         shadowText(g, font, text, tx + 4, ty + 2, GuiTheme.TEXT);
+    }
+
+    // ── Animated Slide Indicator ─────────────────────────────────────────
+
+    /**
+     * Renders a vertical accent indicator bar that slides smoothly.
+     *
+     * @param hoverFactor 0→1 for fade-in of the indicator
+     */
+    public static void slideIndicator(GuiGraphics g, int x, int y, int width, int height, float hoverFactor) {
+        if (hoverFactor <= 0.01f) return;
+        int indicatorH = (int) (height * 0.6f * hoverFactor);
+        int indicatorY = y + (height - indicatorH) / 2;
+        int color = AnimationHelper.withAlpha(GuiTheme.ACCENT, hoverFactor);
+        g.fill(x, indicatorY, x + width, indicatorY + indicatorH, color);
     }
 
     // ── Text ──────────────────────────────────────────────────────────────

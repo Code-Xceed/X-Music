@@ -129,4 +129,20 @@ public class XMusicConfig {
     /** Language code for i18n (e.g. "en", "es", "fr", "de", "ja", "zh"). */
     public String locale = "en";
 
+    // ── Playback Context ────────────────────────────────────────────────
+    /**
+     * Where music is allowed to play.
+     * EVERYWHERE = in-world + menus/title screen.
+     * IN_WORLD = only when the player is in a singleplayer or multiplayer world.
+     * MAIN_MENU = only on the title screen / main menu.
+     */
+    public String playbackContext = "EVERYWHERE";
+
+    // ── Animation Settings ──────────────────────────────────────────────
+    /** Whether GUI intro/outro and hover animations are enabled. */
+    public boolean animationsEnabled = true;
+
+    /** Animation speed multiplier: 0.5 = slow, 1.0 = normal, 2.0 = fast. */
+    public float animationSpeed = 3.0f;
+
 }

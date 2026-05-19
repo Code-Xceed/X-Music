@@ -3,12 +3,12 @@ package com.codexceed.xmusic.gui.layout;
 public final class GuiFrame {
     public static final int MIN_WIDTH = 520;
     public static final int MIN_HEIGHT = 320;
-    public static final int TOP_BAR_HEIGHT = 26;
-    public static final int PLAYER_BAR_HEIGHT = 80;
-    public static final int SIDEBAR_WIDTH = 100;
-    public static final int SIDEBAR_COMPACT_WIDTH = 64;
-    public static final int MARGIN = 4;
-    public static final int GAP = 3;
+    public static final int TOP_BAR_HEIGHT = 22;
+    public static final int PLAYER_BAR_HEIGHT = 74;
+    public static final int SIDEBAR_WIDTH = 96;
+    public static final int SIDEBAR_COMPACT_WIDTH = 60;
+    public static final int MARGIN = 6;
+    public static final int GAP = 4;
 
     private final int x;
     private final int y;

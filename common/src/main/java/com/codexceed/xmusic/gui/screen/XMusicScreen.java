@@ -2,6 +2,7 @@ package com.codexceed.xmusic.gui.screen;
 
 import com.codexceed.xmusic.XMusic;
 import com.codexceed.xmusic.config.ConfigManager;
+import com.codexceed.xmusic.config.XMusicConfig;
 import com.codexceed.xmusic.gui.GuiRoute;
 import com.codexceed.xmusic.gui.component.ContentHost;
 import com.codexceed.xmusic.gui.component.PlayerBar;
@@ -9,6 +10,7 @@ import com.codexceed.xmusic.gui.component.SidebarNav;
 import com.codexceed.xmusic.gui.component.TopBar;
 import com.codexceed.xmusic.gui.layout.GuiFrame;
 import com.codexceed.xmusic.gui.render.GuiRender;
+import com.codexceed.xmusic.gui.render.HoverTracker;
 import com.codexceed.xmusic.gui.theme.GuiTheme;
 import com.codexceed.xmusic.gui.util.AnimationHelper;
 import com.codexceed.xmusic.service.ServiceManager;
@@ -19,78 +21,140 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
+/**
+ * Main music player screen.
+ * <p>
+ * Animation: The entire GUI scales from center as ONE unit.
+ * Purely linear interpolation (no easing) for smooth, consistent motion.
+ * Animation can be disabled or speed-adjusted via config.
+ * <p>
+ * Route memory: First open goes to Home. Subsequent opens restore the
+ * last active route the user was viewing.
+ */
 public final class XMusicScreen extends Screen {
     private final TopBar topBar = new TopBar();
     private final SidebarNav sidebar = new SidebarNav();
     private final ContentHost content = new ContentHost();
     private final PlayerBar playerBar = new PlayerBar();
 
-    private GuiRoute activeRoute = GuiRoute.HOME;
+    // ── Route persistence (static — survives screen close/reopen) ────────
+    private static GuiRoute lastRoute = null; // null = first launch
+    private GuiRoute activeRoute;
 
-    // Intro/outro animation state
-    private float introProgress = 0f;
+    // ── Animation state ──────────────────────────────────────────────────
+    private long animStartMs = 0;
     private boolean closing = false;
-    private long openTimeMs = 0;
 
     public XMusicScreen() {
         super(Component.literal(XMusic.MOD_NAME));
+
+        // First launch → Home; subsequent → restore last route
+        if (lastRoute == null) {
+            activeRoute = GuiRoute.HOME;
+        } else {
+            activeRoute = lastRoute;
+        }
+
         content.setRouteChanger(() -> activeRoute = GuiRoute.LIBRARY);
-        openTimeMs = System.currentTimeMillis();
+        animStartMs = System.currentTimeMillis();
     }
+
+    // ── Background ───────────────────────────────────────────────────────
 
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // Animated overlay alpha
-        float alpha = closing ? introProgress : AnimationHelper.easeInOut(introProgress);
-        int overlayAlpha = (int) (0xDD * alpha);
-        graphics.fill(0, 0, width, height, (overlayAlpha << 24) | (GuiTheme.OVERLAY & 0x00FFFFFF));
+        // No dark overlay — game world stays fully visible
     }
 
     @Override
     protected void renderBlurredBackground() {
-        // Keep the Minecraft world readable behind the custom modal.
+        // Intentionally empty
     }
+
+    // ── Animation helpers ────────────────────────────────────────────────
+
+    /** Get effective intro duration in ms, respecting animation speed config. */
+    private long getIntroDuration() {
+        XMusicConfig cfg = ConfigManager.get();
+        if (!cfg.animationsEnabled) return 0;
+        float speed = Math.max(0.1f, cfg.animationSpeed);
+        return (long) (GuiTheme.INTRO_DURATION_MS / speed);
+    }
+
+    /** Get effective outro duration in ms, respecting animation speed config. */
+    private long getOutroDuration() {
+        XMusicConfig cfg = ConfigManager.get();
+        if (!cfg.animationsEnabled) return 0;
+        float speed = Math.max(0.1f, cfg.animationSpeed);
+        return (long) (GuiTheme.OUTRO_DURATION_MS / speed);
+    }
+
+    // ── Main Render ──────────────────────────────────────────────────────
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // Update intro/outro animation
-        float delta = partialTick / 20f;
+        // Update hover tracker delta
+        HoverTracker.updateFrameDelta();
+
+        // Save active route for next open
+        lastRoute = activeRoute;
+
+        // ── 1. Calculate animation progress (purely linear) ──────────────
+        long elapsed = System.currentTimeMillis() - animStartMs;
+        float progress;
+
         if (closing) {
-            introProgress = AnimationHelper.approach(introProgress, 0f, 10f, delta);
-            if (introProgress < 0.01f) {
+            long duration = getOutroDuration();
+            if (duration <= 0) {
+                HoverTracker.reset();
+                minecraft.setScreen(null);
+                return;
+            }
+            progress = 1f - Math.min(1f, (float) elapsed / duration);
+            if (elapsed >= duration) {
+                HoverTracker.reset();
                 minecraft.setScreen(null);
                 return;
             }
         } else {
-            introProgress = AnimationHelper.approach(introProgress, 1f, 8f, delta);
+            long duration = getIntroDuration();
+            if (duration <= 0) {
+                progress = 1f; // instant
+            } else {
+                progress = Math.min(1f, (float) elapsed / duration);
+            }
         }
 
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        // ── 2. No background overlay ─────────────────────────────────────
 
         GuiFrame frame = GuiFrame.calculate(width, height);
 
-        // Animate the frame sliding in from top + scaling
-        float eased = AnimationHelper.easeOut(introProgress);
-        int slideOffset = (int) ((1f - eased) * -30f);
-        float scale = 0.96f + 0.04f * eased;
-        float alpha = eased;
-
         int fx = frame.x();
-        int fy = frame.y() + slideOffset;
+        int fy = frame.y();
         int fw = frame.width();
         int fh = frame.height();
 
-        // Apply alpha via overlay on the frame background
-        int frameAlpha = (int) (0xFF * alpha);
-        int frameColor = (frameAlpha << 24) | (GuiTheme.FRAME & 0x00FFFFFF);
-        graphics.fill(fx, fy, fx + fw, fy + fh, frameColor);
-        GuiRender.mcFrameBorder(graphics, fx, fy, fw, fh);
+        // ── 3. Single unified transform: linear scale from center ────────
+        float scale = 0.92f + 0.08f * progress;   // 92% → 100% (linear)
+        float alpha = progress;                     // 0 → 1 (linear)
 
-        // Render children with animated frame position offset
-        // We use pose translate to shift all children by the slide offset
+        float centerX = fx + fw / 2f;
+        float centerY = fy + fh / 2f;
+
         graphics.pose().pushPose();
-        graphics.pose().translate(0, slideOffset, 0);
+        graphics.pose().translate(centerX, centerY, 0);
+        graphics.pose().scale(scale, scale, 1f);
+        graphics.pose().translate(-centerX, -centerY, 0);
 
+        // ── 4. Frame background ──────────────────────────────────────────
+        int frameTopColor = AnimationHelper.withAlpha(GuiTheme.FRAME_TOP, alpha);
+        int frameBotColor = AnimationHelper.withAlpha(GuiTheme.FRAME_BOTTOM, alpha);
+        GuiRender.gradientV(graphics, fx, fy, fw, fh, frameTopColor, frameBotColor);
+        if (progress > 0.3f) {
+            GuiRender.mcFrameBorder(graphics, fx, fy, fw, fh);
+        }
+
+        // ── 5. Render ALL children together ──────────────────────────────
         topBar.render(graphics, font, frame, mouseX, mouseY);
         sidebar.render(graphics, font, frame, activeRoute, mouseX, mouseY);
         content.render(graphics, font, frame, activeRoute, mouseX, mouseY);
@@ -101,8 +165,11 @@ public final class XMusicScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
+    // ── Input Events ─────────────────────────────────────────────────────
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (closing) return false;
         GuiFrame frame = GuiFrame.calculate(width, height);
 
         if (topBar.closeClicked(frame, mouseX, mouseY)) {
@@ -113,6 +180,7 @@ public final class XMusicScreen extends Screen {
         GuiRoute clickedRoute = sidebar.clicked(frame, mouseX, mouseY);
         if (clickedRoute != null) {
             activeRoute = clickedRoute;
+            lastRoute = activeRoute;
             return true;
         }
 
@@ -193,14 +261,17 @@ public final class XMusicScreen extends Screen {
 
     /** Trigger animated close instead of instant close. */
     private void closeAnimated() {
-        closing = true;
+        if (!closing) {
+            closing = true;
+            lastRoute = activeRoute;
+            animStartMs = System.currentTimeMillis();
+        }
     }
 
     @Override
     public void onClose() {
-        // If already closing animation, don't restart
         if (!closing) {
-            closing = true;
+            closeAnimated();
         }
     }
 }

@@ -6,6 +6,7 @@ import com.codexceed.xmusic.gui.render.GuiRender;
 import com.codexceed.xmusic.gui.render.HoverTracker;
 import com.codexceed.xmusic.gui.render.IconRenderer;
 import com.codexceed.xmusic.gui.theme.GuiTheme;
+import com.codexceed.xmusic.gui.util.AnimationHelper;
 import com.codexceed.xmusic.download.DownloadManager;
 import com.codexceed.xmusic.download.DownloadState;
 import com.codexceed.xmusic.library.LibraryManager;
@@ -50,8 +51,10 @@ public final class PlayerBar {
         int w = frame.playerWidth();
         int h = frame.playerHeight();
 
-        // 1. Footer Background: MC raised panel
-        GuiRender.mcPanel(graphics, x, y, w, h);
+        // 1. Footer Background: premium gradient panel
+        GuiRender.mcPanelGradient(graphics, x, y, w, h);
+        // Depth separation shadow at top edge
+        GuiRender.depthShadow(graphics, x + 1, y, w - 2);
 
         PlayerState state = PlayerFacade.getInstance().snapshot();
         TrackRef track = state.getCurrentTrack();
@@ -94,36 +97,36 @@ public final class PlayerBar {
         int hSpacing = 10;
         int controlsW = (BTN_W * 4) + PLAY_BTN_W + (hSpacing * 4);
         int controlsX = x + w / 2 - controlsW / 2;
-        int controlsY = y + 36; 
+        int controlsY = y + 32; 
 
         int bx = controlsX;
         boolean hoverBack = GuiRender.inside(mouseX, mouseY, bx, controlsY, BTN_W, BTN_H);
-        HoverTracker.tick("pb_skipback", hoverBack);
-        renderIconButton(graphics, font, bx, controlsY, BTN_W, BTN_H, false, hoverBack, IconRenderer::skipBack);
+        float hoverBackLerp = HoverTracker.tick("pb_skipback", hoverBack);
+        renderIconButtonSmooth(graphics, font, bx, controlsY, BTN_W, BTN_H, false, hoverBackLerp, IconRenderer::skipBack);
         bx += BTN_W + hSpacing;
         boolean hoverPrev = GuiRender.inside(mouseX, mouseY, bx, controlsY, BTN_W, BTN_H);
-        HoverTracker.tick("pb_prev", hoverPrev);
-        renderIconButton(graphics, font, bx, controlsY, BTN_W, BTN_H, false, hoverPrev, IconRenderer::prev);
+        float hoverPrevLerp = HoverTracker.tick("pb_prev", hoverPrev);
+        renderIconButtonSmooth(graphics, font, bx, controlsY, BTN_W, BTN_H, false, hoverPrevLerp, IconRenderer::prev);
         bx += BTN_W + hSpacing;
         
         boolean hoverPlay = GuiRender.inside(mouseX, mouseY, bx, controlsY, PLAY_BTN_W, BTN_H);
-        HoverTracker.tick("pb_play", hoverPlay);
+        float hoverPlayLerp = HoverTracker.tick("pb_play", hoverPlay);
         if (state.isPlaying()) {
-            renderIconButton(graphics, font, bx, controlsY, PLAY_BTN_W, BTN_H, true, hoverPlay, IconRenderer::pause);
+            renderIconButtonSmooth(graphics, font, bx, controlsY, PLAY_BTN_W, BTN_H, true, hoverPlayLerp, IconRenderer::pause);
             // Accent glow around play button when playing
             GuiRender.accentGlow(graphics, bx, controlsY, PLAY_BTN_W, BTN_H);
         } else {
-            renderIconButton(graphics, font, bx, controlsY, PLAY_BTN_W, BTN_H, false, hoverPlay, IconRenderer::play);
+            renderIconButtonSmooth(graphics, font, bx, controlsY, PLAY_BTN_W, BTN_H, false, hoverPlayLerp, IconRenderer::play);
         }
         bx += PLAY_BTN_W + hSpacing;
         
         boolean hoverNext = GuiRender.inside(mouseX, mouseY, bx, controlsY, BTN_W, BTN_H);
-        HoverTracker.tick("pb_next", hoverNext);
-        renderIconButton(graphics, font, bx, controlsY, BTN_W, BTN_H, false, hoverNext, IconRenderer::next);
+        float hoverNextLerp = HoverTracker.tick("pb_next", hoverNext);
+        renderIconButtonSmooth(graphics, font, bx, controlsY, BTN_W, BTN_H, false, hoverNextLerp, IconRenderer::next);
         bx += BTN_W + hSpacing;
         boolean hoverFwd = GuiRender.inside(mouseX, mouseY, bx, controlsY, BTN_W, BTN_H);
-        HoverTracker.tick("pb_skipfwd", hoverFwd);
-        renderIconButton(graphics, font, bx, controlsY, BTN_W, BTN_H, false, hoverFwd, IconRenderer::skipForward);
+        float hoverFwdLerp = HoverTracker.tick("pb_skipfwd", hoverFwd);
+        renderIconButtonSmooth(graphics, font, bx, controlsY, BTN_W, BTN_H, false, hoverFwdLerp, IconRenderer::skipForward);
         
         int bx_end = bx + BTN_W; // Right edge of controls
 
@@ -144,7 +147,7 @@ public final class PlayerBar {
         String pctStr = String.format("%d%%", (int)(vol * 100));
         int pctSlotW = font.width("100%"); // fixed width for stable layout
         
-        int volY = y + 54;
+        int volY = y + 48;
         int pctX = rightEdge - pctSlotW;
         GuiRender.text(graphics, font, pctStr, pctX + (pctSlotW - font.width(pctStr)), volY - 3, GuiTheme.TEXT_SOFT);
         
@@ -165,7 +168,7 @@ public final class PlayerBar {
         }
 
         // Top right buttons
-        int topBtnY = y + 24;
+        int topBtnY = y + 20;
         int topBtnW = 54;
         int topBtnH = 16;
         int autoplayX = rightEdge - topBtnW;
@@ -188,9 +191,9 @@ public final class PlayerBar {
         }
 
         // 5. Draw track info (Left) — two-line layout: title on top, artist + action buttons below
-        int art = 36;
-        int artX = x + 13;
-        int artY = y + 26;
+        int art = 34;
+        int artX = x + 10;
+        int artY = y + 22;
 
         // Music logo box — show album art if available, else noteblock icon
         GuiRender.mcSlot(graphics, artX, artY, art, art);
@@ -214,10 +217,10 @@ public final class PlayerBar {
         // Line 1: Title — full width available (up to controls)
         int maxTitleW = controlsX - infoX - 8;
         if (maxTitleW < 60) maxTitleW = 60;
-        int textY1 = y + 24;
+        int textY1 = y + 20;
 
         // Line 2: Artist text + heart + download inline
-        int textY2 = textY1 + 20;
+        int textY2 = textY1 + 18;
         int artistTextW = maxTitleW - actionsW - 4;
 
         if (track == null) {
@@ -791,8 +794,23 @@ public final class PlayerBar {
         icon.draw(graphics, font, x, y, width, height, iconColor);
     }
 
+    /** Smooth version of renderIconButton with interpolated hover factor. */
+    private void renderIconButtonSmooth(GuiGraphics graphics, Font font, int x, int y, int width, int height, boolean active, float hoverLerp, IconDraw icon) {
+        int iconColor;
+        if (active) {
+            GuiRender.mcButtonSmooth(graphics, x, y, width, height, hoverLerp, true);
+            iconColor = GuiTheme.ACCENT;
+        } else {
+            GuiRender.mcButtonSmooth(graphics, x, y, width, height, hoverLerp, false);
+            // Icon color interpolates: TEXT_SOFT → ACCENT_BRIGHT on hover
+            iconColor = AnimationHelper.lerpColor(GuiTheme.TEXT_SOFT, GuiTheme.ACCENT_BRIGHT, hoverLerp);
+        }
+        icon.draw(graphics, font, x, y, width, height, iconColor);
+    }
+
     private void renderIconBadge(GuiGraphics graphics, Font font, String label, int x, int y, int width, int height, boolean active, boolean hovered, IconDraw icon) {
-        GuiRender.mcButton(graphics, x, y, width, height, hovered, active);
+        float badgeLerp = HoverTracker.tick("pb_badge_" + label, hovered);
+        GuiRender.mcButtonSmooth(graphics, x, y, width, height, badgeLerp, active);
 
         int iconColor;
         int textColor;
@@ -802,8 +820,8 @@ public final class PlayerBar {
             iconColor = GuiTheme.ACCENT;
             textColor = GuiTheme.TEXT;
         } else {
-            iconColor = hovered ? GuiTheme.TEXT : GuiTheme.TEXT_MUTED;
-            textColor = hovered ? GuiTheme.TEXT : GuiTheme.TEXT_MUTED;
+            iconColor = AnimationHelper.lerpColor(GuiTheme.TEXT_MUTED, GuiTheme.TEXT, badgeLerp);
+            textColor = AnimationHelper.lerpColor(GuiTheme.TEXT_MUTED, GuiTheme.TEXT, badgeLerp);
         }
 
         // Draw icon: smaller (10px), vertically centered on left side

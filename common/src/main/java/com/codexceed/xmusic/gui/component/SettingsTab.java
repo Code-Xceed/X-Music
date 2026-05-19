@@ -10,6 +10,7 @@ import com.codexceed.xmusic.gui.render.GuiRender;
 import com.codexceed.xmusic.gui.render.HoverTracker;
 import com.codexceed.xmusic.gui.render.IconRenderer;
 import com.codexceed.xmusic.gui.theme.GuiTheme;
+import com.codexceed.xmusic.gui.util.AnimationHelper;
 import com.codexceed.xmusic.player.PlayerFacade;
 import com.codexceed.xmusic.service.ServiceManager;
 import com.codexceed.xmusic.service.local.LocalMusicService;
@@ -32,10 +33,10 @@ import java.util.List;
 public final class SettingsTab {
 
     // ── Layout ─────────────────────────────────────────────────────────────
-    private static final int PAD = 8;
-    private static final int ROW_H = 22;
-    private static final int SECTION_HEADER_H = 24;
-    private static final int SECTION_GAP = 4;
+    private static final int PAD = 10;
+    private static final int ROW_H = 24;
+    private static final int SECTION_HEADER_H = 26;
+    private static final int SECTION_GAP = 6;
     private static final int TOGGLE_W = 40;
     private static final int TOGGLE_H = 14;
     private static final int SLIDER_W = 100;
@@ -49,6 +50,7 @@ public final class SettingsTab {
     private boolean youtubeExpanded = false;
     private boolean storageExpanded = false;
     private boolean aboutExpanded = false;
+    private boolean animationsExpanded = false;
 
     private double scrollOffset = 0;
     private double targetScroll = 0;
@@ -70,7 +72,9 @@ public final class SettingsTab {
         int w = frame.contentWidth();
         int h = frame.contentHeight();
 
-        GuiRender.mcPanel(graphics, x, y, w, h);
+        // Background panel with gradient + depth
+        GuiRender.mcPanelGradient(graphics, x, y, w, h);
+        GuiRender.innerShadowTop(graphics, x, y, w, 6);
 
         // Smooth scroll
         smoothScroll();
@@ -82,9 +86,11 @@ public final class SettingsTab {
         // Enable scissor for content area
         graphics.enableScissor(x + 1, y + 1, x + w - 1, y + h - 1);
 
-        // Title
-        GuiRender.shadowText(graphics, font, "Settings", contentX, drawY, GuiTheme.ACCENT);
-        drawY += 16;
+        // Title with accent underline
+        GuiRender.shadowText(graphics, font, "Settings", contentX + 2, drawY, GuiTheme.ACCENT);
+        int titleW = font.width("Settings");
+        graphics.fill(contentX + 2, drawY + 11, contentX + 2 + titleW, drawY + 12, GuiTheme.ACCENT_DARK);
+        drawY += 18;
 
         // Sections
         drawY = renderSection(graphics, font, contentX, drawY, contentW, mouseX, mouseY,
@@ -97,6 +103,8 @@ public final class SettingsTab {
                 "Storage", "storage", storageExpanded, this::renderStorageRows);
         drawY = renderSection(graphics, font, contentX, drawY, contentW, mouseX, mouseY,
                 "About", "about", aboutExpanded, this::renderAboutRows);
+        drawY = renderSection(graphics, font, contentX, drawY, contentW, mouseX, mouseY,
+                "Animations", "animations", animationsExpanded, this::renderAnimationsRows);
 
         // Store max scroll for clamping
         int contentHeight = drawY + (int) scrollOffset - y - h + PAD;
@@ -126,29 +134,46 @@ public final class SettingsTab {
     private int renderSection(GuiGraphics g, Font f, int x, int y, int w,
                               int mx, int my, String title, String id,
                               boolean expanded, SectionRenderer renderer) {
-        // Section header
+        // Section header with premium styling
         boolean headerHover = GuiRender.inside(mx, my, x, y, w, SECTION_HEADER_H);
         float lerp = HoverTracker.tick("settings_sec_" + id, headerHover);
 
-        // Header background
-        int headerBg = headerHover ? GuiTheme.PANEL_HOVER : GuiTheme.PANEL_DARK;
+        // Header background — smooth interpolation between states
+        int headerBg = AnimationHelper.lerpColor(GuiTheme.PANEL_DARK, GuiTheme.PANEL_HOVER, lerp);
         g.fill(x, y, x + w, y + SECTION_HEADER_H, headerBg);
-        GuiRender.bevel(g, x, y, w, SECTION_HEADER_H, true);
+
+        // Accent left bar on expanded sections (2px wide)
+        if (expanded) {
+            g.fill(x, y + 2, x + 2, y + SECTION_HEADER_H - 2, GuiTheme.ACCENT);
+        }
+
+        // Top highlight (1px) + bottom shadow (1px) for depth
+        g.fill(x, y, x + w, y + 1, GuiTheme.BEVEL_HIGHLIGHT);
+        g.fill(x, y + SECTION_HEADER_H - 1, x + w, y + SECTION_HEADER_H, GuiTheme.BEVEL_SHADOW);
 
         // Expand/collapse indicator
-        String arrow = expanded ? "▼" : "▶";
-        int arrowColor = expanded ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED;
-        GuiRender.shadowText(g, f, arrow, x + 4, y + (SECTION_HEADER_H - 8) / 2, arrowColor);
+        String arrow = expanded ? "\u25BC" : "\u25B6";
+        int arrowColor = AnimationHelper.lerpColor(
+                expanded ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED,
+                GuiTheme.ACCENT_BRIGHT, lerp);
+        GuiRender.shadowText(g, f, arrow, x + 6, y + (SECTION_HEADER_H - 8) / 2, arrowColor);
 
-        // Section title
-        GuiRender.shadowText(g, f, title, x + 16, y + (SECTION_HEADER_H - 8) / 2,
-                expanded ? GuiTheme.TEXT : GuiTheme.TEXT_SOFT);
+        // Section title with hover color interpolation
+        int titleColor = AnimationHelper.lerpColor(
+                expanded ? GuiTheme.TEXT : GuiTheme.TEXT_SOFT,
+                GuiTheme.TEXT, lerp);
+        GuiRender.shadowText(g, f, title, x + 18, y + (SECTION_HEADER_H - 8) / 2, titleColor);
 
         y += SECTION_HEADER_H + 2;
 
         // Expanded content
         if (expanded) {
+            int rowsStartY = y;
             y = renderer.render(g, f, x, y, w, mx, my);
+            // Depth shadow at top of content area
+            if (y > rowsStartY) {
+                g.fill(x, rowsStartY, x + w, rowsStartY + 1, 0x15000000);
+            }
         }
 
         y += SECTION_GAP;
@@ -170,6 +195,16 @@ public final class SettingsTab {
         String modeLabel = mode.getDisplayName();
         y = renderCycleRow(g, f, x, y, w, mx, my, "Playback Mode",
                 "playbackMode", modeLabel);
+
+        // Playback Context cycle (WHERE music plays)
+        String contextLabel;
+        switch (cfg.playbackContext) {
+            case "IN_WORLD": contextLabel = "In-World Only"; break;
+            case "MAIN_MENU": contextLabel = "Main Menu Only"; break;
+            default: contextLabel = "Everywhere"; break;
+        }
+        y = renderCycleRow(g, f, x, y, w, mx, my, "Play Music In",
+                "playbackContext", contextLabel);
 
         // Volume Step
         y = renderSliderRow(g, f, x, y, w, mx, my, "Volume Step",
@@ -336,32 +371,71 @@ public final class SettingsTab {
         return y;
     }
 
+    // ── Animations rows ─────────────────────────────────────────────────────
+
+    private int renderAnimationsRows(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
+        XMusicConfig cfg = ConfigManager.get();
+
+        // Animations Enabled toggle
+        y = renderToggleRow(g, f, x, y, w, mx, my, "Animations Enabled",
+                "animationsEnabled", cfg.animationsEnabled);
+
+        // Animation Speed slider (only shown when animations are enabled)
+        if (cfg.animationsEnabled) {
+            String speedLabel;
+            if (cfg.animationSpeed <= 0.5f) speedLabel = "Slow";
+            else if (cfg.animationSpeed <= 0.8f) speedLabel = "Relaxed";
+            else if (cfg.animationSpeed <= 1.2f) speedLabel = "Normal";
+            else if (cfg.animationSpeed <= 2.0f) speedLabel = "Fast";
+            else speedLabel = "Instant";
+            y = renderSliderRow(g, f, x, y, w, mx, my, "Animation Speed",
+                    "animationSpeed", cfg.animationSpeed, 0.5f, 3.0f, 0.25f,
+                    String.format("%.1fx (%s)", cfg.animationSpeed, speedLabel));
+        }
+
+        return y;
+    }
+
     // ── Row type renderers ─────────────────────────────────────────────────
 
     private int renderToggleRow(GuiGraphics g, Font f, int x, int y, int w,
                                 int mx, int my, String label, String id, boolean value) {
-        // Row background on hover
+        // Row background with smooth hover
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
-        if (rowHover) g.fill(x, y, x + w, y + ROW_H, GuiTheme.PANEL_HOVER);
+        float hover = HoverTracker.tick("stog_" + id, rowHover);
+        if (hover > 0.01f) {
+            int rowBg = AnimationHelper.withAlpha(GuiTheme.PANEL_HOVER, hover * 0.6f);
+            g.fill(x, y, x + w, y + ROW_H, rowBg);
+        }
 
         // Label
-        GuiRender.shadowText(g, f, label, x + 4, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
+        int labelColor = AnimationHelper.lerpColor(GuiTheme.TEXT, GuiTheme.ACCENT_BRIGHT, hover * 0.15f);
+        GuiRender.shadowText(g, f, label, x + 6, y + (ROW_H - 8) / 2, labelColor);
 
         // Toggle switch
-        int toggleX = x + w - TOGGLE_W - 4;
+        int toggleX = x + w - TOGGLE_W - 6;
         int toggleY = y + (ROW_H - TOGGLE_H) / 2;
-        boolean toggleHover = GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H);
 
-        // Toggle track
+        // Track background (rounded feel with gradient)
         int trackBg = value ? GuiTheme.ACCENT_DARK : GuiTheme.PANEL_DARK;
         g.fill(toggleX, toggleY, toggleX + TOGGLE_W, toggleY + TOGGLE_H, trackBg);
-        GuiRender.bevel(g, toggleX, toggleY, TOGGLE_W, TOGGLE_H, true);
+        // Track border (subtle)
+        int trackBorder = value ? GuiTheme.ACCENT : GuiTheme.BEVEL_HIGHLIGHT;
+        g.fill(toggleX, toggleY, toggleX + TOGGLE_W, toggleY + 1, trackBorder);
+        g.fill(toggleX, toggleY + TOGGLE_H - 1, toggleX + TOGGLE_W, toggleY + TOGGLE_H, GuiTheme.BEVEL_SHADOW);
+        g.fill(toggleX, toggleY, toggleX + 1, toggleY + TOGGLE_H, trackBorder);
+        g.fill(toggleX + TOGGLE_W - 1, toggleY, toggleX + TOGGLE_W, toggleY + TOGGLE_H, GuiTheme.BEVEL_SHADOW);
 
-        // Toggle knob
+        // Knob (smooth position interpolation)
+        float knobLerp = HoverTracker.tick("stogk_" + id, value);
         int knobSize = TOGGLE_H - 4;
-        int knobX = value ? toggleX + TOGGLE_W - knobSize - 2 : toggleX + 2;
-        int knobColor = value ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED;
+        int knobMinX = toggleX + 2;
+        int knobMaxX = toggleX + TOGGLE_W - knobSize - 2;
+        int knobX = (int) (knobMinX + (knobMaxX - knobMinX) * knobLerp);
+        int knobColor = AnimationHelper.lerpColor(GuiTheme.TEXT_MUTED, GuiTheme.ACCENT_BRIGHT, knobLerp);
         g.fill(knobX, toggleY + 2, knobX + knobSize, toggleY + 2 + knobSize, knobColor);
+        // Knob highlight (top 1px)
+        g.fill(knobX, toggleY + 2, knobX + knobSize, toggleY + 3, 0x20FFFFFF);
 
         return y + ROW_H;
     }
@@ -369,18 +443,34 @@ public final class SettingsTab {
     private int renderCycleRow(GuiGraphics g, Font f, int x, int y, int w,
                                int mx, int my, String label, String id, String value) {
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
-        if (rowHover) g.fill(x, y, x + w, y + ROW_H, GuiTheme.PANEL_HOVER);
+        float hover = HoverTracker.tick("scyc_" + id, rowHover);
+        if (hover > 0.01f) {
+            int rowBg = AnimationHelper.withAlpha(GuiTheme.PANEL_HOVER, hover * 0.6f);
+            g.fill(x, y, x + w, y + ROW_H, rowBg);
+        }
 
         // Label
-        GuiRender.shadowText(g, f, label, x + 4, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
+        int labelColor = AnimationHelper.lerpColor(GuiTheme.TEXT, GuiTheme.ACCENT_BRIGHT, hover * 0.15f);
+        GuiRender.shadowText(g, f, label, x + 6, y + (ROW_H - 8) / 2, labelColor);
 
-        // Cycle button showing current value
+        // Cycle button
         int btnW = f.width(value) + 16;
-        int btnX = x + w - btnW - 4;
+        int btnX = x + w - btnW - 6;
         int btnY = y + (ROW_H - BTN_H) / 2;
         boolean btnHover = GuiRender.inside(mx, my, btnX, btnY, btnW, BTN_H);
-        GuiRender.mcButton(g, btnX, btnY, btnW, BTN_H, btnHover, false);
-        int textColor = btnHover ? GuiTheme.ACCENT : GuiTheme.TEXT_SOFT;
+        float btnLerp = HoverTracker.tick("scycb_" + id, btnHover);
+
+        // Button background
+        int btnBg = AnimationHelper.lerpColor(GuiTheme.PANEL_DARK, GuiTheme.PANEL_HOVER, btnLerp);
+        g.fill(btnX, btnY, btnX + btnW, btnY + BTN_H, btnBg);
+        // Button border
+        int borderColor = AnimationHelper.lerpColor(GuiTheme.BEVEL_HIGHLIGHT, GuiTheme.ACCENT, btnLerp);
+        g.fill(btnX, btnY, btnX + btnW, btnY + 1, borderColor);
+        g.fill(btnX, btnY + BTN_H - 1, btnX + btnW, btnY + BTN_H, GuiTheme.BEVEL_SHADOW);
+        g.fill(btnX, btnY, btnX + 1, btnY + BTN_H, borderColor);
+        g.fill(btnX + btnW - 1, btnY, btnX + btnW, btnY + BTN_H, GuiTheme.BEVEL_SHADOW);
+
+        int textColor = AnimationHelper.lerpColor(GuiTheme.TEXT_SOFT, GuiTheme.ACCENT, btnLerp);
         GuiRender.text(g, f, value, btnX + 8, btnY + (BTN_H - 8) / 2, textColor);
 
         return y + ROW_H;
@@ -390,40 +480,55 @@ public final class SettingsTab {
                                 String label, String field, double value, double min, double max,
                                 double step, String displayValue) {
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
-        if (rowHover) g.fill(x, y, x + w, y + ROW_H, GuiTheme.PANEL_HOVER);
+        float hover = HoverTracker.tick("ssld_" + field, rowHover);
+        if (hover > 0.01f) {
+            int rowBg = AnimationHelper.withAlpha(GuiTheme.PANEL_HOVER, hover * 0.6f);
+            g.fill(x, y, x + w, y + ROW_H, rowBg);
+        }
 
         // Label
-        GuiRender.shadowText(g, f, label, x + 4, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
+        int labelColor = AnimationHelper.lerpColor(GuiTheme.TEXT, GuiTheme.ACCENT_BRIGHT, hover * 0.15f);
+        GuiRender.shadowText(g, f, label, x + 6, y + (ROW_H - 8) / 2, labelColor);
 
         // Value display
         int valW = f.width(displayValue) + 4;
-        int valX = x + w - valW - SLIDER_W - 12;
+        int valX = x + w - valW - SLIDER_W - 14;
         GuiRender.text(g, f, displayValue, valX, y + (ROW_H - 8) / 2, GuiTheme.TEXT_MUTED);
 
         // Slider
-        int sliderX = x + w - SLIDER_W - 4;
+        int sliderX = x + w - SLIDER_W - 6;
         int sliderY = y + (ROW_H - SLIDER_H) / 2;
         boolean sliderHover = GuiRender.inside(mx, my, sliderX, sliderY, SLIDER_W, SLIDER_H)
                 || field.equals(draggingSlider);
 
-        // Slider track (MC well)
-        GuiRender.mcWell(g, sliderX, sliderY, SLIDER_W, SLIDER_H);
+        // Slider track (inset well)
+        g.fill(sliderX, sliderY, sliderX + SLIDER_W, sliderY + SLIDER_H, GuiTheme.PANEL_DARK);
+        g.fill(sliderX, sliderY, sliderX + SLIDER_W, sliderY + 1, GuiTheme.BEVEL_SHADOW);
+        g.fill(sliderX, sliderY + SLIDER_H - 1, sliderX + SLIDER_W, sliderY + SLIDER_H, GuiTheme.BEVEL_HIGHLIGHT);
 
-        // Slider fill
+        // Slider fill (accent gradient)
         float pct = (float) ((value - min) / (max - min));
         if (pct < 0) pct = 0;
         if (pct > 1) pct = 1;
         int fillW = (int) (SLIDER_W * pct);
         if (fillW > 0) {
             g.fill(sliderX + 1, sliderY + 1, sliderX + fillW, sliderY + SLIDER_H - 1, GuiTheme.ACCENT_DARK);
+            // Bright edge at fill tip
+            if (fillW > 2) {
+                g.fill(sliderX + fillW - 1, sliderY + 1, sliderX + fillW, sliderY + SLIDER_H - 1, GuiTheme.ACCENT);
+            }
         }
 
-        // Slider knob
+        // Slider knob (accent dot when hovered/dragging)
         int knobX = sliderX + fillW;
         if (sliderHover || field.equals(draggingSlider)) {
-            GuiRender.mcButton(g, knobX - 3, sliderY - 1, 6, SLIDER_H + 2, true, false);
+            int knobColor = field.equals(draggingSlider) ? GuiTheme.ACCENT_BRIGHT : GuiTheme.ACCENT;
+            g.fill(knobX - 2, sliderY - 1, knobX + 2, sliderY + SLIDER_H + 1, knobColor);
+            // Glow around knob
+            g.fill(knobX - 3, sliderY - 2, knobX + 3, sliderY - 1, 0x30000000 | (GuiTheme.ACCENT & 0x00FFFFFF));
+            g.fill(knobX - 3, sliderY + SLIDER_H + 1, knobX + 3, sliderY + SLIDER_H + 2, 0x30000000 | (GuiTheme.ACCENT & 0x00FFFFFF));
         } else if (fillW > 0) {
-            g.fill(knobX - 2, sliderY, knobX + 2, sliderY + SLIDER_H, GuiTheme.TEXT_SOFT);
+            g.fill(knobX - 1, sliderY, knobX + 1, sliderY + SLIDER_H, GuiTheme.TEXT_SOFT);
         }
 
         return y + ROW_H;
@@ -431,10 +536,10 @@ public final class SettingsTab {
 
     private int renderStatusRow(GuiGraphics g, Font f, int x, int y, int w, int mx, int my,
                                 String label, String status, int statusColor) {
-        GuiRender.shadowText(g, f, label, x + 4, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
+        GuiRender.shadowText(g, f, label, x + 6, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
 
         int statusW = f.width(status) + 4;
-        int statusX = x + w - statusW - 4;
+        int statusX = x + w - statusW - 6;
         GuiRender.shadowText(g, f, status, statusX, y + (ROW_H - 8) / 2, statusColor);
 
         return y + ROW_H;
@@ -443,10 +548,13 @@ public final class SettingsTab {
     private int renderPathRow(GuiGraphics g, Font f, int x, int y, int w, int mx, int my,
                               String label, String field, String value) {
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
-        if (rowHover) g.fill(x, y, x + w, y + ROW_H, GuiTheme.PANEL_HOVER);
+        float hover = HoverTracker.tick("spath_" + field, rowHover);
+        if (hover > 0.01f) {
+            g.fill(x, y, x + w, y + ROW_H, AnimationHelper.withAlpha(GuiTheme.PANEL_HOVER, hover * 0.6f));
+        }
 
         // Label
-        GuiRender.shadowText(g, f, label, x + 4, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
+        GuiRender.shadowText(g, f, label, x + 6, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
 
         // Path display (truncated)
         boolean isEditing = field.equals(editingField);
@@ -482,26 +590,38 @@ public final class SettingsTab {
     private int renderFolderRow(GuiGraphics g, Font f, int x, int y, int w, int mx, int my,
                                 String label, String actionId, String path) {
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
-        if (rowHover) g.fill(x, y, x + w, y + ROW_H, GuiTheme.PANEL_HOVER);
+        float hover = HoverTracker.tick("sfld_" + actionId, rowHover);
+        if (hover > 0.01f) {
+            g.fill(x, y, x + w, y + ROW_H, AnimationHelper.withAlpha(GuiTheme.PANEL_HOVER, hover * 0.6f));
+        }
 
         // Label
-        GuiRender.shadowText(g, f, label, x + 4, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
+        GuiRender.shadowText(g, f, label, x + 6, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
 
         // Path display (truncated)
-        int pathX = x + 4 + f.width(label) + 8;
-        int pathW = w - f.width(label) - 8 - 78 - 8;
+        int pathX = x + 6 + f.width(label) + 8;
+        int pathW = w - f.width(label) - 8 - 78 - 10;
         if (pathW > 40) {
             GuiRender.truncated(g, f, path, pathX, y + (ROW_H - 8) / 2, pathW, GuiTheme.TEXT_MUTED);
         }
 
-        // Open button
+        // Open button with smooth hover
         String btnLabel = "Open Folder";
         int btnW = f.width(btnLabel) + 12;
-        int btnX = x + w - btnW - 4;
+        int btnX = x + w - btnW - 6;
         int btnY = y + (ROW_H - BTN_H) / 2;
         boolean btnHover = GuiRender.inside(mx, my, btnX, btnY, btnW, BTN_H);
-        GuiRender.mcButton(g, btnX, btnY, btnW, BTN_H, btnHover, false);
-        int textColor = btnHover ? GuiTheme.ACCENT : GuiTheme.TEXT_SOFT;
+        float btnLerp = HoverTracker.tick("sfldb_" + actionId, btnHover);
+
+        int btnBg = AnimationHelper.lerpColor(GuiTheme.PANEL_DARK, GuiTheme.PANEL_HOVER, btnLerp);
+        g.fill(btnX, btnY, btnX + btnW, btnY + BTN_H, btnBg);
+        int borderColor = AnimationHelper.lerpColor(GuiTheme.BEVEL_HIGHLIGHT, GuiTheme.ACCENT, btnLerp);
+        g.fill(btnX, btnY, btnX + btnW, btnY + 1, borderColor);
+        g.fill(btnX, btnY + BTN_H - 1, btnX + btnW, btnY + BTN_H, GuiTheme.BEVEL_SHADOW);
+        g.fill(btnX, btnY, btnX + 1, btnY + BTN_H, borderColor);
+        g.fill(btnX + btnW - 1, btnY, btnX + btnW, btnY + BTN_H, GuiTheme.BEVEL_SHADOW);
+
+        int textColor = AnimationHelper.lerpColor(GuiTheme.TEXT_SOFT, GuiTheme.ACCENT, btnLerp);
         GuiRender.text(g, f, btnLabel, btnX + 6, btnY + (BTN_H - 8) / 2, textColor);
 
         return y + ROW_H;
@@ -510,20 +630,32 @@ public final class SettingsTab {
     private int renderActionRow(GuiGraphics g, Font f, int x, int y, int w, int mx, int my,
                                 String label, String actionId, String btnLabel) {
         if (!label.isEmpty()) {
-            GuiRender.shadowText(g, f, label, x + 4, y + (ROW_H - 8) / 2, GuiTheme.TEXT_SOFT);
+            GuiRender.shadowText(g, f, label, x + 6, y + (ROW_H - 8) / 2, GuiTheme.TEXT_SOFT);
         }
 
         int btnW = f.width(btnLabel) + 16;
-        int btnX = label.isEmpty() ? x + w - btnW - 4 : x + w - btnW - 4;
+        int btnX = x + w - btnW - 6;
         int btnY = y + (ROW_H - BTN_H) / 2;
         boolean btnHover = GuiRender.inside(mx, my, btnX, btnY, btnW, BTN_H);
-        int btnBg = actionId.equals("confirmReset") ? GuiTheme.PANEL_ACTIVE : 0;
-        if (btnBg != 0) {
-            g.fill(btnX, btnY, btnX + btnW, btnY + BTN_H, btnBg);
-        }
-        GuiRender.mcButton(g, btnX, btnY, btnW, BTN_H, btnHover, false);
-        int textColor = actionId.equals("confirmReset") ? GuiTheme.DANGER
-                : (btnHover ? GuiTheme.ACCENT : GuiTheme.TEXT_SOFT);
+        float btnLerp = HoverTracker.tick("sact_" + actionId, btnHover);
+
+        // Button background
+        boolean isDanger = actionId.equals("confirmReset");
+        int btnBg = AnimationHelper.lerpColor(GuiTheme.PANEL_DARK, GuiTheme.PANEL_HOVER, btnLerp);
+        if (isDanger) btnBg = AnimationHelper.lerpColor(GuiTheme.PANEL_ACTIVE, GuiTheme.PANEL_HOVER, btnLerp);
+        g.fill(btnX, btnY, btnX + btnW, btnY + BTN_H, btnBg);
+
+        // Border
+        int borderColor = isDanger
+                ? AnimationHelper.lerpColor(GuiTheme.DANGER, GuiTheme.DANGER, btnLerp)
+                : AnimationHelper.lerpColor(GuiTheme.BEVEL_HIGHLIGHT, GuiTheme.ACCENT, btnLerp);
+        g.fill(btnX, btnY, btnX + btnW, btnY + 1, borderColor);
+        g.fill(btnX, btnY + BTN_H - 1, btnX + btnW, btnY + BTN_H, GuiTheme.BEVEL_SHADOW);
+        g.fill(btnX, btnY, btnX + 1, btnY + BTN_H, borderColor);
+        g.fill(btnX + btnW - 1, btnY, btnX + btnW, btnY + BTN_H, GuiTheme.BEVEL_SHADOW);
+
+        int textColor = isDanger ? GuiTheme.DANGER
+                : AnimationHelper.lerpColor(GuiTheme.TEXT_SOFT, GuiTheme.ACCENT, btnLerp);
         GuiRender.text(g, f, btnLabel, btnX + 8, btnY + (BTN_H - 8) / 2, textColor);
 
         return y + ROW_H;
@@ -531,9 +663,9 @@ public final class SettingsTab {
 
     private int renderLabelRow(GuiGraphics g, Font f, int x, int y, int w,
                                String label, String value) {
-        GuiRender.shadowText(g, f, label, x + 4, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
+        GuiRender.shadowText(g, f, label, x + 6, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
         int valW = f.width(value);
-        int valX = x + w - valW - 4;
+        int valX = x + w - valW - 6;
         GuiRender.text(g, f, value, valX, y + (ROW_H - 8) / 2, GuiTheme.TEXT_MUTED);
         return y + ROW_H;
     }
@@ -550,34 +682,45 @@ public final class SettingsTab {
         int contentW = w - PAD * 2;
         int drawY = y + PAD - (int) scrollOffset;
 
-        // Title
-        drawY += 16;
+        // Title (must match render offset of 18px)
+        drawY += 18;
 
         // Check section headers
         drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
                 "playback", playbackExpanded);
         if (playbackExpanded) {
             drawY = checkPlaybackClicks(contentX, drawY, contentW, mouseX, mouseY);
+            drawY += SECTION_GAP;
         }
         drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
                 "hud", hudExpanded);
         if (hudExpanded) {
             drawY = checkHudClicks(contentX, drawY, contentW, mouseX, mouseY);
+            drawY += SECTION_GAP;
         }
         drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
                 "youtube", youtubeExpanded);
         if (youtubeExpanded) {
             drawY = checkYouTubeClicks(contentX, drawY, contentW, mouseX, mouseY);
+            drawY += SECTION_GAP;
         }
         drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
                 "storage", storageExpanded);
         if (storageExpanded) {
             drawY = checkStorageClicks(contentX, drawY, contentW, mouseX, mouseY);
+            drawY += SECTION_GAP;
         }
         drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
                 "about", aboutExpanded);
         if (aboutExpanded) {
             drawY = checkAboutClicks(contentX, drawY, contentW, mouseX, mouseY);
+            drawY += SECTION_GAP;
+        }
+        drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
+                "animations", animationsExpanded);
+        if (animationsExpanded) {
+            drawY = checkAnimationsClicks(contentX, drawY, contentW, mouseX, mouseY);
+            drawY += SECTION_GAP;
         }
 
         return false;
@@ -602,12 +745,14 @@ public final class SettingsTab {
             case "youtube": youtubeExpanded = !youtubeExpanded; break;
             case "storage": storageExpanded = !storageExpanded; break;
             case "about": aboutExpanded = !aboutExpanded; break;
+            case "animations": animationsExpanded = !animationsExpanded; break;
         }
     }
 
     // ── Playback click handling ────────────────────────────────────────────
 
     private int checkPlaybackClicks(int x, int y, int w, double mx, double my) {
+        XMusicConfig cfg = ConfigManager.get();
         PlayerFacade player = PlayerFacade.getInstance();
 
         // Autoplay toggle
@@ -624,6 +769,18 @@ public final class SettingsTab {
         // Playback Mode cycle
         if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
             player.cyclePlaybackMode();
+            return y + ROW_H;
+        }
+        y += ROW_H;
+
+        // Playback Context cycle
+        if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
+            switch (cfg.playbackContext) {
+                case "EVERYWHERE": cfg.playbackContext = "IN_WORLD"; break;
+                case "IN_WORLD": cfg.playbackContext = "MAIN_MENU"; break;
+                default: cfg.playbackContext = "EVERYWHERE"; break;
+            }
+            ConfigManager.save();
             return y + ROW_H;
         }
         y += ROW_H;
@@ -753,6 +910,32 @@ public final class SettingsTab {
             y = checkActionClick(x, y, w, mx, my, "cancelReset");
         } else {
             y = checkActionClick(x, y, w, mx, my, "resetAll");
+        }
+
+        return y;
+    }
+
+    // ── Animations click handling ─────────────────────────────────────────
+
+    private int checkAnimationsClicks(int x, int y, int w, double mx, double my) {
+        XMusicConfig cfg = ConfigManager.get();
+
+        // Animations Enabled toggle
+        if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
+            int toggleX = x + w - TOGGLE_W - 4;
+            int toggleY = y + (ROW_H - TOGGLE_H) / 2;
+            if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
+                cfg.animationsEnabled = !cfg.animationsEnabled;
+                ConfigManager.save();
+                return y + ROW_H;
+            }
+        }
+        y += ROW_H;
+
+        // Animation Speed slider (only if animations enabled)
+        if (cfg.animationsEnabled) {
+            y = checkSliderClick(x, y, w, mx, my, "animationSpeed");
+            y += ROW_H;
         }
 
         return y;
@@ -921,6 +1104,12 @@ public final class SettingsTab {
                 break;
             case "hudAutoHideSeconds":
                 cfg.hudAutoHideSeconds = (int) (0 + pct * 30);
+                break;
+            case "animationSpeed":
+                cfg.animationSpeed = 0.5f + pct * 2.5f;
+                cfg.animationSpeed = Math.round(cfg.animationSpeed * 4f) / 4f; // snap to 0.25
+                if (cfg.animationSpeed < 0.5f) cfg.animationSpeed = 0.5f;
+                if (cfg.animationSpeed > 3.0f) cfg.animationSpeed = 3.0f;
                 break;
         }
         ConfigManager.save();

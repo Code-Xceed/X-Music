@@ -6,6 +6,7 @@ import com.codexceed.xmusic.gui.render.GuiRender;
 import com.codexceed.xmusic.gui.render.HoverTracker;
 import com.codexceed.xmusic.gui.render.IconRenderer;
 import com.codexceed.xmusic.gui.theme.GuiTheme;
+import com.codexceed.xmusic.gui.util.AnimationHelper;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -34,17 +35,28 @@ public final class TrackRow {
     public void render(GuiGraphics graphics, Font font, int x, int y, int width,
                        String title, String subtitle, String meta, boolean isPlaying, boolean isSelected, boolean isFavorite, TrackRef trackRef,
                        int mouseX, int mouseY, int screenW, int screenH) {
-        // Background: selected > playing > default
+        // Smooth row hover animation
+        boolean isHovered = GuiRender.inside(mouseX, mouseY, x, y, width, HEIGHT);
+        float rowHover = HoverTracker.tick("tr_row_" + x + "_" + y, isHovered);
+
+        // Background: selected > playing > hover lerp > default
         int fill;
         if (isSelected) {
             fill = GuiTheme.PANEL_ACTIVE;
         } else if (isPlaying) {
             fill = 0xFF1A1520; // subtle dark tint for now-playing
         } else {
-            fill = GuiTheme.PANEL_DARK;
+            // Smooth hover interpolation between dark and hover colors
+            fill = AnimationHelper.lerpColor(GuiTheme.PANEL_DARK, GuiTheme.PANEL_HOVER, rowHover);
         }
         graphics.fill(x, y, x + width, y + HEIGHT, fill);
-        // No hard outline border — use premium glow for selected/playing
+
+        // Smooth hover glow (fades in/out)
+        if (!isSelected && !isPlaying && rowHover > 0.01f) {
+            GuiRender.smoothHoverGlow(graphics, x, y, width, HEIGHT, rowHover * 0.6f);
+        }
+
+        // Premium glow for selected/playing
         if (isSelected) {
             GuiRender.accentGlow(graphics, x, y, width, HEIGHT);
         } else if (isPlaying) {

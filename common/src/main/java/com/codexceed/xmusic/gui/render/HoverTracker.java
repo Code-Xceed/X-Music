@@ -1,37 +1,70 @@
 package com.codexceed.xmusic.gui.render;
 
-import com.codexceed.xmusic.gui.theme.GuiTheme;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Tracks hover enter/exit ticks per interactive region.
- * Provides a 0→1 lerp factor for smooth hover animations.
+ * Tracks hover enter/exit state per interactive region using smooth
+ * delta-time interpolation (not tick-based) for buttery-smooth hover
+ * transitions at any frame rate.
+ * 
+ * Each region is identified by a string key. The tracker stores a float
+ * 0→1 value that smoothly ramps up when hovered and ramps down when not.
  */
 public final class HoverTracker {
     private HoverTracker() {}
 
-    private static final Map<String, Integer> TICKS = new HashMap<>();
+    /** Speed of hover-in transition (higher = faster). */
+    private static final float HOVER_IN_SPEED = 12f;
+    /** Speed of hover-out transition (higher = faster). */
+    private static final float HOVER_OUT_SPEED = 8f;
 
-    /** Call every render frame. Returns 0→1 lerp factor (0 = just entered, 1 = fully hovered). */
+    private static final Map<String, Float> VALUES = new HashMap<>();
+    private static long lastFrameMs = System.currentTimeMillis();
+    private static float frameDelta = 0f;
+
+    /**
+     * Must be called ONCE at the start of each render frame to update
+     * the global delta time. Called from XMusicScreen.render().
+     */
+    public static void updateFrameDelta() {
+        long now = System.currentTimeMillis();
+        frameDelta = Math.min((now - lastFrameMs) / 1000f, 0.05f); // cap at 50ms
+        lastFrameMs = now;
+    }
+
+    /**
+     * Smoothly animate a hover value for the given key.
+     * Call every frame for each interactive region.
+     *
+     * @param key     Unique identifier for this region
+     * @param hovered Whether the mouse is currently over this region
+     * @return Current hover factor 0→1 (smoothly interpolated)
+     */
     public static float tick(String key, boolean hovered) {
-        int t = TICKS.getOrDefault(key, 0);
-        if (hovered) {
-            t = Math.min(t + 1, GuiTheme.HOVER_TICKS);
+        float current = VALUES.getOrDefault(key, 0f);
+        float target = hovered ? 1f : 0f;
+        float speed = hovered ? HOVER_IN_SPEED : HOVER_OUT_SPEED;
+
+        float diff = target - current;
+        if (Math.abs(diff) < 0.002f) {
+            current = target;
         } else {
-            t = Math.max(t - 1, 0);
+            current += diff * (1f - (float) Math.exp(-speed * frameDelta));
         }
-        TICKS.put(key, t);
-        return (float) t / GuiTheme.HOVER_TICKS;
+
+        VALUES.put(key, current);
+        return current;
     }
 
     /** Get current lerp without advancing. */
     public static float current(String key) {
-        return (float) TICKS.getOrDefault(key, 0) / GuiTheme.HOVER_TICKS;
+        return VALUES.getOrDefault(key, 0f);
     }
 
     /** Reset all trackers (e.g. on screen close). */
     public static void reset() {
-        TICKS.clear();
+        VALUES.clear();
+        lastFrameMs = System.currentTimeMillis();
     }
 }

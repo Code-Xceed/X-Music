@@ -31,10 +31,11 @@ public final class ContentHost {
         int w = frame.contentWidth();
         int h = frame.contentHeight();
 
-        GuiRender.mcPanel(graphics, x, y, w, h);
+        // Premium gradient panel with depth
+        GuiRender.mcPanelGradient(graphics, x, y, w, h);
 
-        // Inner shadow: 1px darker line at top inside content area
-        graphics.fill(x + 1, y + 1, x + w - 1, y + 2, GuiTheme.GLOW_DIM);
+        // Inner shadow: subtle top gradient for inset depth feel
+        GuiRender.innerShadowTop(graphics, x + 1, y + 1, w - 2, 4);
 
         if (route == GuiRoute.HOME) {
             homeTab.render(graphics, font, frame, mouseX, mouseY);

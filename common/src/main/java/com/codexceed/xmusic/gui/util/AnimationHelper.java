@@ -2,10 +2,14 @@ package com.codexceed.xmusic.gui.util;
 
 /**
  * Easing functions and animation utilities for smooth UI transitions.
+ * Provides time-based progress helpers, stagger offsets, and color interpolation
+ * for premium intro/outro and hover animations across the entire GUI.
  */
 public final class AnimationHelper {
 
     private AnimationHelper() {}
+
+    // ── Easing Curves ────────────────────────────────────────────────────
 
     public static float easeInOut(float t) {
         t = clamp(t);
@@ -24,10 +28,40 @@ public final class AnimationHelper {
         return t * t * t;
     }
 
+    /** Quart ease-out for snappier deceleration. */
+    public static float easeOutQuart(float t) {
+        t = clamp(t);
+        float inv = 1f - t;
+        return 1f - inv * inv * inv * inv;
+    }
+
+    /** Quint ease-out for ultra-smooth deceleration. */
+    public static float easeOutQuint(float t) {
+        t = clamp(t);
+        float inv = 1f - t;
+        return 1f - inv * inv * inv * inv * inv;
+    }
+
+    /** Expo ease-out — aggressive start, gentle finish. */
+    public static float easeOutExpo(float t) {
+        t = clamp(t);
+        return t >= 1f ? 1f : 1f - (float) Math.pow(2, -10 * t);
+    }
+
+    /** Back ease-out — slight overshoot for spring-like feel. */
+    public static float easeOutBack(float t) {
+        t = clamp(t);
+        float c1 = 1.70158f;
+        float c3 = c1 + 1f;
+        return 1f + c3 * (float) Math.pow(t - 1, 3) + c1 * (float) Math.pow(t - 1, 2);
+    }
+
     public static float spring(float t) {
         t = clamp(t);
         return (float) (1.0 + Math.pow(2, -10 * t) * Math.sin((t - 0.075) * (2 * Math.PI) / 0.3));
     }
+
+    // ── Smooth Approach (delta-time lerp) ────────────────────────────────
 
     /**
      * Delta-time based smooth approach (for continuous animations).
@@ -44,6 +78,8 @@ public final class AnimationHelper {
         return current + diff * (1f - (float) Math.exp(-speed * delta));
     }
 
+    // ── Time-Based Progress ──────────────────────────────────────────────
+
     /**
      * Calculate animation progress given start time and duration.
      */
@@ -55,6 +91,78 @@ public final class AnimationHelper {
 
     public static boolean isFinished(long startTimeMs, long durationMs) {
         return System.currentTimeMillis() - startTimeMs >= durationMs;
+    }
+
+    // ── Staggered Cascade Animations ─────────────────────────────────────
+
+    /**
+     * Returns a staggered progress value for a child element in a cascade.
+     * Each child starts its animation slightly after the previous one.
+     *
+     * @param parentProgress Overall parent progress 0→1
+     * @param index          Child index (0-based)
+     * @param totalChildren  Total number of children in the cascade
+     * @param overlap        How much animations overlap (0.0 = none, 1.0 = full)
+     * @return The individual child's progress 0→1
+     */
+    public static float stagger(float parentProgress, int index, int totalChildren, float overlap) {
+        if (totalChildren <= 1) return clamp(parentProgress);
+        float windowSize = 1f / (1f + (totalChildren - 1) * (1f - overlap));
+        float start = index * windowSize * (1f - overlap);
+        float end = start + windowSize;
+        float t = (parentProgress - start) / (end - start);
+        return clamp(t);
+    }
+
+    // ── Color Interpolation ──────────────────────────────────────────────
+
+    /**
+     * Interpolates between two ARGB colors by factor t (0→1).
+     * Blends each channel independently for smooth color transitions.
+     */
+    public static int lerpColor(int from, int to, float t) {
+        t = clamp(t);
+        int aF = (from >> 24) & 0xFF, rF = (from >> 16) & 0xFF, gF = (from >> 8) & 0xFF, bF = from & 0xFF;
+        int aT = (to >> 24) & 0xFF, rT = (to >> 16) & 0xFF, gT = (to >> 8) & 0xFF, bT = to & 0xFF;
+        int a = aF + (int) ((aT - aF) * t);
+        int r = rF + (int) ((rT - rF) * t);
+        int g = gF + (int) ((gT - gF) * t);
+        int b = bF + (int) ((bT - bF) * t);
+        return (a << 24) | (r << 16) | (g << 8) | b;
+    }
+
+    /**
+     * Applies an alpha multiplier to an existing ARGB color.
+     */
+    public static int withAlpha(int color, float alpha) {
+        int a = (int) (((color >> 24) & 0xFF) * clamp(alpha));
+        return (a << 24) | (color & 0x00FFFFFF);
+    }
+
+    /**
+     * Creates a pulsing alpha value for glow effects.
+     * Returns 0→1 sine-based pulse at the given frequency.
+     */
+    public static float pulse(float frequencyHz) {
+        double t = System.currentTimeMillis() / 1000.0;
+        return (float) (Math.sin(t * Math.PI * 2 * frequencyHz) * 0.5 + 0.5);
+    }
+
+    // ── Linear Interpolation ─────────────────────────────────────────────
+
+    public static float lerp(float a, float b, float t) {
+        return a + (b - a) * clamp(t);
+    }
+
+    public static int lerp(int a, int b, float t) {
+        return a + (int) ((b - a) * clamp(t));
+    }
+
+    // ── Utility ──────────────────────────────────────────────────────────
+
+    /** Public clamp to 0–1 range. */
+    public static float clamp01(float t) {
+        return Math.max(0f, Math.min(1f, t));
     }
 
     private static float clamp(float t) {
