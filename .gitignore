@@ -1,23 +1,20 @@
-.gradle
-.gradle-build-home*/
-.gradle-build-home-escalated/
-.gradle-tmp/
-.gradle-user-home/
-.project-cache-dir/
-.build-validation/
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
+# Monorepo root — generated artifacts from any version subdirectory
+**/.gradle/
+**/.gradle-build-home*/
+**/.gradle-build-home-escalated/
+**/.gradle-tmp/
+**/.gradle-user-home/
+**/.project-cache-dir/
+**/.build-validation/
+**/build/
+!**/gradle/wrapper/gradle-wrapper.jar
 
 ### IntelliJ IDEA ###
 .idea/
 *.iws
 *.iml
 *.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
+**/out/
 
 ### Eclipse ###
 .apt_generated
@@ -27,16 +24,7 @@ out/
 .settings
 .springBeans
 .sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
+**/bin/
 
 ### VS Code ###
 .vscode/
@@ -44,11 +32,10 @@ bin/
 ### Mac OS ###
 .DS_Store
 
-### Manifold ###
+### Manifold (per-version generated) ###
 **/build.properties
 
-### Minecraft ###
-run/
+### Minecraft run dirs ###
+**/run/
 **/logs/
 **/crash-reports/
-**/run/
