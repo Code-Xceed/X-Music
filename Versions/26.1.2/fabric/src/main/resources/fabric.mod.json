@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${version}",
+  "name": "${mod_name}",
+  "description": "A native in-game music client for Minecraft with YouTube and local file playback.",
+  "authors": $mod_authors,
+  "contact": {
+    "homepage": "https://github.com/codexceed/xmusic",
+    "sources": "https://github.com/codexceed/xmusic"
+  },
+  "license": "${license}",
+  "icon": "assets/${mod_id}/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.codexceed.xmusic.XMusicFabric"
+    ]
+  },
+  "mixins": [
+    "xmusic.mixins.json",
+    "xmusic.client.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "fabric-api": "*",
+    "minecraft": $compatible_mc_versions
+  },
+  "suggests": {
+    "watermedia": "*"
+  }
+}

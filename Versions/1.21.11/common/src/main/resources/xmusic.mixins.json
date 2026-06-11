@@ -1,0 +1,8 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.codexceed.xmusic.mixins",
+  "compatibilityLevel": "JAVA_${java_version}",
+  "mixins": [],
+  "client": []
+}

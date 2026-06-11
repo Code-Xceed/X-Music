@@ -1,0 +1,80 @@
+plugins {
+    id 'unimined-fabric'
+}
+
+repositories {
+    mavenCentral()
+    maven { url = "https://maven.fabricmc.net/" }
+    maven { url = "https://maven.lavalink.dev/releases" }      // youtube-source v2
+}
+
+configurations {
+    embeddedAudio
+}
+
+dependencies {
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${gradle.ext.fabric_api_version}"
+
+    // Compile-time workarounds for Fabric API on Minecraft 26.1.2
+    compileOnly "net.fabricmc.fabric-api:fabric-key-mapping-api-v1:2.0.4+e2bdee784c"
+    compileOnly "net.fabricmc.fabric-api:fabric-rendering-v1:23.1.1+1403e82c4c"
+    compileOnly "net.fabricmc.fabric-api:fabric-lifecycle-events-v1:4.1.0+6d50a0854c"
+    compileOnly "net.fabricmc.fabric-api:fabric-api-base:2.0.3+ece063234c"
+
+    // ── Local file decoders (shaded into jar) ────────────────────────────
+    embeddedAudio 'de.sfuhrm:jaad:0.8.7'
+    embeddedAudio 'com.googlecode.soundlibs:jlayer:1.0.1.4'
+    embeddedAudio 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+    embeddedAudio 'com.googlecode.soundlibs:tritonus-share:0.3.7.4'
+    embeddedAudio 'com.googlecode.soundlibs:vorbisspi:1.0.3.3'
+    embeddedAudio 'com.googlecode.soundlibs:jorbis:0.0.17.4'
+
+    // ── LavaPlayer engine + sources (shaded into jar) ────────────────────
+    embeddedAudio 'dev.arbjerg:lavaplayer:2.2.6'
+    embeddedAudio 'dev.lavalink.youtube:v2:1.18.1'
+    embeddedAudio 'org.slf4j:jcl-over-slf4j:2.0.17'
+
+    // ── Also declare as implementation for common module compile ──────────
+    implementation 'dev.arbjerg:lavaplayer:2.2.6'
+    implementation 'dev.lavalink.youtube:v2:1.18.1'
+    implementation 'org.slf4j:jcl-over-slf4j:2.0.17'
+
+    implementation 'de.sfuhrm:jaad:0.8.7'
+    implementation 'com.googlecode.soundlibs:jlayer:1.0.1.4'
+    implementation 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+    implementation 'com.googlecode.soundlibs:tritonus-share:0.3.7.4'
+    implementation 'com.googlecode.soundlibs:vorbisspi:1.0.3.3'
+    implementation 'com.googlecode.soundlibs:jorbis:0.0.17.4'
+}
+
+tasks.named("processResources", ProcessResources).configure {
+}
+
+tasks.named("jar", Jar).configure {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from({
+        configurations.embeddedAudio.resolvedConfiguration.resolvedArtifacts.collect { artifact ->
+            artifact.file.isDirectory() ? artifact.file : zipTree(artifact.file)
+        }
+    }) {
+        exclude 'META-INF/*.SF'
+        exclude 'META-INF/*.DSA'
+        exclude 'META-INF/*.RSA'
+        exclude 'META-INF/MANIFEST.MF'
+        exclude 'module-info.class'
+        exclude 'META-INF/maven/**'
+        exclude 'META-INF/LICENSE*'
+        exclude 'META-INF/NOTICE*'
+    }
+}
+
+// No shadeDowngradedApi task needed
+
+tasks.register("printModArtifacts") {
+    doLast {
+        configurations.modImplementation.resolvedConfiguration.resolvedArtifacts.each {
+            println "Artifact: ${it.moduleVersion.id} -> ${it.file}"
+        }
+    }
+}
+

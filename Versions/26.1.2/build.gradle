@@ -1,0 +1,5 @@
+plugins {
+    id 'root'
+    id 'xyz.wagyourtail.unimined' version '1.4.2-SNAPSHOT' apply false
+    id 'xyz.wagyourtail.manifold' version '1.0.0-SNAPSHOT'
+}
