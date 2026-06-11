@@ -134,7 +134,7 @@ public final class ArtworkRenderer {
         try (InputStream is = Files.newInputStream(file)) {
             NativeImage image = NativeImage.read(is);
             int texId = textureCounter++;
-            DynamicTexture texture = new DynamicTexture(image);
+            DynamicTexture texture = new DynamicTexture(() -> "xmusic_art_" + texId, image);
             ResourceLocation loc = ResourceLocation.fromNamespaceAndPath("xmusic", "art_" + texId);
             Minecraft.getInstance().getTextureManager().register(loc, texture);
             TEXTURE_CACHE.put(artworkUrl, loc);
