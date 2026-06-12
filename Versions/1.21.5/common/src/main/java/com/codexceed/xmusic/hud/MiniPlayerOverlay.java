@@ -38,15 +38,19 @@ public class MiniPlayerOverlay {
     private static final int PROGRESS_H = 2;
     private static final int PROGRESS_INSET = 6;
 
-    // ── Animation State ──────────────────────────────────────────────────
+    // ── Animation & Transition State ─────────────────────────────────────
     private float showProgress = 0f;
     private long lastActivityTime = 0;
-    private String lastStateKey = "";
     private float glowPulse = 0f;
     private final float[] waveHeights = new float[WAVE_DOTS];
     private final float[] waveTargets = new float[WAVE_DOTS];
     private long lastWaveUpdate = 0;
+
+    private TrackRef renderedTrack = null;
+    private int lastKnownLoopIteration = 0;
     private long lastKnownPosMs = 0;
+    private float lockedProgressPct = 0f;
+    private boolean isTransitioningOut = false;
     private boolean draggingProgress = false;
 
     public int getHudWidth() { return HUD_W; }
@@ -129,32 +133,99 @@ public class MiniPlayerOverlay {
         TrackRef track = state.getCurrentTrack();
         boolean isActive = state.isPlaying() || state.isPaused();
 
-        // Detect track changes
-        String stateKey = buildStateKey(state, track);
-        if (!stateKey.equals(lastStateKey)) {
-            lastStateKey = stateKey;
-            lastActivityTime = System.currentTimeMillis();
-            if (isActive) showProgress = 0f;
+        // 1. Detect sound/track changes (looping, autoplay, restarts, next track)
+        boolean trackChanged = false;
+        if (track == null) {
+            if (renderedTrack != null) {
+                trackChanged = true;
+            }
+        } else {
+            if (renderedTrack == null) {
+                trackChanged = true;
+            } else {
+                // Check track ID
+                if (!track.getId().equals(renderedTrack.getId())) {
+                    trackChanged = true;
+                }
+                // Check loop iteration
+                else if (state.getLoopIteration() != lastKnownLoopIteration) {
+                    trackChanged = true;
+                }
+                // Check rewind/restart (exclude when dragging progress)
+                else if (!draggingProgress && state.getPositionMs() < lastKnownPosMs - 1500) {
+                    trackChanged = true;
+                }
+            }
         }
 
-        // Auto-hide
-        boolean shouldShow = isActive;
+        // 2. Handle transition states
+        if (trackChanged) {
+            if (showProgress < 0.01f) {
+                // If already invisible, swap instantly in the background
+                renderedTrack = track;
+                if (track != null) {
+                    lastKnownLoopIteration = state.getLoopIteration();
+                    lastKnownPosMs = state.getPositionMs();
+                    lockedProgressPct = state.getDurationMs() > 0 ? (float) state.getPositionMs() / state.getDurationMs() : 0f;
+                } else {
+                    lastKnownLoopIteration = 0;
+                    lastKnownPosMs = 0;
+                    lockedProgressPct = 0f;
+                }
+                isTransitioningOut = false;
+                lastActivityTime = System.currentTimeMillis();
+            } else if (!isTransitioningOut) {
+                // Start transitioning out (lock current progress percent to avoid visual jitter)
+                isTransitioningOut = true;
+                if (renderedTrack != null && state.getDurationMs() > 0) {
+                    lockedProgressPct = (float) lastKnownPosMs / state.getDurationMs();
+                } else {
+                    lockedProgressPct = 0f;
+                }
+            }
+        }
+
+        // Force hide when transitioning out
+        boolean shouldShow = isActive && !isTransitioningOut;
         int autoHide = cfg.hudAutoHideSeconds;
-        if (autoHide > 0 && isActive) {
-            if (System.currentTimeMillis() - lastActivityTime > autoHide * 1000L)
+        if (autoHide > 0 && isActive && !isTransitioningOut) {
+            if (System.currentTimeMillis() - lastActivityTime > autoHide * 1000L) {
                 shouldShow = false;
+            }
         }
 
-        // Animate
+        // Approach transition progress
         float target = shouldShow ? 1f : 0f;
         float delta = partialTick / 20f;
         showProgress = AnimationHelper.approach(showProgress, target, 8f, delta);
-        if (showProgress < 0.005f) return;
 
-        if (track != null) lastKnownPosMs = state.getPositionMs();
+        // Complete transition once fully hidden
+        if (showProgress < 0.01f) {
+            if (isTransitioningOut) {
+                renderedTrack = track;
+                if (track != null) {
+                    lastKnownLoopIteration = state.getLoopIteration();
+                    lastKnownPosMs = state.getPositionMs();
+                    lockedProgressPct = state.getDurationMs() > 0 ? (float) state.getPositionMs() / state.getDurationMs() : 0f;
+                } else {
+                    lastKnownLoopIteration = 0;
+                    lastKnownPosMs = 0;
+                    lockedProgressPct = 0f;
+                }
+                isTransitioningOut = false;
+                lastActivityTime = System.currentTimeMillis();
+            }
+            return;
+        }
+
+        // 3. Keep tracking position/loop iteration under normal playback
+        if (!isTransitioningOut && track != null) {
+            lastKnownPosMs = state.getPositionMs();
+            lastKnownLoopIteration = state.getLoopIteration();
+        }
 
         // Glow pulse
-        if (state.isPlaying()) {
+        if (state.isPlaying() && !isTransitioningOut) {
             glowPulse = AnimationHelper.approach(glowPulse, 1f, 3f, delta);
         } else {
             glowPulse = AnimationHelper.approach(glowPulse, 0f, 5f, delta);
@@ -180,14 +251,14 @@ public class MiniPlayerOverlay {
         long now = System.currentTimeMillis();
 
         // ── Waveform animation ───────────────────────────────────────────
-        if (state.isPlaying() && now - lastWaveUpdate > 80) {
+        if (state.isPlaying() && !isTransitioningOut && now - lastWaveUpdate > 80) {
             lastWaveUpdate = now;
             for (int i = 0; i < WAVE_DOTS; i++) {
                 float phase = (float) Math.sin(now / 220.0 + i * 0.8) * 0.5f + 0.5f;
                 float env = 1f - Math.abs(i - WAVE_DOTS / 2f) / (WAVE_DOTS / 2f) * 0.35f;
                 waveTargets[i] = WAVE_MIN_H + (WAVE_MAX_H - WAVE_MIN_H) * phase * env;
             }
-        } else if (!state.isPlaying()) {
+        } else if (!state.isPlaying() || isTransitioningOut) {
             for (int i = 0; i < WAVE_DOTS; i++) waveTargets[i] = WAVE_MIN_H;
         }
         for (int i = 0; i < WAVE_DOTS; i++) {
@@ -222,7 +293,7 @@ public class MiniPlayerOverlay {
         g.fill(hudX + RADIUS, hudY + 1, hudX + HUD_W - RADIUS, hudY + 2,
                 (hlAlpha << 24) | 0xFFFFFF);
 
-        if (track == null) {
+        if (renderedTrack == null) {
             int mutedAlpha = (int) (0xFF * alpha);
             GuiRender.shadowText(g, font, "No track playing",
                     hudX + PAD, hudY + HUD_H / 2 - 4,
@@ -254,15 +325,15 @@ public class MiniPlayerOverlay {
         int infoW = HUD_W - (infoX - hudX) - PAD;
 
         // Title
-        String title = track.getTitle();
+        String title = renderedTrack.getTitle();
         if (title == null || title.isEmpty()) title = "Unknown";
         int titleColor = (textAlpha << 24) | (GuiTheme.TEXT & 0x00FFFFFF);
         GuiRender.truncated(g, font, title, infoX, hudY + 5, infoW, titleColor);
 
         // Artist · Source
-        String artist = track.getArtist();
+        String artist = renderedTrack.getArtist();
         if (artist == null || artist.isEmpty()) artist = "Unknown Artist";
-        String sourceLabel = getSourceLabel(track);
+        String sourceLabel = getSourceLabel(renderedTrack);
         int artistColor = (textAlpha << 24) | (GuiTheme.TEXT_SOFT & 0x00FFFFFF);
         int sourceColor = (textAlpha << 24) | (GuiTheme.ACCENT & 0x00FFFFFF);
 
@@ -278,39 +349,35 @@ public class MiniPlayerOverlay {
         }
 
         // ── Progress bar (bottom) ────────────────────────────────────────
-        if (track.getPlaybackType() != PlaybackType.NATIVE && state.getDurationMs() > 0) {
-            float progressPct = (float) state.getPositionMs() / state.getDurationMs();
+        if (renderedTrack.getPlaybackType() != PlaybackType.NATIVE && (isTransitioningOut ? true : state.getDurationMs() > 0)) {
+            float progressPct = 0f;
+            if (draggingProgress) {
+                progressPct = state.getDurationMs() > 0 ? (float) state.getPositionMs() / state.getDurationMs() : 0f;
+            } else if (isTransitioningOut) {
+                progressPct = lockedProgressPct;
+            } else {
+                progressPct = state.getDurationMs() > 0 ? (float) state.getPositionMs() / state.getDurationMs() : 0f;
+            }
+
             if (progressPct > 1f) progressPct = 1f;
             int progY = hudY + HUD_H - PROGRESS_H - 3;
 
-            // Track
+            // Track background
             int trackBgAlpha = (int) (0x30 * alpha);
-            g.fill(hudX + PROGRESS_INSET, progY, hudX + HUD_W - PROGRESS_INSET, progY + PROGRESS_H,
+            GuiRender.fillRounded(g, hudX + PROGRESS_INSET, progY, HUD_W - PROGRESS_INSET * 2, PROGRESS_H, 1,
                     (trackBgAlpha << 24) | 0x505050);
 
             // Fill
             int fillW = (int) ((HUD_W - PROGRESS_INSET * 2) * progressPct);
             if (fillW > 0) {
                 int fillAlpha = (int) (0xB0 * alpha);
-                g.fill(hudX + PROGRESS_INSET, progY, hudX + PROGRESS_INSET + fillW, progY + PROGRESS_H,
+                GuiRender.fillRounded(g, hudX + PROGRESS_INSET, progY, fillW, PROGRESS_H, 1,
                         (fillAlpha << 24) | (GuiTheme.ACCENT & 0x00FFFFFF));
             }
         }
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
-
-    private String buildStateKey(PlayerState state, TrackRef track) {
-        String trackId = track != null ? track.getId() : "";
-        String sourceId = track != null ? track.getSourceId() : "";
-        String loopKey = "";
-        if (track != null && state.isPlaying() && state.getDurationMs() > 0) {
-            if (lastKnownPosMs > state.getDurationMs() * 0.8 && state.getPositionMs() < 1000) {
-                loopKey = "_loop_" + System.currentTimeMillis();
-            }
-        }
-        return trackId + "|" + sourceId + loopKey;
-    }
 
     private static String getSourceLabel(TrackRef track) {
         if (track == null) return "";

@@ -11,64 +11,23 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.PauseScreen;
-import net.minecraft.network.chat.Component;
-import net.minecraft.util.FormattedCharSequence;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Renders a modern mini-player widget at the top of the pause/escape screen.
+ * Renders a modern mini-player widget at the bottom of the pause/escape screen.
  */
 @Mixin(PauseScreen.class)
 public abstract class PauseScreenMixin {
 
     private static final int WIDGET_W = 240;
-    private static final int WIDGET_H = 40;
-    private static final int RADIUS = 5;
-    private static final int PAD = 8;
+    private static final int WIDGET_H = 44;
+    private static final int RADIUS = 6;
+    private static final int PAD = 10;
     private static final int PROGRESS_H = 2;
-    private static final int ART_SIZE = 24;
-
-    @Redirect(
-        method = "render",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/GuiGraphics;drawCenteredString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;III)V"
-        ),
-        require = 0
-    )
-    private void redirectTitleRenderComponent(GuiGraphics g, Font font, Component text, int x, int y, int color) {
-        PlayerState state = PlayerFacade.getInstance().snapshot();
-        TrackRef track = state.getCurrentTrack();
-        boolean widgetActive = (track != null || state.isPlaying() || state.isPaused());
-        if (widgetActive) {
-            g.drawCenteredString(font, text, x, 52, color);
-        } else {
-            g.drawCenteredString(font, text, x, y, color);
-        }
-    }
-
-    @Redirect(
-        method = "render",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/GuiGraphics;drawCenteredString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/util/FormattedCharSequence;III)V"
-        ),
-        require = 0
-    )
-    private void redirectTitleRenderCharSequence(GuiGraphics g, Font font, FormattedCharSequence text, int x, int y, int color) {
-        PlayerState state = PlayerFacade.getInstance().snapshot();
-        TrackRef track = state.getCurrentTrack();
-        boolean widgetActive = (track != null || state.isPlaying() || state.isPaused());
-        if (widgetActive) {
-            g.drawCenteredString(font, text, x, 52, color);
-        } else {
-            g.drawCenteredString(font, text, x, y, color);
-        }
-    }
+    private static final int ART_SIZE = 26;
 
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(GuiGraphics g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
@@ -80,9 +39,10 @@ public abstract class PauseScreenMixin {
             Minecraft mc = Minecraft.getInstance();
             Font font = mc.font;
             int screenW = mc.getWindow().getGuiScaledWidth();
+            int screenH = mc.getWindow().getGuiScaledHeight();
 
             int widgetX = (screenW - WIDGET_W) / 2;
-            int widgetY = 6;
+            int widgetY = screenH - WIDGET_H - 12; // Positioned at the bottom of the screen with 12px margin
 
             // Glow effect (Subtle atmospheric pulsing glow when music is playing)
             if (state.isPlaying()) {
@@ -109,9 +69,9 @@ public abstract class PauseScreenMixin {
                     (0x15 << 24) | 0xFFFFFF);
 
             if (track != null) {
-                // Left side: Album art
+                // Left side: Album art (centered vertically in content area)
                 int artX = widgetX + PAD;
-                int artY = widgetY + (WIDGET_H - ART_SIZE) / 2;
+                int artY = widgetY + 5;
                 ArtworkRenderer.renderArtwork(g, track.getArtworkUrl(), artX, artY, ART_SIZE);
 
                 // Right of art: track info
@@ -123,7 +83,7 @@ public abstract class PauseScreenMixin {
                 int sourceColor = GuiTheme.ACCENT;
 
                 // Line 1: Title
-                GuiRender.truncated(g, font, track.getTitle(), infoX, widgetY + 4, infoW, titleColor);
+                GuiRender.truncated(g, font, track.getTitle(), infoX, widgetY + 5, infoW, titleColor);
 
                 // Line 2: Artist · Source — fixed layout: artist left, source right-aligned
                 String sourceLabel = getSourceLabel(track);
@@ -133,10 +93,10 @@ public abstract class PauseScreenMixin {
                     int sourceW = font.width(sourceText);
                     int sourceX = infoX + infoW - sourceW;
                     int artistOnlyW = Math.max(infoW - sourceW - 4, infoW / 2);
-                    GuiRender.truncated(g, font, artist, infoX, widgetY + 14, artistOnlyW, artistColor);
-                    g.drawString(font, sourceText, sourceX, widgetY + 14, sourceColor, true);
+                    GuiRender.truncated(g, font, artist, infoX, widgetY + 15, artistOnlyW, artistColor);
+                    g.drawString(font, sourceText, sourceX, widgetY + 15, sourceColor, true);
                 } else {
-                    GuiRender.truncated(g, font, artist, infoX, widgetY + 14, infoW, artistColor);
+                    GuiRender.truncated(g, font, artist, infoX, widgetY + 15, infoW, artistColor);
                 }
 
                 // Line 3: Play state + position
@@ -144,21 +104,21 @@ public abstract class PauseScreenMixin {
                 long posMs = state.getPositionMs();
                 long durMs = state.getDurationMs();
                 String posText = formatTime(posMs) + " / " + formatTime(durMs);
-                g.drawString(font, stateText, infoX, widgetY + 24, GuiTheme.TEXT_MUTED, true);
-                g.drawString(font, posText, infoX + infoW - font.width(posText), widgetY + 24, GuiTheme.TEXT_MUTED, true);
+                g.drawString(font, stateText, infoX, widgetY + 25, GuiTheme.TEXT_MUTED, true);
+                g.drawString(font, posText, infoX + infoW - font.width(posText), widgetY + 25, GuiTheme.TEXT_MUTED, true);
 
                 // Progress bar (for non-NATIVE tracks with duration)
                 if (track.getPlaybackType() != PlaybackType.NATIVE && durMs > 0) {
                     float pct = (float) posMs / durMs;
                     if (pct > 1f) pct = 1f;
-                    int progY = widgetY + WIDGET_H - PROGRESS_H - 2;
+                    int progY = widgetY + 36;
 
-                    // Track background
-                    g.fill(widgetX + PAD, progY, widgetX + WIDGET_W - PAD, progY + PROGRESS_H, 0x30505050);
+                    // Rounded Track background
+                    GuiRender.fillRounded(g, widgetX + PAD, progY, WIDGET_W - PAD * 2, PROGRESS_H, 1, 0x30505050);
 
                     int fillW = (int) ((WIDGET_W - PAD * 2) * pct);
                     if (fillW > 0) {
-                        g.fill(widgetX + PAD, progY, widgetX + PAD + fillW, progY + PROGRESS_H,
+                        GuiRender.fillRounded(g, widgetX + PAD, progY, fillW, PROGRESS_H, 1,
                                 (0xB0 << 24) | (GuiTheme.ACCENT & 0x00FFFFFF));
                     }
                 }
