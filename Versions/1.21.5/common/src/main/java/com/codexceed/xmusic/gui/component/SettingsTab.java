@@ -196,15 +196,7 @@ public final class SettingsTab {
         y = renderCycleRow(g, f, x, y, w, mx, my, "Playback Mode",
                 "playbackMode", modeLabel);
 
-        // Playback Context cycle (WHERE music plays)
-        String contextLabel;
-        switch (cfg.playbackContext) {
-            case "IN_WORLD": contextLabel = "In-World Only"; break;
-            case "MAIN_MENU": contextLabel = "Main Menu Only"; break;
-            default: contextLabel = "Everywhere"; break;
-        }
-        y = renderCycleRow(g, f, x, y, w, mx, my, "Play Music In",
-                "playbackContext", contextLabel);
+
 
         // Volume Step
         y = renderSliderRow(g, f, x, y, w, mx, my, "Volume Step",
@@ -757,7 +749,7 @@ public final class SettingsTab {
 
         // Autoplay toggle
         if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
-            int toggleX = x + w - TOGGLE_W - 4;
+            int toggleX = x + w - TOGGLE_W - 6;
             int toggleY = y + (ROW_H - TOGGLE_H) / 2;
             if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
                 player.toggleAutoplay();
@@ -768,22 +760,18 @@ public final class SettingsTab {
 
         // Playback Mode cycle
         if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
-            player.cyclePlaybackMode();
-            return y + ROW_H;
+            Font font = Minecraft.getInstance().font;
+            int btnW = font.width(player.getPlaybackMode().getDisplayName()) + 16;
+            int btnX = x + w - btnW - 6;
+            int btnY = y + (ROW_H - BTN_H) / 2;
+            if (GuiRender.inside(mx, my, btnX, btnY, btnW, BTN_H)) {
+                player.cyclePlaybackMode();
+                return y + ROW_H;
+            }
         }
         y += ROW_H;
 
-        // Playback Context cycle
-        if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
-            switch (cfg.playbackContext) {
-                case "EVERYWHERE": cfg.playbackContext = "IN_WORLD"; break;
-                case "IN_WORLD": cfg.playbackContext = "MAIN_MENU"; break;
-                default: cfg.playbackContext = "EVERYWHERE"; break;
-            }
-            ConfigManager.save();
-            return y + ROW_H;
-        }
-        y += ROW_H;
+
 
         // Volume Step slider
         y = checkSliderClick(x, y, w, mx, my, "volumeStep");
@@ -799,7 +787,7 @@ public final class SettingsTab {
 
         // HUD Enabled toggle
         if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
-            int toggleX = x + w - TOGGLE_W - 4;
+            int toggleX = x + w - TOGGLE_W - 6;
             int toggleY = y + (ROW_H - TOGGLE_H) / 2;
             if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
                 cfg.hudEnabled = !cfg.hudEnabled;
@@ -811,17 +799,24 @@ public final class SettingsTab {
 
         // HUD Position cycle
         if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
-            String[] positions = {"TOP_CENTER", "TOP_LEFT", "TOP_RIGHT", "BOTTOM_RIGHT", "BOTTOM_LEFT"};
-            int idx = 0;
-            for (int i = 0; i < positions.length; i++) {
-                if (positions[i].equals(cfg.hudPosition)) { idx = i; break; }
+            Font font = Minecraft.getInstance().font;
+            String posLabel = cfg.hudPosition.replace("_", " ");
+            int btnW = font.width(posLabel) + 16;
+            int btnX = x + w - btnW - 6;
+            int btnY = y + (ROW_H - BTN_H) / 2;
+            if (GuiRender.inside(mx, my, btnX, btnY, btnW, BTN_H)) {
+                String[] positions = {"TOP_CENTER", "TOP_LEFT", "TOP_RIGHT", "BOTTOM_RIGHT", "BOTTOM_LEFT"};
+                int idx = 0;
+                for (int i = 0; i < positions.length; i++) {
+                    if (positions[i].equals(cfg.hudPosition)) { idx = i; break; }
+                }
+                cfg.hudPosition = positions[(idx + 1) % positions.length];
+                // Reset custom position when using presets
+                cfg.hudX = -1;
+                cfg.hudY = -1;
+                ConfigManager.save();
+                return y + ROW_H;
             }
-            cfg.hudPosition = positions[(idx + 1) % positions.length];
-            // Reset custom position when using presets
-            cfg.hudX = -1;
-            cfg.hudY = -1;
-            ConfigManager.save();
-            return y + ROW_H;
         }
         y += ROW_H;
 
@@ -831,7 +826,7 @@ public final class SettingsTab {
 
         // Now Playing Toast toggle
         if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
-            int toggleX = x + w - TOGGLE_W - 4;
+            int toggleX = x + w - TOGGLE_W - 6;
             int toggleY = y + (ROW_H - TOGGLE_H) / 2;
             if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
                 cfg.showNowPlayingToast = !cfg.showNowPlayingToast;
@@ -922,7 +917,7 @@ public final class SettingsTab {
 
         // Animations Enabled toggle
         if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
-            int toggleX = x + w - TOGGLE_W - 4;
+            int toggleX = x + w - TOGGLE_W - 6;
             int toggleY = y + (ROW_H - TOGGLE_H) / 2;
             if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
                 cfg.animationsEnabled = !cfg.animationsEnabled;
@@ -944,7 +939,7 @@ public final class SettingsTab {
     // ── Generic click helpers ──────────────────────────────────────────────
 
     private int checkSliderClick(int x, int y, int w, double mx, double my, String field) {
-        int sliderX = x + w - SLIDER_W - 4;
+        int sliderX = x + w - SLIDER_W - 6;
         int sliderY = y + (ROW_H - SLIDER_H) / 2;
         if (GuiRender.inside(mx, my, sliderX, sliderY, SLIDER_W, SLIDER_H)) {
             draggingSlider = field;
@@ -976,7 +971,7 @@ public final class SettingsTab {
         String btnLabel = "Open Folder";
         Font font = Minecraft.getInstance().font;
         int btnW = font.width(btnLabel) + 12;
-        int btnX = x + w - btnW - 4;
+        int btnX = x + w - btnW - 6;
         int btnY = y + (ROW_H - BTN_H) / 2;
         if (GuiRender.inside(mx, my, btnX, btnY, btnW, BTN_H)) {
             executeAction(actionId);
@@ -990,7 +985,7 @@ public final class SettingsTab {
         // Estimate button width based on action
         String btnLabel = getActionLabel(actionId);
         int btnW = font.width(btnLabel) + 16;
-        int btnX = x + w - btnW - 4;
+        int btnX = x + w - btnW - 6;
         int btnY = y + (ROW_H - BTN_H) / 2;
         if (GuiRender.inside(mx, my, btnX, btnY, btnW, BTN_H)) {
             executeAction(actionId);
@@ -1077,7 +1072,7 @@ public final class SettingsTab {
     private void updateSliderFromMouse(int x, int w, double mx) {
         if (draggingSlider == null) return;
 
-        int sliderX = x + w - SLIDER_W - 4;
+        int sliderX = x + w - SLIDER_W - 6;
         float pct = (float) ((mx - sliderX) / SLIDER_W);
         if (pct < 0) pct = 0;
         if (pct > 1) pct = 1;

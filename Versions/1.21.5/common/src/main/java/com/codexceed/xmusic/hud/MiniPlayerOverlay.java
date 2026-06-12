@@ -363,9 +363,9 @@ public class MiniPlayerOverlay {
             int progY = hudY + HUD_H - PROGRESS_H - 3;
 
             // Track background
-            int trackBgAlpha = (int) (0x30 * alpha);
+            int trackBgAlpha = (int) (0x25 * alpha);
             GuiRender.fillRounded(g, hudX + PROGRESS_INSET, progY, HUD_W - PROGRESS_INSET * 2, PROGRESS_H, 1,
-                    (trackBgAlpha << 24) | 0x505050);
+                    (trackBgAlpha << 24) | (GuiTheme.ACCENT_DARK & 0x00FFFFFF));
 
             // Fill
             int fillW = (int) ((HUD_W - PROGRESS_INSET * 2) * progressPct);

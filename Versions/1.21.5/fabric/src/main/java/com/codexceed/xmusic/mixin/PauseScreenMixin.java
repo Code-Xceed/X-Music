@@ -27,7 +27,7 @@ public abstract class PauseScreenMixin {
     private static final int RADIUS = 6;
     private static final int PAD = 10;
     private static final int PROGRESS_H = 2;
-    private static final int ART_SIZE = 26;
+    private static final int ART_SIZE = 24;
 
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(GuiGraphics g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
@@ -42,7 +42,32 @@ public abstract class PauseScreenMixin {
             int screenH = mc.getWindow().getGuiScaledHeight();
 
             int widgetX = (screenW - WIDGET_W) / 2;
-            int widgetY = screenH - WIDGET_H - 12; // Positioned at the bottom of the screen with 12px margin
+
+            // Dynamically find the lowest button in the pause menu column
+            int lowestY = -1;
+            int lowestH = 0;
+            net.minecraft.client.gui.screens.Screen screen = (net.minecraft.client.gui.screens.Screen) (Object) this;
+            for (net.minecraft.client.gui.components.events.GuiEventListener child : screen.children()) {
+                if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget) {
+                    int centerX = widget.getX() + widget.getWidth() / 2;
+                    if (Math.abs(centerX - screenW / 2) < 60) {
+                        if (widget.getY() > lowestY) {
+                            lowestY = widget.getY();
+                            lowestH = widget.getHeight();
+                        }
+                    }
+                }
+            }
+
+            int widgetY;
+            if (lowestY != -1) {
+                widgetY = lowestY + lowestH + 12;
+                if (widgetY + WIDGET_H > screenH - 8) {
+                    widgetY = screenH - WIDGET_H - 8;
+                }
+            } else {
+                widgetY = screenH - WIDGET_H - 12; // Fallback
+            }
 
             // Glow effect (Subtle atmospheric pulsing glow when music is playing)
             if (state.isPlaying()) {
@@ -71,7 +96,7 @@ public abstract class PauseScreenMixin {
             if (track != null) {
                 // Left side: Album art (centered vertically in content area)
                 int artX = widgetX + PAD;
-                int artY = widgetY + 5;
+                int artY = widgetY + 6;
                 ArtworkRenderer.renderArtwork(g, track.getArtworkUrl(), artX, artY, ART_SIZE);
 
                 // Right of art: track info
@@ -114,7 +139,8 @@ public abstract class PauseScreenMixin {
                     int progY = widgetY + 36;
 
                     // Rounded Track background
-                    GuiRender.fillRounded(g, widgetX + PAD, progY, WIDGET_W - PAD * 2, PROGRESS_H, 1, 0x30505050);
+                    GuiRender.fillRounded(g, widgetX + PAD, progY, WIDGET_W - PAD * 2, PROGRESS_H, 1,
+                            (0x25 << 24) | (GuiTheme.ACCENT_DARK & 0x00FFFFFF));
 
                     int fillW = (int) ((WIDGET_W - PAD * 2) * pct);
                     if (fillW > 0) {

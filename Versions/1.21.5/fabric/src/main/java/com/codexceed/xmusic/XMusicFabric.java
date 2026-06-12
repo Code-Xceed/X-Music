@@ -63,8 +63,7 @@ public class XMusicFabric implements ClientModInitializer {
                 PlayerFacade.getInstance().saveResumeState();
             }
 
-            // ── Playback Context Enforcement ─────────────────────────────
-            enforcePlaybackContext(client);
+
 
             // Handle key bindings
             handleKeyBindings(client);
@@ -132,48 +131,5 @@ public class XMusicFabric implements ClientModInitializer {
         }
     }
 
-    // ── Playback Context ─────────────────────────────────────────────────
 
-    /** True when playback was paused by context enforcement (not by user). */
-    private boolean contextPaused = false;
-
-    /**
-     * Enforce the playbackContext setting.
-     * IN_WORLD: pause when not in a world (title screen, menus).
-     * MAIN_MENU: pause when in a world.
-     * EVERYWHERE: no restrictions.
-     */
-    private void enforcePlaybackContext(Minecraft client) {
-        String context = ConfigManager.get().playbackContext;
-        if ("EVERYWHERE".equals(context)) {
-            // If we previously context-paused, resume
-            if (contextPaused) {
-                contextPaused = false;
-                PlayerFacade.getInstance().resume();
-            }
-            return;
-        }
-
-        boolean inWorld = client.level != null && client.player != null;
-        boolean shouldPause;
-
-        if ("IN_WORLD".equals(context)) {
-            // Music only in-world → pause when NOT in world
-            shouldPause = !inWorld;
-        } else if ("MAIN_MENU".equals(context)) {
-            // Music only on main menu → pause when IN world
-            shouldPause = inWorld;
-        } else {
-            return; // unknown, do nothing
-        }
-
-        PlayerFacade player = PlayerFacade.getInstance();
-        if (shouldPause && player.snapshot().isPlaying()) {
-            player.pause();
-            contextPaused = true;
-        } else if (!shouldPause && contextPaused) {
-            contextPaused = false;
-            player.resume();
-        }
-    }
 }

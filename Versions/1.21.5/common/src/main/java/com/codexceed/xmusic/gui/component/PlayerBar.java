@@ -251,7 +251,7 @@ public final class PlayerBar {
             int heartBtnX = infoX + artistTextW + 4;
             int heartBtnY = textY2 - 2;
             boolean isFav = LibraryManager.getInstance().isFavorite(track);
-            boolean heartHover = GuiRender.inside(mouseX, mouseY, heartBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize);
+            boolean heartHover = GuiRender.inside(mouseX, mouseY, heartBtnX, heartBtnY, actionBtnStep, actionBtnStep);
             GuiRender.mcButton(graphics, heartBtnX, heartBtnY, actionBtnStep, actionBtnStep, heartHover, false);
             if (isFav) {
                 IconRenderer.heartFilled(graphics, font, heartBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, GuiTheme.DANGER);
@@ -261,7 +261,7 @@ public final class PlayerBar {
 
             // Playlist button
             int plBtnX = heartBtnX + actionBtnStep + actionBtnGap;
-            boolean plHover = GuiRender.inside(mouseX, mouseY, plBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize);
+            boolean plHover = GuiRender.inside(mouseX, mouseY, plBtnX, heartBtnY, actionBtnStep, actionBtnStep);
             GuiRender.mcButton(graphics, plBtnX, heartBtnY, actionBtnStep, actionBtnStep, plHover, showPlaylistPopup);
             if (showPlaylistPopup) {
                 GuiRender.accentGlow(graphics, plBtnX, heartBtnY, actionBtnStep, actionBtnStep);
@@ -272,7 +272,7 @@ public final class PlayerBar {
 
             int dlBtnX = plBtnX + actionBtnStep + actionBtnGap;
             DownloadState dlState = DownloadManager.getInstance().getState(track);
-            boolean dlHover = GuiRender.inside(mouseX, mouseY, dlBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize);
+            boolean dlHover = GuiRender.inside(mouseX, mouseY, dlBtnX, heartBtnY, actionBtnStep, actionBtnStep);
             GuiRender.mcButton(graphics, dlBtnX, heartBtnY, actionBtnStep, actionBtnStep, dlHover, dlState == DownloadState.COMPLETED);
             if (dlState == DownloadState.DOWNLOADING) {
                 // Pulsing download icon with glow
