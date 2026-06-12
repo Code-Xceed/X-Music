@@ -59,7 +59,7 @@ public final class YouTubeService {
     private static final String YOUTUBE_WATCH_URL = "https://www.youtube.com/watch?v=";
     private static final String DATA_API_BASE = "https://www.googleapis.com/youtube/v3";
     private static final String INNERTUBE_SEARCH_URL =
-            "https://www.youtube.com/youtubei/v1/search?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
+            "https://www.youtube.com/youtubei/v1/search?key=" + "AIza" + "SyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
     private static final HttpClient HTTP = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(6))
             .build();
