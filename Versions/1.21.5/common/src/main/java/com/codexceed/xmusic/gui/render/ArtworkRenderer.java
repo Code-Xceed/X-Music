@@ -64,6 +64,8 @@ public final class ArtworkRenderer {
         if (loc != null) {
             RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
             g.blit(RenderType::guiTextured, loc, x, y, 0f, 0f, size, size, size, size);
+            // Draw a subtle border overlay to frame the artwork
+            GuiRender.drawRoundedBorder(g, x, y, size, size, 4, 0x30FFFFFF);
             return;
         }
 
@@ -78,13 +80,13 @@ public final class ArtworkRenderer {
 
     /** Render a dark placeholder with a music note icon. */
     public static void renderPlaceholder(GuiGraphics g, int x, int y, int size) {
-        g.fill(x, y, x + size, y + size, 0xFF1A1A1A);
-        // Simple note icon using text
+        GuiRender.fillRounded(g, x, y, size, size, 4, 0xFF121319);
+        // Double note icon using text
         var font = Minecraft.getInstance().font;
-        String note = "\u266A";
+        String note = "\u266B";
         int nx = x + (size - font.width(note)) / 2;
         int ny = y + (size - 8) / 2;
-        g.drawString(font, note, nx, ny, 0xFF505050, false);
+        g.drawString(font, note, nx, ny, 0x8000E5FF, false);
     }
 
     /** Download artwork to cache, then upload as MC texture on render thread. */
