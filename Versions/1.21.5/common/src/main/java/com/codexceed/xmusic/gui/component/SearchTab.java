@@ -104,10 +104,7 @@ public final class SearchTab {
         GuiRender.mcWell(graphics, searchBarX, searchBarY, inputW, SEARCH_BAR_HEIGHT);
         // Focus highlight border
         if (queryFocused) {
-            graphics.fill(searchBarX - 1, searchBarY - 1, searchBarX + inputW + 1, searchBarY, GuiTheme.GLOW_ACCENT);
-            graphics.fill(searchBarX - 1, searchBarY + SEARCH_BAR_HEIGHT, searchBarX + inputW + 1, searchBarY + SEARCH_BAR_HEIGHT + 1, GuiTheme.GLOW_ACCENT);
-            graphics.fill(searchBarX - 1, searchBarY, searchBarX, searchBarY + SEARCH_BAR_HEIGHT, GuiTheme.GLOW_ACCENT);
-            graphics.fill(searchBarX + inputW, searchBarY, searchBarX + inputW + 1, searchBarY + SEARCH_BAR_HEIGHT, GuiTheme.GLOW_ACCENT);
+            GuiRender.glowRect(graphics, searchBarX, searchBarY, inputW, SEARCH_BAR_HEIGHT);
         }
 
         // Query text or placeholder
