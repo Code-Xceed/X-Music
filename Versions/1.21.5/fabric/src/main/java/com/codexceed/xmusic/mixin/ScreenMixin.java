@@ -7,7 +7,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -19,10 +19,10 @@ public abstract class ScreenMixin {
         method = "render",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/GuiGraphics;drawCenteredString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;III)V"
+            target = "Lnet/minecraft/client/gui/GuiGraphics;drawCenteredString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/util/FormattedCharSequence;III)V"
         )
     )
-    private void redirectTitleRender(GuiGraphics g, Font font, Component text, int x, int y, int color) {
+    private void redirectTitleRender(GuiGraphics g, Font font, FormattedCharSequence text, int x, int y, int color) {
         if ((Object) this instanceof PauseScreen) {
             PlayerState state = PlayerFacade.getInstance().snapshot();
             TrackRef track = state.getCurrentTrack();
