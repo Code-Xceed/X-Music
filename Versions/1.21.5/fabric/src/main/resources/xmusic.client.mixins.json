@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "com.codexceed.xmusic.mixin",
   "compatibilityLevel": "JAVA_17",
-  "client": ["PauseScreenMixin", "ScreenAccessor"],
+  "client": ["PauseScreenMixin", "ScreenMixin"],
   "injectors": {
     "defaultRequire": 1
   }

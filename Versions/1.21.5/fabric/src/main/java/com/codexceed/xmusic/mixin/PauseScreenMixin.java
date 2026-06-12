@@ -11,8 +11,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.PauseScreen;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,30 +22,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(PauseScreen.class)
 public abstract class PauseScreenMixin {
 
-    private Component originalTitle;
-
     private static final int WIDGET_W = 240;
     private static final int WIDGET_H = 40;
     private static final int RADIUS = 5;
     private static final int PAD = 8;
     private static final int PROGRESS_H = 2;
     private static final int ART_SIZE = 24;
-
-    @Inject(method = "render", at = @At("HEAD"))
-    private void onRenderHead(GuiGraphics g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
-        PlayerState state = PlayerFacade.getInstance().snapshot();
-        TrackRef track = state.getCurrentTrack();
-        boolean widgetActive = (track != null || state.isPlaying() || state.isPaused());
-
-        if (widgetActive) {
-            ScreenAccessor accessor = (ScreenAccessor) (Object) this;
-            Component currentTitle = accessor.getTitle();
-            if (currentTitle != null && currentTitle != Component.empty()) {
-                this.originalTitle = currentTitle;
-                accessor.setTitle(Component.empty());
-            }
-        }
-    }
 
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(GuiGraphics g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
@@ -86,12 +66,6 @@ public abstract class PauseScreenMixin {
             // Top highlight
             g.fill(widgetX + RADIUS, widgetY + 1, widgetX + WIDGET_W - RADIUS, widgetY + 2,
                     (0x15 << 24) | 0xFFFFFF);
-
-            // Render original title centered below the widget
-            if (this.originalTitle != null) {
-                int titleY = widgetY + WIDGET_H + 6;
-                g.drawCenteredString(font, this.originalTitle, screenW / 2, titleY, 0xFFFFFF);
-            }
 
             if (track != null) {
                 // Left side: Album art
@@ -148,12 +122,6 @@ public abstract class PauseScreenMixin {
                     }
                 }
             }
-        }
-
-        // Restore title so it's clean for subsequent code/next frame
-        if (this.originalTitle != null) {
-            ((ScreenAccessor) (Object) this).setTitle(this.originalTitle);
-            this.originalTitle = null;
         }
     }
 
