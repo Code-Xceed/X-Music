@@ -11,9 +11,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -23,9 +23,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(PauseScreen.class)
 public abstract class PauseScreenMixin {
-
-    @Shadow
-    private Component title;
 
     private Component originalTitle;
 
@@ -43,9 +40,11 @@ public abstract class PauseScreenMixin {
         boolean widgetActive = (track != null || state.isPlaying() || state.isPaused());
 
         if (widgetActive) {
-            if (this.title != null && this.title != Component.empty()) {
-                this.originalTitle = this.title;
-                this.title = Component.empty();
+            ScreenAccessor accessor = (ScreenAccessor) (Object) this;
+            Component currentTitle = accessor.getTitle();
+            if (currentTitle != null && currentTitle != Component.empty()) {
+                this.originalTitle = currentTitle;
+                accessor.setTitle(Component.empty());
             }
         }
     }
@@ -153,7 +152,7 @@ public abstract class PauseScreenMixin {
 
         // Restore title so it's clean for subsequent code/next frame
         if (this.originalTitle != null) {
-            this.title = this.originalTitle;
+            ((ScreenAccessor) (Object) this).setTitle(this.originalTitle);
             this.originalTitle = null;
         }
     }
