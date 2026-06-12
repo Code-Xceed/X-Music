@@ -311,4 +311,54 @@ public final class GuiRender {
     public static boolean inside(double mouseX, double mouseY, int x, int y, int width, int height) {
         return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
     }
+
+    // ── Rounded rect primitives ──────────────────────────────────────────
+
+    public static void fillRounded(GuiGraphics g, int x, int y, int w, int h, int r, int color) {
+        if (r <= 0) { g.fill(x, y, x + w, y + h, color); return; }
+        r = Math.min(r, Math.min(w, h) / 2);
+        g.fill(x + r, y, x + w - r, y + h, color);
+        g.fill(x, y + r, x + r, y + h - r, color);
+        g.fill(x + w - r, y + r, x + w, y + h - r, color);
+        for (int i = 0; i < r; i++) {
+            int dy = r - i;
+            int dx = (int) Math.sqrt(Math.max(0, r * r - dy * dy));
+            g.fill(x + r - dx, y + i, x + r, y + i + 1, color);
+            g.fill(x + w - r, y + i, x + w - r + dx, y + i + 1, color);
+            g.fill(x + r - dx, y + h - i - 1, x + r, y + h - i, color);
+            g.fill(x + w - r, y + h - i - 1, x + w - r + dx, y + h - i, color);
+        }
+    }
+
+    public static void drawRoundedBorder(GuiGraphics g, int x, int y, int w, int h, int r, int color) {
+        if (r <= 0) {
+            g.fill(x, y, x + w, y + 1, color);
+            g.fill(x, y + h - 1, x + w, y + h, color);
+            g.fill(x, y, x + 1, y + h, color);
+            g.fill(x + w - 1, y, x + w, y + h, color);
+            return;
+        }
+        r = Math.min(r, Math.min(w, h) / 2);
+        g.fill(x + r, y, x + w - r, y + 1, color);
+        g.fill(x + r, y + h - 1, x + w - r, y + h, color);
+        g.fill(x, y + r, x + 1, y + h - r, color);
+        g.fill(x + w - 1, y + r, x + w, y + h - r, color);
+        for (int i = 0; i < r; i++) {
+            int dy = r - i;
+            int dx = (int) Math.sqrt(Math.max(0, r * r - dy * dy));
+            int dxInner = (int) Math.sqrt(Math.max(0, (r - 1) * (r - 1) - dy * dy));
+            for (int px = r - dx; px < r - dxInner; px++) {
+                g.fill(x + px, y + i, x + px + 1, y + i + 1, color);
+            }
+            for (int px = w - r + dxInner; px < w - r + dx; px++) {
+                g.fill(x + px, y + i, x + px + 1, y + i + 1, color);
+            }
+            for (int px = r - dx; px < r - dxInner; px++) {
+                g.fill(x + px, y + h - i - 1, x + px + 1, y + h - i, color);
+            }
+            for (int px = w - r + dxInner; px < w - r + dx; px++) {
+                g.fill(x + px, y + h - i - 1, x + px + 1, y + h - i, color);
+            }
+        }
+    }
 }

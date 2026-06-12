@@ -42,9 +42,29 @@ public abstract class PauseScreenMixin {
         int widgetX = (screenW - WIDGET_W) / 2;
         int widgetY = 10;
 
-        // Background panel
-        fillRounded(g, widgetX, widgetY, WIDGET_W, WIDGET_H, RADIUS, 0xE8222222);
-        drawRoundedBorder(g, widgetX, widgetY, WIDGET_W, WIDGET_H, RADIUS, 0x503BF0FF);
+        // Glow effect (Subtle atmospheric pulsing glow when music is playing)
+        if (state.isPlaying()) {
+            long now = System.currentTimeMillis();
+            float pulse = 0.8f + 0.2f * (float) Math.sin(now / 1000.0);
+            int outerA = (int) (0x0B * pulse);
+            GuiRender.fillRounded(g, widgetX - 3, widgetY - 3, WIDGET_W + 6, WIDGET_H + 6, RADIUS + 3,
+                    (outerA << 24) | (GuiTheme.ACCENT & 0x00FFFFFF));
+            int innerA = (int) (0x1C * pulse);
+            GuiRender.fillRounded(g, widgetX - 1, widgetY - 1, WIDGET_W + 2, WIDGET_H + 2, RADIUS + 1,
+                    (innerA << 24) | (GuiTheme.ACCENT & 0x00FFFFFF));
+        }
+
+        // Background panel (Slate dark gradient style)
+        GuiRender.fillRounded(g, widgetX, widgetY, WIDGET_W, WIDGET_H, RADIUS,
+                (0xEE << 24) | (GuiTheme.PANEL & 0x00FFFFFF));
+
+        // Border (Electric cyan soft outline)
+        GuiRender.drawRoundedBorder(g, widgetX, widgetY, WIDGET_W, WIDGET_H, RADIUS,
+                (0x40 << 24) | (GuiTheme.ACCENT_DARK & 0x00FFFFFF));
+
+        // Top highlight
+        g.fill(widgetX + RADIUS, widgetY + 1, widgetX + WIDGET_W - RADIUS, widgetY + 2,
+                (0x15 << 24) | 0xFFFFFF);
 
         if (track == null) return;
 
@@ -91,10 +111,14 @@ public abstract class PauseScreenMixin {
             float pct = (float) posMs / durMs;
             if (pct > 1f) pct = 1f;
             int progY = widgetY + WIDGET_H - PROGRESS_H - 3;
-            g.fill(widgetX + PAD, progY, widgetX + WIDGET_W - PAD, progY + PROGRESS_H, 0x40404040);
+            
+            // Track background
+            g.fill(widgetX + PAD, progY, widgetX + WIDGET_W - PAD, progY + PROGRESS_H, 0x30505050);
+            
             int fillW = (int) ((WIDGET_W - PAD * 2) * pct);
             if (fillW > 0) {
-                g.fill(widgetX + PAD, progY, widgetX + PAD + fillW, progY + PROGRESS_H, GuiTheme.ACCENT);
+                g.fill(widgetX + PAD, progY, widgetX + PAD + fillW, progY + PROGRESS_H, 
+                        (0xB0 << 24) | (GuiTheme.ACCENT & 0x00FFFFFF));
             }
         }
     }
@@ -121,32 +145,5 @@ public abstract class PauseScreenMixin {
         int m = sec / 60;
         int s = sec % 60;
         return m + ":" + (s < 10 ? "0" : "") + s;
-    }
-
-    private static void fillRounded(GuiGraphics g, int x, int y, int w, int h, int r, int color) {
-        if (r <= 0) { g.fill(x, y, x + w, y + h, color); return; }
-        r = Math.min(r, Math.min(w, h) / 2);
-        g.fill(x + r, y, x + w - r, y + h, color);
-        g.fill(x, y + r, x + r, y + h - r, color);
-        g.fill(x + w - r, y + r, x + w, y + h - r, color);
-        for (int i = 0; i < r; i++) {
-            int dy = r - i;
-            int a = (int) (Math.sqrt(r * r - dy * dy) / r * r);
-            g.fill(x + r - a, y + i, x + r, y + i + 1, color);
-            g.fill(x + w - r, y + i, x + w - r + a, y + i + 1, color);
-            g.fill(x + r - a, y + h - i - 1, x + r, y + h - i, color);
-            g.fill(x + w - r, y + h - i - 1, x + w - r + a, y + h - i, color);
-        }
-    }
-
-    private static void drawRoundedBorder(GuiGraphics g, int x, int y, int w, int h, int r, int color) {
-        // Top
-        g.fill(x + r, y, x + w - r, y + 1, color);
-        // Bottom
-        g.fill(x + r, y + h - 1, x + w - r, y + h, color);
-        // Left
-        g.fill(x, y + r, x + 1, y + h - r, color);
-        // Right
-        g.fill(x + w - 1, y + r, x + w, y + h - r, color);
     }
 }
