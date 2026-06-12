@@ -11,9 +11,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
@@ -28,6 +31,44 @@ public abstract class PauseScreenMixin {
     private static final int PAD = 8;
     private static final int PROGRESS_H = 2;
     private static final int ART_SIZE = 24;
+
+    @Redirect(
+        method = "render",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/GuiGraphics;drawCenteredString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;III)V"
+        ),
+        require = 0
+    )
+    private void redirectTitleRenderComponent(GuiGraphics g, Font font, Component text, int x, int y, int color) {
+        PlayerState state = PlayerFacade.getInstance().snapshot();
+        TrackRef track = state.getCurrentTrack();
+        boolean widgetActive = (track != null || state.isPlaying() || state.isPaused());
+        if (widgetActive) {
+            g.drawCenteredString(font, text, x, 52, color);
+        } else {
+            g.drawCenteredString(font, text, x, y, color);
+        }
+    }
+
+    @Redirect(
+        method = "render",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/GuiGraphics;drawCenteredString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/util/FormattedCharSequence;III)V"
+        ),
+        require = 0
+    )
+    private void redirectTitleRenderCharSequence(GuiGraphics g, Font font, FormattedCharSequence text, int x, int y, int color) {
+        PlayerState state = PlayerFacade.getInstance().snapshot();
+        TrackRef track = state.getCurrentTrack();
+        boolean widgetActive = (track != null || state.isPlaying() || state.isPaused());
+        if (widgetActive) {
+            g.drawCenteredString(font, text, x, 52, color);
+        } else {
+            g.drawCenteredString(font, text, x, y, color);
+        }
+    }
 
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(GuiGraphics g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
