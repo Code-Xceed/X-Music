@@ -23,13 +23,13 @@ dependencies {
     embeddedAudio 'com.googlecode.soundlibs:jorbis:0.0.17.4'
 
     // ── LavaPlayer engine + sources (shaded into jar) ────────────────────
-    embeddedAudio 'dev.arbjerg:lavaplayer:2.2.6'
-    embeddedAudio 'dev.lavalink.youtube:v2:1.18.1'
+    embeddedAudio 'dev.arbjerg:lavaplayer:2.2.3'
+    embeddedAudio 'dev.lavalink.youtube:v2:1.16.0'
     embeddedAudio 'org.slf4j:jcl-over-slf4j:2.0.17'
 
     // ── Also declare as implementation for common module compile ──────────
-    implementation 'dev.arbjerg:lavaplayer:2.2.6'
-    implementation 'dev.lavalink.youtube:v2:1.18.1'
+    implementation 'dev.arbjerg:lavaplayer:2.2.3'
+    implementation 'dev.lavalink.youtube:v2:1.16.0'
     implementation 'org.slf4j:jcl-over-slf4j:2.0.17'
 
     implementation 'de.sfuhrm:jaad:0.8.7'
@@ -55,6 +55,8 @@ tasks.named("jar", Jar).configure {
         exclude 'META-INF/*.RSA'
         exclude 'META-INF/MANIFEST.MF'
         exclude 'module-info.class'
+        exclude 'com/fasterxml/jackson/**'
+        exclude 'META-INF/services/com.fasterxml.jackson.*'
         exclude 'META-INF/maven/**'
         exclude 'META-INF/LICENSE*'
         exclude 'META-INF/NOTICE*'
@@ -62,4 +64,6 @@ tasks.named("jar", Jar).configure {
 }
 
 tasks.named("shadeDowngradedApi").configure {
+    exclude 'com/fasterxml/jackson/**'
+    exclude 'META-INF/services/com.fasterxml.jackson.*'
 }

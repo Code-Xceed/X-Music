@@ -141,9 +141,9 @@ public final class YouTubeToolManager {
                     installStep = InstallStep.DONE;
                     message = "All tools ready!";
                 } else {
-                    // Verification failed â€” one or both tools didn't pass the check
+                    // Verification failed — one or both tools didn't pass the check
                     installStep = InstallStep.FINISHING;
-                    message = "Verification incomplete â€” some tools may need a restart";
+                    message = "Verification incomplete — some tools may need a restart";
                     state = SetupState.MISSING;
                 }
                 return state == SetupState.READY;
@@ -208,7 +208,7 @@ public final class YouTubeToolManager {
             ffmpegExecutable = "";
         }
 
-        // Only set READY when BOTH tools are verified â€” don't override INSTALLING state
+        // Only set READY when BOTH tools are verified — don't override INSTALLING state
         if (ytReady && ffReady) {
             maybePersistResolvedPaths(ytDlp, ffmpeg);
             state = SetupState.READY;
@@ -218,9 +218,9 @@ public final class YouTubeToolManager {
             return;
         }
 
-        // During installation, keep INSTALLING state â€” don't downgrade to MISSING
+        // During installation, keep INSTALLING state — don't downgrade to MISSING
         if (state == SetupState.INSTALLING) {
-            // Still installing â€” keep current state, just update readiness flags
+            // Still installing — keep current state, just update readiness flags
             lastRefreshAt = System.currentTimeMillis();
             return;
         }
@@ -282,7 +282,7 @@ public final class YouTubeToolManager {
         } catch (Exception ignored) { return false; }
     }
 
-    // â”€â”€ Install Methods â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Install Methods ────────────────────────────────────────────────────
 
     private void installYtDlp() throws Exception {
         Files.createDirectories(getBinDirectory());
@@ -338,7 +338,7 @@ public final class YouTubeToolManager {
                 Files.deleteIfExists(tempZip);
             }
         } else {
-            // Linux: download static binary tar.xz â€” try direct binary first
+            // Linux: download static binary tar.xz — try direct binary first
             // Fallback: try apt/brew-style PATH resolution
             Path tempFile = getBinDirectory().resolve("ffmpeg-download.tar.xz");
             try {

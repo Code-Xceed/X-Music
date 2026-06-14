@@ -116,7 +116,7 @@ public final class LibraryManager {
         return Collections.unmodifiableSet(data.downloaded);
     }
 
-    // â”€â”€â”€ Playlist CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Playlist CRUD ──────────────────────────────────────────────────────
 
     public List<TrackRef> getPlaylist(String name) {
         return Collections.unmodifiableList(data.playlists.getOrDefault(name, Collections.emptyList()));
@@ -176,7 +176,7 @@ public final class LibraryManager {
         save();
     }
 
-    // â”€â”€â”€ Auto-Grouping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Auto-Grouping ────────────────────────────────────────────────────
 
     /**
      * Union of all tracks across favorites and all playlists, deduped by (id, sourceId).
@@ -241,7 +241,7 @@ public final class LibraryManager {
         return value;
     }
 
-    // â”€â”€â”€ Play Count & History â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Play Count & History ─────────────────────────────────────────────
 
     private static final int MAX_HISTORY = 200;
 

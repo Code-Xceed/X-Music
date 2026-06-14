@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class PcmStreamBuffer extends InputStream {
 
-    private static final int BUFFER_SIZE = 512 * 1024; // 512KB â€” ~1.4s at 48kHz stereo 16-bit
+    private static final int BUFFER_SIZE = 512 * 1024; // 512KB — ~1.4s at 48kHz stereo 16-bit
 
     private final byte[] ring = new byte[BUFFER_SIZE];
     private int readPos = 0;
@@ -65,7 +65,7 @@ public class PcmStreamBuffer extends InputStream {
             int firstSeg = Math.min(chunk, BUFFER_SIZE - writePos);
             System.arraycopy(data, offset + written, ring, writePos, firstSeg);
             if (firstSeg < chunk) {
-                // Wraps around â€” second segment at start of ring
+                // Wraps around — second segment at start of ring
                 System.arraycopy(data, offset + written + firstSeg, ring, 0, chunk - firstSeg);
             }
             writePos = (writePos + chunk) % BUFFER_SIZE;

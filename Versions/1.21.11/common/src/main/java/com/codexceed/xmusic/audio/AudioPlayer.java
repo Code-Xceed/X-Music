@@ -243,7 +243,6 @@ public class AudioPlayer implements AudioEventListener {
     public void setVolume(float volume) {
         engine.setVolume(volume);
         ConfigManager.get().volume = volume;
-        ConfigManager.save();
     }
 
     public float getVolume() {
@@ -415,5 +414,13 @@ public class AudioPlayer implements AudioEventListener {
      */
     public void shutdown() {
         engine.shutdown();
+    }
+
+    public void getWaveform(float[] dest) {
+        engine.getWaveform(dest);
+    }
+
+    public float getCurrentAmplitude() {
+        return engine.getCurrentAmplitude();
     }
 }

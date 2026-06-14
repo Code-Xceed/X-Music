@@ -147,9 +147,9 @@ public final class NativeAudioBackend implements PlaybackBackend, AudioEventList
 
         try {
             // Check loop first — if looping, replay current track
-            if (state.isLooping()) {
+            if (facade.shouldLoopCurrentTrack()) {
                 facade.replayCurrentTrackFromBackend();
-            } else if (facade.isAutoplay()) {
+            } else if (facade.isAutoplay() && !"home".equals(facade.getPlaybackContext())) {
                 facade.next();
             } else {
                 // Neither loop nor autoplay — just stop
@@ -178,7 +178,9 @@ public final class NativeAudioBackend implements PlaybackBackend, AudioEventList
     public void onStopped() {}
 
     @Override
-    public void onError(String message, Exception exception) {}
+    public void onError(String message, Exception exception) {
+        PlayerFacade.getInstance().setLastError(message);
+    }
 
     @Override
     public void onVolumeChanged(float volume) {}
@@ -188,4 +190,12 @@ public final class NativeAudioBackend implements PlaybackBackend, AudioEventList
 
     @Override
     public void onBuffering(AudioTrack track) {}
+
+    public void getWaveform(float[] dest) {
+        player.getWaveform(dest);
+    }
+
+    public float getCurrentAmplitude() {
+        return player.getCurrentAmplitude();
+    }
 }

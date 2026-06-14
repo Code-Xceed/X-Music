@@ -1,0 +1,143 @@
+package com.codexceed.xmusic.mixin;
+
+import com.codexceed.xmusic.audio.PlaybackMode;
+import com.codexceed.xmusic.config.ConfigManager;
+import com.codexceed.xmusic.config.XMusicConfig;
+import com.codexceed.xmusic.gui.screen.XMusicScreen;
+import com.codexceed.xmusic.gui.screen.HudEditorScreen;
+import com.codexceed.xmusic.hud.HudRenderer;
+import com.codexceed.xmusic.input.KeyBindings;
+import com.codexceed.xmusic.player.PlayerFacade;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.BookEditScreen;
+import net.minecraft.client.gui.screens.inventory.CommandBlockEditScreen;
+import net.minecraft.client.gui.screens.inventory.SignEditScreen;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+/**
+ * Mixin to intercept screen rendering and keypress events to render the HUD 
+ * and process keybindings globally, even when screens are open.
+ */
+@Mixin(Screen.class)
+public abstract class ScreenMixin {
+
+    @Inject(method = "render", at = @At("TAIL"))
+    private void onRender(GuiGraphics g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        Screen thisScreen = (Object) this instanceof Screen ? (Screen) (Object) this : null;
+        if (thisScreen == null) {
+            return;
+        }
+        if (thisScreen instanceof com.codexceed.xmusic.gui.screen.XMusicScreen 
+                || thisScreen instanceof com.codexceed.xmusic.gui.screen.HudEditorScreen 
+                || thisScreen instanceof net.minecraft.client.gui.screens.PauseScreen) {
+            return;
+        }
+
+        net.minecraft.client.gui.screens.Screen activeScreen = Minecraft.getInstance().screen;
+        if (activeScreen instanceof com.codexceed.xmusic.gui.screen.XMusicScreen 
+                || activeScreen instanceof com.codexceed.xmusic.gui.screen.HudEditorScreen 
+                || activeScreen instanceof net.minecraft.client.gui.screens.PauseScreen) {
+            return;
+        }
+
+        XMusicConfig cfg = ConfigManager.get();
+        if (cfg.hudEnabled) {
+            HudRenderer.getInstance().getMiniPlayer().render(g, partialTick);
+        }
+    }
+
+    @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
+    private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
+        Screen thisScreen = (Screen) (Object) this;
+
+        // Skip if typing in a text field
+        if (thisScreen.getFocused() instanceof EditBox) {
+            return;
+        }
+
+        // Skip if screen is a known text-editing screen
+        String clsName = thisScreen.getClass().getSimpleName();
+        if (thisScreen instanceof ChatScreen
+                || thisScreen instanceof BookEditScreen
+                || thisScreen instanceof SignEditScreen
+                || thisScreen instanceof CommandBlockEditScreen
+                || clsName.contains("Sign")
+                || clsName.contains("Book")
+                || clsName.contains("Chat")
+                || clsName.contains("Anvil")) {
+            return;
+        }
+
+        if (KeyBindings.OPEN_PLAYER.matches(keyCode, scanCode)) {
+            Minecraft client = Minecraft.getInstance();
+            if (client.screen instanceof XMusicScreen) {
+                ((XMusicScreen) client.screen).closeAnimated();
+            } else {
+                client.setScreen(new XMusicScreen(client.screen));
+            }
+            cir.setReturnValue(true);
+            return;
+        }
+
+        if (KeyBindings.PLAY_PAUSE.matches(keyCode, scanCode)) {
+            PlayerFacade.getInstance().togglePlayPause();
+            cir.setReturnValue(true);
+            return;
+        }
+
+        if (KeyBindings.NEXT_TRACK.matches(keyCode, scanCode)) {
+            PlayerFacade.getInstance().next();
+            cir.setReturnValue(true);
+            return;
+        }
+
+        if (KeyBindings.PREV_TRACK.matches(keyCode, scanCode)) {
+            PlayerFacade.getInstance().previous();
+            cir.setReturnValue(true);
+            return;
+        }
+
+        if (KeyBindings.VOLUME_UP.matches(keyCode, scanCode)) {
+            PlayerFacade.getInstance().adjustVolume(ConfigManager.get().volumeStep);
+            cir.setReturnValue(true);
+            return;
+        }
+
+        if (KeyBindings.VOLUME_DOWN.matches(keyCode, scanCode)) {
+            PlayerFacade.getInstance().adjustVolume(-ConfigManager.get().volumeStep);
+            cir.setReturnValue(true);
+            return;
+        }
+
+        if (KeyBindings.TOGGLE_SHUFFLE.matches(keyCode, scanCode)) {
+            PlayerFacade facade = PlayerFacade.getInstance();
+            if (facade.getPlaybackMode() == PlaybackMode.SHUFFLE) {
+                facade.setPlaybackMode(PlaybackMode.SEQUENTIAL);
+            } else {
+                facade.setPlaybackMode(PlaybackMode.SHUFFLE);
+            }
+            cir.setReturnValue(true);
+            return;
+        }
+
+        if (KeyBindings.CYCLE_LOOP.matches(keyCode, scanCode)) {
+            PlayerFacade.getInstance().cycleLoopMode();
+            cir.setReturnValue(true);
+            return;
+        }
+
+        if (KeyBindings.CYCLE_PLAYBACK_MODE.matches(keyCode, scanCode)) {
+            PlayerFacade.getInstance().cyclePlaybackMode();
+            cir.setReturnValue(true);
+            return;
+        }
+    }
+}

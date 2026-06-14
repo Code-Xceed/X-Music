@@ -32,10 +32,10 @@ dependencies {
     // FLAC decoding (pure Java, JavaSound SPI)
     implementation 'com.tianscar.javasound:javasound-flac:1.4.1'
 
-    // ── LavaPlayer Audio Engine ──────────────────────────────────────────────
-    // Core LavaPlayer — official Arbjerg fork on Maven Central (no yt-dlp needed)
+    // â”€â”€ LavaPlayer Audio Engine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Core LavaPlayer â€” official Arbjerg fork on Maven Central (no yt-dlp needed)
     implementation 'dev.arbjerg:lavaplayer:2.2.3'
-    // YouTube source v2 — pure Java YouTube resolver (replaces yt-dlp subprocess)
+    // YouTube source v2 â€” pure Java YouTube resolver (replaces yt-dlp subprocess)
     implementation 'dev.lavalink.youtube:v2:1.16.0'
     // SLF4J JCL bridge so LavaPlayer's Apache HTTP logs route to Minecraft's log4j
     implementation 'org.slf4j:jcl-over-slf4j:2.0.17'

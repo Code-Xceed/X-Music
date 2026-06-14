@@ -79,11 +79,17 @@ public final class LavaPlayerEngine {
     /** Position in ms, from LavaPlayer's own per-track tracker. Drift-free. */
     private final AtomicLong currentPositionMs = new AtomicLong(0);
 
+    private volatile float currentRms = 0f;
+
     /** Set to true when a track switch occurs — the output loop will flush the SDL. */
     private volatile boolean flushRequested = false;
 
     /** Set to true when pause is requested — output loop flushes and sleeps. */
     private volatile boolean pauseFlushRequested = false;
+
+    private static final int HISTORY_SIZE = 128 * 1024;
+    private final byte[] historyBuffer = new byte[HISTORY_SIZE];
+    private long totalBytesWrittenToLine = 0;
 
     // ── Constructor ────────────────────────────────────────────────────────
     private LavaPlayerEngine() {
@@ -295,7 +301,25 @@ public final class LavaPlayerEngine {
                 continue;
             }
 
+            // Calculate RMS of decoded buffer
+            int samples = bytesRead / 4; // stereo 16-bit
+            double sum = 0;
+            for (int i = 0; i < samples; i++) {
+                int offset = i * 4;
+                short sample = (short) ((buf[offset + 1] << 8) | (buf[offset] & 0xFF));
+                sum += sample * sample;
+            }
+            double rms = Math.sqrt(sum / (samples > 0 ? samples : 1)) / 32768.0;
+            currentRms = (float) (currentRms * 0.8f + rms * 0.2f);
+
             // ── Write to hardware ──────────────────────────────────────
+            if (sourceLine != null && sourceLine.isOpen()) {
+                for (int i = 0; i < bytesRead; i++) {
+                    int idx = (int) ((totalBytesWrittenToLine + i) % HISTORY_SIZE);
+                    historyBuffer[idx] = buf[i];
+                }
+                totalBytesWrittenToLine += bytesRead;
+            }
             sourceLine.write(buf, 0, bytesRead);
 
             // ── Update position (drift-free) ───────────────────────────
@@ -320,6 +344,8 @@ public final class LavaPlayerEngine {
             line.open(javaFormat, SDL_BUFFER_BYTES);
             line.start();
             sourceLine = line;
+            totalBytesWrittenToLine = 0;
+            java.util.Arrays.fill(historyBuffer, (byte) 0);
             XMusic.LOGGER.info("[LavaPlayer] SourceDataLine opened: {} (buf={}B)",
                     mixer.getMixerInfo().getName(), SDL_BUFFER_BYTES);
             return true;
@@ -339,6 +365,8 @@ public final class LavaPlayerEngine {
             } catch (Exception ignored) {}
             sourceLine = null;
         }
+        totalBytesWrittenToLine = 0;
+        java.util.Arrays.fill(historyBuffer, (byte) 0);
     }
 
     /** Find and set the audio mixer by name. Empty = first supported (default). */
@@ -385,6 +413,7 @@ public final class LavaPlayerEngine {
     public void stopTrack() {
         player.stopTrack();
         currentPositionMs.set(0);
+        currentRms = 0f;
         flushRequested = true;
     }
 
@@ -420,5 +449,49 @@ public final class LavaPlayerEngine {
     /** Request the output loop to flush the SDL buffer (e.g. after seek). */
     public void requestFlush() {
         flushRequested = true;
+    }
+
+    public void getWaveform(float[] dest) {
+        SourceDataLine line = sourceLine;
+        if (line == null || !line.isOpen() || player.isPaused()) {
+            java.util.Arrays.fill(dest, 0f);
+            return;
+        }
+
+        long playBytes = line.getLongFramePosition() * 4;
+        
+        // 160ms total span at 48000Hz = 0.16 * 48000 * 4 = 30720 bytes.
+        // stepBytes = 30720 / 32 = 960 bytes.
+        int stepBytes = 960;
+
+        // 24ms averaging window = 0.024 * 48000 * 4 = 4608 bytes.
+        int avgWindowBytes = 4608;
+        int subSamples = 12;
+        int subStep = 4608 / subSamples; // 384 bytes (multiple of 4)
+
+        for (int i = 0; i < 32; i++) {
+            long centerOffset = playBytes + (long) i * stepBytes;
+            long startOffset = centerOffset - (avgWindowBytes / 2);
+
+            long sum = 0;
+            for (int j = 0; j < subSamples; j++) {
+                long offset = startOffset + (long) j * subStep;
+                int idx = (int) (offset % HISTORY_SIZE);
+                if (idx < 0) idx += HISTORY_SIZE;
+
+                int b1 = historyBuffer[idx] & 0xFF;
+                int b2 = historyBuffer[(idx + 1) % HISTORY_SIZE];
+                short val = (short) ((b2 << 8) | b1);
+                sum += Math.abs(val);
+            }
+
+            float amplitude = (sum / (float) subSamples) / 32768f;
+            if (amplitude > 1f) amplitude = 1f;
+            dest[i] = amplitude;
+        }
+    }
+
+    public float getCurrentAmplitude() {
+        return player.getPlayingTrack() != null && !player.isPaused() ? currentRms : 0f;
     }
 }

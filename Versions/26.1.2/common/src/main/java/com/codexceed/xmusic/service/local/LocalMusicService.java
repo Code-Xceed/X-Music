@@ -25,7 +25,7 @@ import javax.sound.sampled.AudioSystem;
  * Default music directory: .minecraft/xmusic/local/
  * User can customize via config.
  *
- * Works completely offline â€” no API keys needed.
+ * Works completely offline — no API keys needed.
  * Just drop MP3/OGG files in the folder and they appear in the player.
  */
 public class LocalMusicService {
@@ -147,7 +147,7 @@ public class LocalMusicService {
             }
 
             // Estimate duration from file size (rough approximation)
-            // MP3: ~128kbps = 16KB/s â†’ duration = fileSize / 16000
+            // MP3: ~128kbps = 16KB/s → duration = fileSize / 16000
             // OGG: ~128kbps similar
             long estimatedDurationMs = estimateDurationMs(file);
 

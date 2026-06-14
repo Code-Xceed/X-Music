@@ -161,11 +161,12 @@ public final class YouTubeNativeBackend implements PlaybackBackend, AudioEventLi
                     XMusic.LOGGER.debug("[YT] Auto-advance cancelled â€” user already switched tracks.");
                     return;
                 }
-                if (!facade.isAutoplay() && !facade.snapshot().isLooping()) {
-                    XMusic.LOGGER.info("[YT] Autoplay is OFF. Stopping playback.");
-                    facade.stop();
-                } else {
+                if (facade.shouldLoopCurrentTrack()) {
+                    facade.replayCurrentTrackFromBackend();
+                } else if (facade.isAutoplay() && !"home".equals(facade.getPlaybackContext())) {
                     facade.next();
+                } else {
+                    facade.stop();
                 }
             } catch (Exception e) {
                 XMusic.LOGGER.error("Auto-advance after YouTube track ended failed", e);
@@ -459,6 +460,7 @@ public final class YouTubeNativeBackend implements PlaybackBackend, AudioEventLi
     private void reportFailure(String msg) {
         YouTubeService s = ServiceManager.getYouTube();
         if (s != null) s.reportNativeFailure(msg);
+        com.codexceed.xmusic.player.PlayerFacade.getInstance().setLastError(msg);
     }
 
     private String resolveErrorMessage(Throwable error) {

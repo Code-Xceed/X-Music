@@ -24,10 +24,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <h3>State flow</h3>
  * <pre>
- *   IDLE Ã¢â€ â€™ play() Ã¢â€ â€™ RESOLVING Ã¢â€ â€™ (loadItem callback) Ã¢â€ â€™ engine.startTrack() Ã¢â€ â€™ PLAYING
- *   PLAYING Ã¢â€ â€™ pause() Ã¢â€ â€™ PAUSED Ã¢â€ â€™ resume() Ã¢â€ â€™ PLAYING
- *   PLAYING Ã¢â€ â€™ stop() Ã¢â€ â€™ IDLE
- *   RESOLVING Ã¢â€ â€™ play(new track) Ã¢â€ â€™ old callback discarded (generation mismatch)
+ *   IDLE â†’ play() â†’ RESOLVING â†’ (loadItem callback) â†’ engine.startTrack() â†’ PLAYING
+ *   PLAYING â†’ pause() â†’ PAUSED â†’ resume() â†’ PLAYING
+ *   PLAYING â†’ stop() â†’ IDLE
+ *   RESOLVING â†’ play(new track) â†’ old callback discarded (generation mismatch)
  * </pre>
  *
  * <h3>snapshot() reads from LavaPlayerEngine only</h3>
@@ -47,7 +47,11 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
         this.facade = facade;
     }
 
-    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ PlaybackBackend Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    public boolean isResolving() {
+        return resolving;
+    }
+
+    // â”€â”€â”€ PlaybackBackend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Override
     public String getId() { return "lavaplayer"; }
@@ -74,7 +78,7 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
         engine.setVolume(Math.round(ConfigManager.get().volume * 100f));
 
         String uri = resolveUri(track);
-        XMusic.LOGGER.info("[LP-{}] Loading: {} Ã¢â€ â€™ {}", gen, track.getDisplayName(), uri);
+        XMusic.LOGGER.info("[LP-{}] Loading: {} â†’ {}", gen, track.getDisplayName(), uri);
 
         engine.getManager().loadItem(uri, new AudioLoadResultHandler() {
 
@@ -85,6 +89,14 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
 
                 // Update display track with resolved metadata (title/artist may differ from search)
                 var info = lavaTrack.getInfo();
+                String resolvedArtwork = (info.artworkUrl != null && !info.artworkUrl.isEmpty()) ? info.artworkUrl : track.getArtworkUrl();
+                if (resolvedArtwork == null || resolvedArtwork.isEmpty()) {
+                    String srcId = track.getSourceId();
+                    if ("youtube".equals(srcId) || "spotify".equals(srcId)) {
+                        resolvedArtwork = "https://img.youtube.com/vi/" + lavaTrack.getIdentifier() + "/mqdefault.jpg";
+                    }
+                }
+
                 currentTrackRef = new TrackRef.Builder()
                         .id(lavaTrack.getIdentifier())
                         .sourceId(track.getSourceId())
@@ -92,7 +104,7 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
                         .artist(info.author != null ? info.author : track.getArtist())
                         .album(track.getAlbum())
                         .durationMs(info.length > 0 ? info.length : track.getDurationMs())
-                        .artworkUrl(info.artworkUrl != null ? info.artworkUrl : track.getArtworkUrl())
+                        .artworkUrl(resolvedArtwork != null ? resolvedArtwork : "")
                         .playbackType(track.getPlaybackType())
                         .remoteUri(lavaTrack.getIdentifier())
                         .externalUrl(info.uri != null ? info.uri : track.getExternalUrl())
@@ -119,6 +131,7 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
                 resolving = false;
                 currentTrackRef = null;
                 XMusic.LOGGER.warn("[LP-{}] No matches for: {}", gen, uri);
+                com.codexceed.xmusic.player.PlayerFacade.getInstance().setLastError("No matching track found");
             }
 
             @Override
@@ -126,6 +139,7 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
                 if (isStale(gen)) return;
                 resolving = false;
                 XMusic.LOGGER.error("[LP-{}] Load failed: {}", gen, exception.getMessage());
+                com.codexceed.xmusic.player.PlayerFacade.getInstance().setLastError(exception.getMessage());
             }
         });
 
@@ -188,7 +202,7 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
                     volume, mode, currentIndex, queueSize);
         }
 
-        // No active track Ã¢â€ â€™ idle
+        // No active track â†’ idle
         if (display == null) {
             return PlayerState.idle();
         }
@@ -211,7 +225,7 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
                 volume, mode, currentIndex, queueSize);
     }
 
-    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Auto-advance on track end Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    // â”€â”€â”€ Auto-advance on track end â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Override
     public void onTrackEnd(com.sedmelluq.discord.lavaplayer.player.AudioPlayer player,
@@ -221,10 +235,16 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
             int capturedGen = generation.get();
             XMusic.LOGGER.info("[LP] Track ended ({}): {}", endReason,
                     track != null ? track.getInfo().title : "null");
-            // Advance to next track on a separate thread to avoid blocking LavaPlayer's event loop
+            // Advance/loop on a separate thread to avoid blocking LavaPlayer's event loop
             Thread t = new Thread(() -> {
                 if (generation.get() == capturedGen && facade != null) {
-                    facade.next();
+                    if (facade.shouldLoopCurrentTrack()) {
+                        facade.replayCurrentTrackFromBackend();
+                    } else if (facade.isAutoplay() && !"home".equals(facade.getPlaybackContext())) {
+                        facade.next();
+                    } else {
+                        facade.stop();
+                    }
                 }
             }, "XMusic-LavaAdvance");
             t.setDaemon(true);
@@ -232,10 +252,10 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
         }
     }
 
-    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ URI Resolution Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    // â”€â”€â”€ URI Resolution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private String resolveUri(TrackRef track) {
-        // Spotify: resolve ISRC â†’ YouTube search
+        // Spotify: resolve ISRC → YouTube search
         if ("spotify".equals(track.getSourceId())) {
             String isrc = track.getRemoteUri();
             if (isrc != null && !isrc.isBlank()) {
@@ -264,5 +284,13 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
 
     private boolean isStale(int gen) {
         return generation.get() != gen;
+    }
+
+    public void getWaveform(float[] dest) {
+        engine.getWaveform(dest);
+    }
+
+    public float getCurrentAmplitude() {
+        return engine.getCurrentAmplitude();
     }
 }

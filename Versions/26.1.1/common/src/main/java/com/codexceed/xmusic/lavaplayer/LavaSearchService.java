@@ -10,6 +10,8 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -59,9 +61,14 @@ public final class LavaSearchService {
 
             @Override
             public void playlistLoaded(AudioPlaylist playlist) {
-                List<TrackRef> results = new ArrayList<>(Math.min(playlist.getTracks().size(), MAX_RESULTS));
+                List<AudioTrack> tracks = new ArrayList<>(playlist.getTracks());
+                if (uri.startsWith("ytsearch:")) {
+                    String queryText = uri.substring("ytsearch:".length());
+                    tracks.sort((t1, t2) -> Integer.compare(calculateOfficialScore(t2, queryText), calculateOfficialScore(t1, queryText)));
+                }
+                List<TrackRef> results = new ArrayList<>();
                 String sourceId = deriveSourceId(uri);
-                for (AudioTrack track : playlist.getTracks()) {
+                for (AudioTrack track : tracks) {
                     if (!isAllowedDuration(track)) {
                         continue;
                     }
@@ -106,7 +113,7 @@ public final class LavaSearchService {
             resolvedSourceId = deriveSourceId(info.uri != null ? info.uri : "");
         }
 
-        // Resolve artwork URL â€” LavaPlayer often leaves artworkUrl null,
+        // Resolve artwork URL — LavaPlayer often leaves artworkUrl null,
         // so we construct thumbnails from the video ID for YouTube.
         String artworkUrl = info.artworkUrl;
         if (artworkUrl == null || artworkUrl.isEmpty()) {
@@ -132,7 +139,7 @@ public final class LavaSearchService {
         if (identifier == null || identifier.isEmpty()) return "";
         switch (sourceId) {
             case "youtube":
-                // YouTube video ID â†’ standard thumbnail
+                // YouTube video ID → standard thumbnail
                 return "https://img.youtube.com/vi/" + identifier + "/mqdefault.jpg";
             case "soundcloud":
                 // SoundCloud doesn't have a simple URL pattern; rely on LavaPlayer
@@ -175,5 +182,91 @@ public final class LavaSearchService {
     private static boolean isAllowedDuration(AudioTrack track) {
         long length = track.getInfo().length;
         return length <= MAX_DURATION_MS || length == Long.MAX_VALUE;
+    }
+
+    private static int calculateOfficialScore(AudioTrack track, String query) {
+        int score = 0;
+        String title = track.getInfo().title != null ? track.getInfo().title.toLowerCase() : "";
+        String author = track.getInfo().author != null ? track.getInfo().author.toLowerCase() : "";
+        String q = query.toLowerCase();
+
+        // 1. Author/Channel checks
+        if (author.endsWith("vevo") || author.contains(" vevo") || author.contains("vevo ")) {
+            score += 150;
+        }
+        if (author.endsWith("- topic") || author.contains("- topic") || author.contains(" - topic")) {
+            score += 120;
+        }
+
+        // 2. Title keywords boosts
+        if (title.contains("official audio")) {
+            score += 90;
+        } else if (title.contains("official video") || title.contains("official music video")) {
+            score += 80;
+        } else if (title.contains("official lyric") || title.contains("official lyrics")) {
+            score += 50;
+        } else if (title.contains("lyrics") || title.contains("lyric")) {
+            score += 25;
+        }
+
+        // 3. Keyword penalties (only if the query itself doesn't contain these words)
+        if (title.contains("cover") && !q.contains("cover")) {
+            score -= 100;
+        }
+        if (title.contains("reaction") && !q.contains("reaction")) {
+            score -= 120;
+        }
+        if ((title.contains("karaoke") || title.contains("instrumental") || title.contains("backing track")) 
+                && !q.contains("karaoke") && !q.contains("instrumental")) {
+            score -= 90;
+        }
+        if ((title.contains("1 hour") || title.contains("10 hour") || title.contains("loop") || title.contains("infinite")) 
+                && !q.contains("hour") && !q.contains("loop")) {
+            score -= 110;
+        }
+        if ((title.contains("slowed") || title.contains("reverb") || title.contains("sped up") || title.contains("speed up") || title.contains("bass boosted") || title.contains("remix")) 
+                && !q.contains("slowed") && !q.contains("reverb") && !q.contains("sped") && !q.contains("speed") && !q.contains("boosted") && !q.contains("remix")) {
+            score -= 80;
+        }
+        if (title.contains("live") && !q.contains("live")) {
+            score -= 40;
+        }
+        if (title.contains("shorts") || title.contains("#shorts")) {
+            score -= 50;
+        }
+
+        // 4. Query word matching overlap
+        String[] words = q.replaceAll("[^a-zA-Z0-9\\s]", " ").split("\\s+");
+        int matched = 0;
+        int validWords = 0;
+        for (String w : words) {
+            String wt = w.trim();
+            if (wt.length() >= 2) {
+                validWords++;
+                if (title.contains(wt) || author.contains(wt)) {
+                    matched++;
+                }
+            }
+        }
+        if (validWords > 0) {
+            score += (int) (((double) matched / validWords) * 70);
+        }
+
+        // 5. Duration checks (prefer standard song lengths of 2-8 minutes if possible)
+        long lengthMs = track.getInfo().length;
+        if (lengthMs > 0) {
+            long minutes = lengthMs / 60_000L;
+            if (minutes >= 2 && minutes <= 8) {
+                score += 20;
+            }
+            if (minutes > 15) {
+                score -= 30;
+            }
+            if (minutes > 30) {
+                score -= 60;
+            }
+        }
+
+        return score;
     }
 }

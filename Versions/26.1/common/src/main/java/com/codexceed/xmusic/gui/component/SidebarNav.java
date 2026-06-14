@@ -8,7 +8,7 @@ import com.codexceed.xmusic.gui.render.IconRenderer;
 import com.codexceed.xmusic.gui.theme.GuiTheme;
 import com.codexceed.xmusic.gui.util.AnimationHelper;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 
 public final class SidebarNav {
     private static final int ROW_H = 24;
@@ -20,8 +20,9 @@ public final class SidebarNav {
 
     private String hoveredRoute = null;
     private float activeIndicatorY = -1f;
+    private double scrollAmount = 0.0;
 
-    public void render(GuiGraphicsExtractor graphics, Font font, GuiFrame frame, GuiRoute activeRoute, int mouseX, int mouseY) {
+    public void render(GuiGraphics graphics, Font font, GuiFrame frame, GuiRoute activeRoute, int mouseX, int mouseY) {
         int x = frame.sidebarX();
         int y = frame.sidebarY();
         int w = frame.sidebarWidth();
@@ -31,27 +32,34 @@ public final class SidebarNav {
         GuiRender.mcPanelGradient(graphics, x, y, w, h);
         GuiRender.innerShadowTop(graphics, x + 1, y + 1, w - 2, 2);
 
+        int totalHeight = GuiRoute.values().length * (ROW_H + ROW_GAP) - ROW_GAP + 10;
+        double maxScroll = Math.max(0, totalHeight - h);
+        scrollAmount = Math.max(0, Math.min(maxScroll, scrollAmount));
+
         graphics.enableScissor(x + 1, y + 1, x + w - 1, y + h - 1);
-        int rowY = y + 5;
+        int rowY = y + 5 - (int) scrollAmount;
         hoveredRoute = null;
-        int activeRowY = -1;
+        int activeRouteIndex = -1;
+        int idx = 0;
 
         for (GuiRoute route : GuiRoute.values()) {
             boolean isHovered = GuiRender.inside(mouseX, mouseY, x + INSET, rowY, w - INSET * 2, ROW_H);
             if (isHovered) hoveredRoute = route.name();
-            if (route == activeRoute) activeRowY = rowY;
-            renderRoute(graphics, font, route, activeRoute == route, x + INSET, rowY, w - INSET * 2, isHovered);
+            if (route == activeRoute) activeRouteIndex = idx;
+            renderRoute(graphics, font, frame, route, activeRoute == route, x + INSET, rowY, w - INSET * 2, isHovered, mouseX, mouseY);
             rowY += ROW_H + ROW_GAP;
+            idx++;
         }
 
-        // Animated active indicator bar
-        if (activeRowY >= 0) {
+        // Animated active indicator bar (relative to scrolled Y space)
+        if (activeRouteIndex >= 0) {
+            int targetRelativeY = activeRouteIndex * (ROW_H + ROW_GAP) + 5;
             if (activeIndicatorY < 0) {
-                activeIndicatorY = activeRowY;
+                activeIndicatorY = targetRelativeY;
             } else {
-                activeIndicatorY = AnimationHelper.approach(activeIndicatorY, activeRowY, 14f, 0.016f);
+                activeIndicatorY = AnimationHelper.approach(activeIndicatorY, targetRelativeY, 14f, 0.016f);
             }
-            int indY = Math.round(activeIndicatorY);
+            int indY = y + Math.round(activeIndicatorY) - (int) scrollAmount;
             // Accent bar (left edge, 2px)
             graphics.fill(x + INSET, indY + 3, x + INSET + 2, indY + ROW_H - 3, GuiTheme.ACCENT);
             // Soft glow
@@ -62,9 +70,28 @@ public final class SidebarNav {
         graphics.disableScissor();
     }
 
+    public boolean mouseScrolled(GuiFrame frame, double mouseX, double mouseY, double amountY) {
+        int x = frame.sidebarX();
+        int y = frame.sidebarY();
+        int w = frame.sidebarWidth();
+        int h = frame.sidebarHeight();
+        if (GuiRender.inside(mouseX, mouseY, x, y, w, h)) {
+            int totalHeight = GuiRoute.values().length * (ROW_H + ROW_GAP) - ROW_GAP + 10;
+            double maxScroll = Math.max(0, totalHeight - h);
+            if (maxScroll > 0) {
+                scrollAmount = Math.max(0, Math.min(maxScroll, scrollAmount - amountY * 12));
+                return true;
+            }
+        }
+        return false;
+    }
+
     public GuiRoute clicked(GuiFrame frame, double mouseX, double mouseY) {
+        if (!GuiRender.inside(mouseX, mouseY, frame.sidebarX(), frame.sidebarY(), frame.sidebarWidth(), frame.sidebarHeight())) {
+            return null;
+        }
         int x = frame.sidebarX() + INSET;
-        int y = frame.sidebarY() + 5;
+        int y = frame.sidebarY() + 5 - (int) scrollAmount;
         int w = frame.sidebarWidth() - INSET * 2;
         for (GuiRoute route : GuiRoute.values()) {
             if (GuiRender.inside(mouseX, mouseY, x, y, w, ROW_H)) {
@@ -75,8 +102,8 @@ public final class SidebarNav {
         return null;
     }
 
-    private void renderRoute(GuiGraphicsExtractor graphics, Font font, GuiRoute route, boolean active,
-                             int x, int y, int width, boolean hovered) {
+    private void renderRoute(GuiGraphics graphics, Font font, GuiFrame frame, GuiRoute route, boolean active,
+                             int x, int y, int width, boolean hovered, int mouseX, int mouseY) {
         float hoverLerp = HoverTracker.tick("sidebar_" + route.name(), hovered);
 
         // Background (only on hover/active)
@@ -95,7 +122,7 @@ public final class SidebarNav {
         }
 
         // Icon
-        int iconX = x + ICON_PAD;
+        int iconX = frame.compact() ? x + (width - ICON_SIZE) / 2 : x + ICON_PAD;
         int iconY = y + (ROW_H - ICON_SIZE) / 2;
         int iconColor;
         if (active) {
@@ -112,11 +139,16 @@ public final class SidebarNav {
             case SETTINGS:  IconRenderer.settings(graphics, font, iconX, iconY, ICON_SIZE, ICON_SIZE, iconColor); break;
         }
 
-        // Label
-        int labelX = iconX + ICON_SIZE + LABEL_GAP;
-        int labelY = y + (ROW_H - 8) / 2;
-        int labelColor = active ? GuiTheme.ACCENT
-                : AnimationHelper.lerpColor(GuiTheme.TEXT_MUTED, GuiTheme.TEXT, hoverLerp);
-        GuiRender.shadowText(graphics, font, route.label(), labelX, labelY, labelColor);
+        // Label (only if not compact)
+        if (!frame.compact()) {
+            int labelX = iconX + ICON_SIZE + LABEL_GAP;
+            int labelY = y + (ROW_H - 8) / 2;
+            int labelColor = active ? GuiTheme.ACCENT
+                    : AnimationHelper.lerpColor(GuiTheme.TEXT_MUTED, GuiTheme.TEXT, hoverLerp);
+            GuiRender.shadowText(graphics, font, route.label(), labelX, labelY, labelColor);
+        } else if (hovered) {
+            // Show route label tooltip in compact mode
+            GuiRender.tooltip(graphics, font, route.label(), mouseX, mouseY, frame.x() + frame.width(), frame.y() + frame.height());
+        }
     }
 }

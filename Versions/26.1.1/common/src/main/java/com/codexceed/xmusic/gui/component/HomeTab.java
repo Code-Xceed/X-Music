@@ -1,6 +1,7 @@
 package com.codexceed.xmusic.gui.component;
 
 import com.codexceed.xmusic.gui.layout.GuiFrame;
+import com.codexceed.xmusic.gui.render.ArtworkRenderer;
 import com.codexceed.xmusic.gui.render.GuiRender;
 import com.codexceed.xmusic.gui.render.IconRenderer;
 import com.codexceed.xmusic.gui.theme.GuiTheme;
@@ -8,7 +9,7 @@ import com.codexceed.xmusic.library.LibraryManager;
 import com.codexceed.xmusic.player.PlayerFacade;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 
 import java.util.*;
 
@@ -18,13 +19,13 @@ import java.util.*;
  */
 public final class HomeTab {
 
-    // â”€â”€ Layout Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Layout Constants ─────────────────────────────────────────────────
     private static final int PAD = 6;
     private static final int SECTION_GAP = 10;
-    private static final int CARD_W = 82;
-    private static final int CARD_H = 102;
-    private static final int CARD_GAP = 6;
-    private static final int CARD_ICON_SIZE = 40;
+    private static final int CARD_W = 96;
+    private static final int CARD_H = 112;
+    private static final int CARD_GAP = 8;
+    private static final int CARD_ICON_SIZE = 48;
     private static final int TEXT_LINE_H = 9;
     private static final int QUICK_TILE_H = 30;
     private static final int QUICK_TILE_GAP = 3;
@@ -33,25 +34,25 @@ public final class HomeTab {
     private static final int ICON_SIZE = 12;
     private static final float SCROLL_LERP = 0.18f; // smooth interpolation speed
 
-    // â”€â”€ Smooth Scroll State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Smooth Scroll State ──────────────────────────────────────────────
     private double targetVerticalScroll = 0;
     private double smoothVerticalScroll = 0;
     private double maxVerticalScroll = 0;
     private final Map<String, Double> targetSectionScrolls = new HashMap<>();
     private final Map<String, Double> smoothSectionScrolls = new HashMap<>();
 
-    // â”€â”€ Animation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Animation ────────────────────────────────────────────────────────
     private long lastFrameTime = System.currentTimeMillis();
     private float eqPhase = 0f; // equalizer animation phase
 
-    // â”€â”€ Navigation callback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Navigation callback ─────────────────────────────────────────────
     private Runnable navigateToLibrary = null;
 
     public void setNavigateToLibrary(Runnable callback) {
         this.navigateToLibrary = callback;
     }
 
-    // â”€â”€ Smooth Scroll Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Smooth Scroll Helper ─────────────────────────────────────────────
 
     private double lerp(double current, double target, float speed) {
         double delta = target - current;
@@ -70,9 +71,9 @@ public final class HomeTab {
         }
     }
 
-    // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Render ──────────────────────────────────────────────────────────
 
-    public void render(GuiGraphicsExtractor g, Font f, GuiFrame frame, int mx, int my) {
+    public void render(GuiGraphics g, Font f, GuiFrame frame, int mx, int my) {
         // Update smooth scroll positions
         long now = System.currentTimeMillis();
         float dt = Math.min(50f, (now - lastFrameTime) / 16.667f); // normalize to ~60fps
@@ -169,9 +170,9 @@ public final class HomeTab {
         g.disableScissor();
     }
 
-    // â”€â”€ Greeting + Equalizer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Greeting + Equalizer ────────────────────────────────────────────
 
-    private int renderGreeting(GuiGraphicsExtractor g, Font f, int x, int y, int w) {
+    private int renderGreeting(GuiGraphics g, Font f, int x, int y, int w) {
         String greeting = getGreeting();
         GuiRender.shadowText(g, f, greeting, x, y, GuiTheme.ACCENT);
 
@@ -183,7 +184,7 @@ public final class HomeTab {
         return y + 14;
     }
 
-    private void renderEqualizer(GuiGraphicsExtractor g, int x, int y, int w, int h) {
+    private void renderEqualizer(GuiGraphics g, int x, int y, int w, int h) {
         int bars = 4;
         int barW = 2;
         int gap = 1;
@@ -212,13 +213,16 @@ public final class HomeTab {
         return "Good evening";
     }
 
-    // â”€â”€ Quick-Play Grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Quick-Play Grid ────────────────────────────────────────────────
 
-    private int renderQuickPlayGrid(GuiGraphicsExtractor g, Font f, int x, int y, int w,
+    private int renderQuickPlayGrid(GuiGraphics g, Font f, int x, int y, int w,
                                      List<TrackRef> tracks, int mx, int my, int sw, int sh) {
         int tileW = 120;
         int cols = Math.max(1, (w + QUICK_TILE_GAP) / (tileW + QUICK_TILE_GAP));
         tileW = (w - (cols - 1) * QUICK_TILE_GAP) / cols;
+
+        TrackRef currentPlaying = PlayerFacade.getInstance().snapshot().getCurrentTrack();
+        boolean isCurrentActive = PlayerFacade.getInstance().snapshot().isPlaying();
 
         int maxTiles = Math.min(tracks.size(), cols * 2);
         for (int i = 0; i < maxTiles; i++) {
@@ -229,36 +233,64 @@ public final class HomeTab {
 
             TrackRef track = tracks.get(i);
             boolean hovered = GuiRender.inside(mx, my, tileX, tileY, tileW, QUICK_TILE_H);
+            boolean isPlaying = currentPlaying != null && currentPlaying.getId().equals(track.getId());
+            boolean isActivePlaying = isPlaying && isCurrentActive;
 
-            int bg = hovered ? GuiTheme.QUICK_TILE_HOVER : GuiTheme.QUICK_TILE_BG;
-            g.fill(tileX, tileY, tileX + tileW, tileY + QUICK_TILE_H, bg);
-            GuiRender.bevelHover(g, tileX, tileY, tileW, QUICK_TILE_H, false, hovered);
+            int drawTileY = hovered ? tileY - 1 : tileY;
 
-            // Accent left border on hover
-            if (hovered) {
-                g.fill(tileX, tileY, tileX + 2, tileY + QUICK_TILE_H, GuiTheme.ACCENT);
+            // Beautiful gradient background
+            int bgTop = hovered ? 0xFF2E3038 : (isPlaying ? 0xFF3A1C54 : 0xFF1D1F23);
+            int bgBottom = hovered ? 0xFF1C1D22 : (isPlaying ? 0xFF1D0E2B : 0xFF141517);
+            GuiRender.fillRoundedGradient(g, tileX, drawTileY, tileW, QUICK_TILE_H, 4, bgTop, bgBottom);
+
+            if (isPlaying) {
+                GuiRender.drawRoundedBorder(g, tileX, drawTileY, tileW, QUICK_TILE_H, 4, GuiTheme.ACCENT);
+                GuiRender.smoothHoverGlow(g, tileX - 1, drawTileY - 1, tileW + 2, QUICK_TILE_H + 2, 0.6f);
+            } else if (hovered) {
+                GuiRender.drawRoundedBorder(g, tileX, drawTileY, tileW, QUICK_TILE_H, 4, 0x40FFFFFF);
+                GuiRender.smoothHoverGlow(g, tileX - 1, drawTileY - 1, tileW + 2, QUICK_TILE_H + 2, 0.3f);
+            } else {
+                GuiRender.drawRoundedBorder(g, tileX, drawTileY, tileW, QUICK_TILE_H, 4, 0x15FFFFFF);
             }
 
-            int iconX = tileX + 6;
-            int iconY = tileY + (QUICK_TILE_H - ICON_SIZE) / 2;
-            IconRenderer.musicNote(g, f, iconX, iconY, ICON_SIZE, ICON_SIZE,
-                    hovered ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
+            int slotW = 28;
+            int slotH = 16;
+            int imgX = tileX + 6;
+            int imgY = drawTileY + (QUICK_TILE_H - slotH) / 2;
+            int textX = imgX + slotW + 6;
+            
+            ArtworkRenderer.renderArtwork(g, track, imgX, imgY, slotW, slotH);
 
-            int textX = iconX + ICON_SIZE + 4;
-            int textW = tileW - ICON_SIZE - 16;
-            String label = track.getTitle() + " \u00B7 " + track.getArtist();
-            GuiRender.truncated(g, f, label, textX, tileY + (QUICK_TILE_H - 8) / 2, textW,
-                    hovered ? GuiTheme.TEXT : GuiTheme.TEXT_SOFT);
+            if (isActivePlaying) {
+                g.fill(imgX, imgY, imgX + slotW, imgY + slotH, 0x60000000);
+                long time = System.currentTimeMillis();
+                for (int b = 0; b < 3; b++) {
+                    float bounce = (float) Math.sin((time * 0.015) + b * 1.5) * 0.5f + 0.5f;
+                    int barH = 1 + (int) (bounce * 7f);
+                    g.fill(imgX + 5 + b * 4, imgY + 13 - barH, imgX + 5 + b * 4 + 2, imgY + 13, GuiTheme.ACCENT);
+                }
+            }
 
+            int textW = tileX + tileW - textX - 8;
+            String title = track.getTitle();
+            String artist = track.getArtist();
+            if (title == null || title.isEmpty()) title = "Unknown";
+            if (artist == null || artist.isEmpty()) artist = "Unknown Artist";
+
+            int titleCol = isPlaying ? GuiTheme.ACCENT : (hovered ? GuiTheme.TEXT : GuiTheme.TEXT_SOFT);
+            int artistCol = hovered ? GuiTheme.TEXT_SOFT : GuiTheme.TEXT_MUTED;
+            
+            GuiRender.truncated(g, f, title, textX, drawTileY + 4, textW, titleCol);
+            GuiRender.truncated(g, f, artist, textX, drawTileY + 15, textW, artistCol);
         }
 
         int rows = Math.min(2, (maxTiles + cols - 1) / cols);
         return y + rows * QUICK_TILE_H + (rows - 1) * QUICK_TILE_GAP + 4;
     }
 
-    // â”€â”€ Section (horizontal card row) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Section (horizontal card row) ──────────────────────────────────
 
-    private int renderSection(GuiGraphicsExtractor g, Font f, int x, int y, int w,
+    private int renderSection(GuiGraphics g, Font f, int x, int y, int w,
                               String title, SectionIcon icon, Map<String, List<TrackRef>> groups,
                               String sectionId, boolean isTrackCards, int mx, int my, int sw, int sh) {
         // Section header
@@ -276,14 +308,14 @@ public final class HomeTab {
 
         y += SECTION_HEADER_H + 4;
 
-        // Card row â€” scissor clip to section width
+        // Card row — scissor clip to section width
         int rowY = y;
         int scroll = (int) getSmoothSectionScroll(sectionId);
         int totalCardsW = groups.size() * (CARD_W + CARD_GAP) - CARD_GAP;
         boolean needsScroll = totalCardsW > w;
 
         if (needsScroll) {
-            g.enableScissor(x, rowY, x + w, rowY + CARD_H + 2);
+            g.enableScissor(x, rowY - 4, x + w, rowY + CARD_H + 4);
         }
 
         int cardX = x - scroll;
@@ -320,9 +352,9 @@ public final class HomeTab {
         return rowY + CARD_H + 4;
     }
 
-    // â”€â”€ Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Card ────────────────────────────────────────────────────────────
 
-    private void renderCard(GuiGraphicsExtractor g, Font f, int x, int y, String label,
+    private void renderCard(GuiGraphics g, Font f, int x, int y, String label,
                             List<TrackRef> tracks, boolean isTrackCards,
                             SectionIcon sectionIcon,
                             int mx, int my, int sw, int sh) {
@@ -340,38 +372,44 @@ public final class HomeTab {
             }
         }
 
-        // Card background
-        int bg = hovered ? GuiTheme.CARD_HOVER : (isActive ? 0xFF1A1225 : GuiTheme.CARD_BG);
-        g.fill(x, y, x + CARD_W, y + CARD_H, bg);
-        GuiRender.bevelHover(g, x, y, CARD_W, CARD_H, false, hovered || isActive);
+        int drawY = hovered ? y - 2 : y;
 
-        // Active indicator: accent glow border + top accent line
+        // Card background (Beautiful gradient!)
+        int bgTop = hovered ? 0xFF282930 : (isActive ? 0xFF28193D : 0xFF18191E);
+        int bgBottom = hovered ? 0xFF141519 : (isActive ? 0xFF10071C : 0xFF0E0F11);
+        GuiRender.fillRoundedGradient(g, x, drawY, CARD_W, CARD_H, 6, bgTop, bgBottom);
+
+        // Hover & Active Borders/Glows
         if (isActive) {
-            GuiRender.accentGlow(g, x, y, CARD_W, CARD_H);
-            g.fill(x + 1, y, x + CARD_W - 1, y + 2, GuiTheme.ACCENT);
+            GuiRender.drawRoundedBorder(g, x, drawY, CARD_W, CARD_H, 6, GuiTheme.ACCENT);
+            GuiRender.smoothHoverGlow(g, x - 1, drawY - 1, CARD_W + 2, CARD_H + 2, 0.8f);
+        } else if (hovered) {
+            GuiRender.drawRoundedBorder(g, x, drawY, CARD_W, CARD_H, 6, 0x40FFFFFF);
+            GuiRender.smoothHoverGlow(g, x - 1, drawY - 1, CARD_W + 2, CARD_H + 2, 0.4f);
+        } else {
+            GuiRender.drawRoundedBorder(g, x, drawY, CARD_W, CARD_H, 6, 0x15FFFFFF);
         }
 
-        // Hover accent glow
-        if (hovered && !isActive) {
-            GuiRender.glowRect(g, x, y, CARD_W, CARD_H);
-        }
-
-        // Icon area â€” dark inset with subtle border
+        // Icon area — dark inset with rounded border
         int iconPad = 5;
         int iconX = x + iconPad;
-        int iconY = y + iconPad;
+        int iconY = drawY + iconPad;
         int iconBgW = CARD_W - iconPad * 2;
         int iconBgH = CARD_ICON_SIZE + 8;
-        g.fill(iconX, iconY, iconX + iconBgW, iconY + iconBgH, GuiTheme.PANEL_DARK);
-        GuiRender.bevel(g, iconX, iconY, iconBgW, iconBgH, true);
+        
+        GuiRender.fillRounded(g, iconX, iconY, iconBgW, iconBgH, 4, GuiTheme.PANEL_DARK);
+        GuiRender.drawRoundedBorder(g, iconX, iconY, iconBgW, iconBgH, 4, 0x20FFFFFF);
+
+        String artworkUrl = null;
+        if (tracks != null && !tracks.isEmpty()) {
+            artworkUrl = tracks.get(0).getArtworkUrl();
+        }
 
         int iconColor = hovered ? GuiTheme.ACCENT : (isActive ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
-        if (isActive) {
-            // Active card: show music note with glow
-            GuiRender.accentGlow(g, iconX, iconY, iconBgW, iconBgH);
-            IconRenderer.musicNote(g, f, iconX + (iconBgW - CARD_ICON_SIZE) / 2,
-                    iconY + (iconBgH - CARD_ICON_SIZE) / 2,
-                    CARD_ICON_SIZE, CARD_ICON_SIZE, GuiTheme.ACCENT);
+        if (artworkUrl != null && !artworkUrl.isEmpty()) {
+            ArtworkRenderer.renderArtwork(g, tracks.get(0), iconX + 1, iconY + 1, iconBgW - 2, iconBgH - 2);
+        } else if (isTrackCards && !tracks.isEmpty()) {
+            ArtworkRenderer.renderPlaceholder(g, tracks.get(0), iconX + 1, iconY + 1, iconBgW - 2, iconBgH - 2);
         } else {
             // Category-specific disc icon
             sectionIcon.render(g, f, iconX + (iconBgW - CARD_ICON_SIZE) / 2,
@@ -379,19 +417,32 @@ public final class HomeTab {
                     CARD_ICON_SIZE, CARD_ICON_SIZE, iconColor);
         }
 
+        // Pulse visualizer overlay when currently playing
+        if (isActive && PlayerFacade.getInstance().snapshot().isPlaying()) {
+            int eqX = iconX + iconBgW - 14;
+            int eqY = iconY + iconBgH - 10;
+            g.fill(eqX - 1, eqY - 1, eqX + 11, eqY + 7, 0xA0000000);
+            long time = System.currentTimeMillis();
+            for (int b = 0; b < 3; b++) {
+                float bounce = (float) Math.sin((time * 0.015) + b * 1.5) * 0.5f + 0.5f;
+                int barH = 1 + (int) (bounce * 4f);
+                g.fill(eqX + b * 4, eqY + 6 - barH, eqX + b * 4 + 2, eqY + 6, GuiTheme.ACCENT);
+            }
+        }
+
         // Play overlay on hover
         if (hovered && !isActive) {
             int playSize = 20;
             int playX = iconX + (iconBgW - playSize) / 2;
             int playY = iconY + (iconBgH - playSize) / 2;
-            g.fill(iconX, iconY, iconX + iconBgW, iconY + iconBgH, 0x80000000);
+            GuiRender.fillRounded(g, iconX, iconY, iconBgW, iconBgH, 4, 0x80000000);
             IconRenderer.play(g, f, playX, playY, playSize, playSize, GuiTheme.ACCENT);
         }
 
-        // Text area below icon â€” up to 2 lines title + 1 line subtitle
-        int textY = iconY + iconBgH + 4;
-        int textX = x + 4;
-        int textW = CARD_W - 8;
+        // Text area below icon — up to 2 lines title + 1 line subtitle
+        int textY = iconY + iconBgH + 6;
+        int textX = x + 6;
+        int textW = CARD_W - 12;
         int titleColor = isActive ? GuiTheme.ACCENT : (hovered ? GuiTheme.TEXT : GuiTheme.TEXT_SOFT);
 
         // Render title across up to 2 lines
@@ -439,7 +490,7 @@ public final class HomeTab {
         }
     }
 
-    // â”€â”€ Mouse â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Mouse ───────────────────────────────────────────────────────────
 
     public boolean mouseClicked(GuiFrame frame, double mx, double my, int button) {
         int x = frame.contentX();
@@ -470,6 +521,7 @@ public final class HomeTab {
                 int tileX = innerX + col * (tileW + QUICK_TILE_GAP);
                 int tileY = currentY + row * (QUICK_TILE_H + QUICK_TILE_GAP);
                 if (GuiRender.inside(mx, my, tileX, tileY, tileW, QUICK_TILE_H)) {
+                    GuiRender.playActionSound();
                     TrackRef track = quickTracks.get(i);
                     if (button == 1) {
                         PlayerFacade.getInstance().addToQueue(track);
@@ -538,18 +590,20 @@ public final class HomeTab {
         // "See all" click
         int seeAllX = x + w - SEE_ALL_W;
         if (GuiRender.inside(mx, my, seeAllX, currentY, SEE_ALL_W, SECTION_HEADER_H)) {
+            GuiRender.playClickSound(1.2f);
             if (navigateToLibrary != null) navigateToLibrary.run();
             return true;
         }
 
         currentY += SECTION_HEADER_H + 4;
 
-        // Card clicks â€” use smooth scroll position
+        // Card clicks — use smooth scroll position
         int scroll = (int) getSmoothSectionScroll(sectionId);
         int cardX = x - scroll;
         for (Map.Entry<String, List<TrackRef>> entry : groups.entrySet()) {
             if (cardX + CARD_W > x && cardX < x + w) {
                 if (GuiRender.inside(mx, my, cardX, currentY, CARD_W, CARD_H)) {
+                    GuiRender.playActionSound();
                     List<TrackRef> tracks = entry.getValue();
                     if (!tracks.isEmpty()) {
                         if (button == 1) {
@@ -567,7 +621,7 @@ public final class HomeTab {
         return null;
     }
 
-    // â”€â”€ Scroll â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Scroll ──────────────────────────────────────────────────────────
 
     public boolean mouseScrolled(GuiFrame frame, double mx, double my, double amount) {
         int x = frame.contentX();
@@ -593,7 +647,7 @@ public final class HomeTab {
 
         if (scrollSections(lib, innerX, innerW, currentY, mx, my, amount)) return true;
 
-        // Vertical scroll â€” set target, smooth lerp handles the rest
+        // Vertical scroll — set target, smooth lerp handles the rest
         targetVerticalScroll -= amount * 20;
         if (targetVerticalScroll < 0) targetVerticalScroll = 0;
         if (targetVerticalScroll > maxVerticalScroll) targetVerticalScroll = maxVerticalScroll;
@@ -666,11 +720,11 @@ public final class HomeTab {
 
         setTargetSectionScroll(sectionId, newScroll);
 
-        // If we were already at the boundary, don't consume â€” let vertical scroll handle it
+        // If we were already at the boundary, don't consume — let vertical scroll handle it
         return !wasAtBound;
     }
 
-    // â”€â”€ Data Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Data Helpers ───────────────────────────────────────────────────
 
     private List<TrackRef> getQuickPlayTracks(LibraryManager lib) {
         List<TrackRef> result = new ArrayList<>();
@@ -707,10 +761,10 @@ public final class HomeTab {
         return map;
     }
 
-    // â”€â”€ Section Icon Interface â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Section Icon Interface ───────────────────────────────────────────
 
     @FunctionalInterface
     private interface SectionIcon {
-        void render(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c);
+        void render(GuiGraphics g, Font f, int x, int y, int w, int h, int c);
     }
 }

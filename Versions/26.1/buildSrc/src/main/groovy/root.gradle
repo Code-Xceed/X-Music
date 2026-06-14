@@ -17,10 +17,12 @@ def writePreprocessorDefinitions() {
 }
 writePreprocessorDefinitions()
 
-// Make jar finalized by remapJar
+// Make JVMDowngrader downgrade the remapped jar
 gradle.projectsEvaluated {
     rootProject.subprojects.each {
         if (it.tasks.findByName('remapJar') == null) return
+        it.tasks.downgradeJar.inputFile = it.tasks.remapJar.archiveFile
         it.tasks.jar.finalizedBy(it.tasks.remapJar)
+        it.tasks.remapJar.finalizedBy(it.tasks.shadeDowngradedApi)
     }
 }

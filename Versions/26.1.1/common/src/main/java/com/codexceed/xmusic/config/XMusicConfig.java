@@ -64,7 +64,7 @@ public class XMusicConfig {
     /** Directory to scan for local music files. Empty = .minecraft/xmusic/local. */
     public String localMusicDirectory = "";
 
-    // â”€â”€ Spotify (PKCE OAuth â€” tokens auto-managed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Spotify (PKCE OAuth — tokens auto-managed) ──────────────────────
     public String spotifyAccessToken = "";
     public String spotifyRefreshToken = "";
     public long spotifyTokenExpiresAt = 0L;
@@ -72,12 +72,12 @@ public class XMusicConfig {
     /** If true, the setup prompt popup will never show again (user clicked Skip). */
     public boolean setupPromptSkipped = false;
 
-    // â”€â”€ HUD Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── HUD Settings ────────────────────────────────────────────────────
     /** Whether the mini-player HUD overlay is visible in-game. */
     public boolean hudEnabled = true;
 
     /** HUD position preset: TOP_CENTER, TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT. Used when hudX/hudY are -1. */
-    public String hudPosition = "TOP_CENTER";
+    public String hudPosition = "BOTTOM_RIGHT";
 
     /** Custom HUD X position in pixels. -1 = use preset position. */
     public int hudX = -1;
@@ -85,18 +85,21 @@ public class XMusicConfig {
     /** Custom HUD Y position in pixels. -1 = use preset position. */
     public int hudY = -1;
 
-    /** Auto-hide HUD after N seconds of inactivity (0 = always visible). */
-    public int hudAutoHideSeconds = 3;
-
     /** Show "Now Playing" toast notification when track changes. */
     public boolean showNowPlayingToast = true;
 
-    // â”€â”€ Auto-Resume â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Auto-Resume ──────────────────────────────────────────────────────
     /** Whether to auto-resume last playing track on game restart. */
     public boolean autoResume = true;
 
+    /** Whether to allow music playback to continue when in the main menu screen. */
+    public boolean playInMainMenu = false;
+
     /** Last playing track ID for auto-resume. */
     public String resumeTrackId = "";
+
+    /** Last playing track artwork URL for auto-resume. */
+    public String resumeTrackArtworkUrl = "";
 
     /** Last playing track source ID for auto-resume. */
     public String resumeSourceId = "";
@@ -125,24 +128,19 @@ public class XMusicConfig {
     /** Whether the track was playing (vs paused) when the game was closed. */
     public boolean resumeWasPlaying = false;
 
-    // â”€â”€ Locale â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Locale ──────────────────────────────────────────────────────────
     /** Language code for i18n (e.g. "en", "es", "fr", "de", "ja", "zh"). */
     public String locale = "en";
 
-    // â”€â”€ Playback Context â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    /**
-     * Where music is allowed to play.
-     * EVERYWHERE = in-world + menus/title screen.
-     * IN_WORLD = only when the player is in a singleplayer or multiplayer world.
-     * MAIN_MENU = only on the title screen / main menu.
-     */
-    public String playbackContext = "EVERYWHERE";
-
-    // â”€â”€ Animation Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Animation Settings ──────────────────────────────────────────────
     /** Whether GUI intro/outro and hover animations are enabled. */
     public boolean animationsEnabled = true;
 
-    /** Animation speed multiplier: 0.5 = slow, 1.0 = normal, 2.0 = fast. */
-    public float animationSpeed = 3.0f;
+    /** Animation speed multiplier: default is 1.0f (which runs at 3x original speed). */
+    public float animationSpeed = 1.0f;
+
+    // ── Search History ──────────────────────────────────────────────────
+    /** Saved search history, limit to 10. */
+    public java.util.List<String> searchHistory = new java.util.ArrayList<>();
 
 }

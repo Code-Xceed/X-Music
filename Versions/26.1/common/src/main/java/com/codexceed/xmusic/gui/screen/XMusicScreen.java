@@ -16,11 +16,8 @@ import com.codexceed.xmusic.gui.util.AnimationHelper;
 import com.codexceed.xmusic.service.ServiceManager;
 import com.codexceed.xmusic.service.youtube.YouTubeToolManager;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.CharacterEvent;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
@@ -40,18 +37,24 @@ public final class XMusicScreen extends Screen {
     private final ContentHost content = new ContentHost();
     private final PlayerBar playerBar = new PlayerBar();
 
-    // â”€â”€ Route persistence (static â€” survives screen close/reopen) â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Route persistence (static — survives screen close/reopen) ────────
     private static GuiRoute lastRoute = null; // null = first launch
     private GuiRoute activeRoute;
 
-    // â”€â”€ Animation state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    public GuiRoute getActiveRoute() {
+        return activeRoute;
+    }
+
+    // ── Animation state ──────────────────────────────────────────────────
     private long animStartMs = 0;
     private boolean closing = false;
+    private final Screen parentScreen;
 
-    public XMusicScreen() {
+    public XMusicScreen(Screen parentScreen) {
         super(Component.literal(XMusic.MOD_NAME));
+        this.parentScreen = parentScreen;
 
-        // First launch â†’ Home; subsequent â†’ restore last route
+        // First launch → Home; subsequent → restore last route
         if (lastRoute == null) {
             activeRoute = GuiRoute.HOME;
         } else {
@@ -62,20 +65,29 @@ public final class XMusicScreen extends Screen {
         animStartMs = System.currentTimeMillis();
     }
 
-    // â”€â”€ Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-    @Override
-    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        // No dark overlay â€” game world stays fully visible
+    public XMusicScreen() {
+        this(null);
     }
 
-    // â”€â”€ Animation helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Background ───────────────────────────────────────────────────────
+
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        // No dark overlay — game world stays fully visible
+    }
+
+    @Override
+    protected void renderBlurredBackground() {
+        // Intentionally empty
+    }
+
+    // ── Animation helpers ────────────────────────────────────────────────
 
     /** Get effective intro duration in ms, respecting animation speed config. */
     private long getIntroDuration() {
         XMusicConfig cfg = ConfigManager.get();
         if (!cfg.animationsEnabled) return 0;
-        float speed = Math.max(0.1f, cfg.animationSpeed);
+        float speed = Math.max(0.1f, cfg.animationSpeed * 3.0f);
         return (long) (GuiTheme.INTRO_DURATION_MS / speed);
     }
 
@@ -83,21 +95,31 @@ public final class XMusicScreen extends Screen {
     private long getOutroDuration() {
         XMusicConfig cfg = ConfigManager.get();
         if (!cfg.animationsEnabled) return 0;
-        float speed = Math.max(0.1f, cfg.animationSpeed);
+        float speed = Math.max(0.1f, cfg.animationSpeed * 3.0f);
         return (long) (GuiTheme.OUTRO_DURATION_MS / speed);
     }
 
-    // â”€â”€ Main Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Main Render ──────────────────────────────────────────────────────
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        // Render the parent screen (e.g. main menu, options) behind us so the background remains visible
+        if (parentScreen != null) {
+            try {
+                parentScreen.render(graphics, -999, -999, partialTick);
+            } catch (Throwable t) {
+                XMusic.LOGGER.error("Failed to render parent screen", t);
+            }
+            com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+        }
+
         // Update hover tracker delta
         HoverTracker.updateFrameDelta();
 
         // Save active route for next open
         lastRoute = activeRoute;
 
-        // â”€â”€ 1. Calculate animation progress (purely linear) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── 1. Calculate animation progress (purely linear) ──────────────
         long elapsed = System.currentTimeMillis() - animStartMs;
         float progress;
 
@@ -105,13 +127,13 @@ public final class XMusicScreen extends Screen {
             long duration = getOutroDuration();
             if (duration <= 0) {
                 HoverTracker.reset();
-                minecraft.setScreen(null);
+                minecraft.setScreen(parentScreen);
                 return;
             }
             progress = 1f - Math.min(1f, (float) elapsed / duration);
             if (elapsed >= duration) {
                 HoverTracker.reset();
-                minecraft.setScreen(null);
+                minecraft.setScreen(parentScreen);
                 return;
             }
         } else {
@@ -123,110 +145,153 @@ public final class XMusicScreen extends Screen {
             }
         }
 
-        // â”€â”€ 2. No background overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── 2. No background overlay ─────────────────────────────────────
 
-        GuiFrame frame = GuiFrame.calculate(width, height);
+        boolean scaleActive = isScaleActive();
+        GuiFrame frame = getEffectiveFrame();
 
         int fx = frame.x();
         int fy = frame.y();
         int fw = frame.width();
         int fh = frame.height();
 
-        // â”€â”€ 3. Single unified transform: linear scale from center â”€â”€â”€â”€â”€â”€â”€â”€
-        float scale = 0.92f + 0.08f * progress;   // 92% â†’ 100% (linear)
-        float alpha = progress;                     // 0 â†’ 1 (linear)
+        // ── 3. Single unified transform: premium spring/eased scale from center ────────
+        float easedProgress = closing ? AnimationHelper.easeIn(progress) : AnimationHelper.easeOutBack(progress);
+        float scale = 0.92f + 0.08f * easedProgress;
+        float alpha = AnimationHelper.clamp01(progress);
 
         float centerX = fx + fw / 2f;
         float centerY = fy + fh / 2f;
 
-        graphics.pose().pushMatrix();
-        graphics.pose().translate(centerX, centerY);
-        graphics.pose().scale(scale, scale);
-        graphics.pose().translate(-centerX, -centerY);
+        graphics.pose().pushPose();
+        if (scaleActive) {
+            graphics.pose().scale(2.0f, 2.0f, 1.0f);
+        }
+        graphics.pose().translate(0, 0, 300f);
+        graphics.pose().translate(centerX, centerY, 0);
+        graphics.pose().scale(scale, scale, 1f);
+        graphics.pose().translate(-centerX, -centerY, 0);
 
-        // â”€â”€ 4. Frame background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── 4. Frame background & Border ─────────────────────────────────
         int frameTopColor = AnimationHelper.withAlpha(GuiTheme.FRAME_TOP, alpha);
         int frameBotColor = AnimationHelper.withAlpha(GuiTheme.FRAME_BOTTOM, alpha);
         GuiRender.gradientV(graphics, fx, fy, fw, fh, frameTopColor, frameBotColor);
-        if (progress > 0.3f) {
-            GuiRender.mcFrameBorder(graphics, fx, fy, fw, fh);
+        GuiRender.mcFrameBorder(graphics, fx, fy, fw, fh, alpha);
+
+        // ── 5. Render ALL children together ──────────────────────────────
+        int drawMouseX = mouseX;
+        int drawMouseY = mouseY;
+        if (scaleActive) {
+            drawMouseX /= 2;
+            drawMouseY /= 2;
         }
 
-        // â”€â”€ 5. Render ALL children together â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        topBar.render(graphics, font, frame, mouseX, mouseY);
-        sidebar.render(graphics, font, frame, activeRoute, mouseX, mouseY);
-        content.render(graphics, font, frame, activeRoute, mouseX, mouseY);
-        playerBar.render(graphics, font, frame, mouseX, mouseY);
+        topBar.render(graphics, font, frame, drawMouseX, drawMouseY);
+        sidebar.render(graphics, font, frame, activeRoute, drawMouseX, drawMouseY);
+        content.render(graphics, font, frame, activeRoute, drawMouseX, drawMouseY);
+        playerBar.render(graphics, font, frame, drawMouseX, drawMouseY);
 
-        graphics.pose().popMatrix();
+        graphics.pose().popPose();
 
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
-    // â”€â”€ Input Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    private boolean isScaleActive() {
+        return minecraft != null && ((int) minecraft.getWindow().getGuiScale()) == 1;
+    }
+
+    private GuiFrame getEffectiveFrame() {
+        if (isScaleActive()) {
+            return GuiFrame.calculate(width / 2, height / 2);
+        }
+        return GuiFrame.calculate(width, height);
+    }
+
+    // ── Input Events ─────────────────────────────────────────────────────
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean someBool) {
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (closing) return false;
-        double mouseX = event.x();
-        double mouseY = event.y();
-        int button = event.button();
-        GuiFrame frame = GuiFrame.calculate(width, height);
+        GuiRender.soundPlayedThisFrame = false;
+        if (isScaleActive()) {
+            mouseX /= 2.0;
+            mouseY /= 2.0;
+        }
+        GuiFrame frame = getEffectiveFrame();
 
         if (topBar.closeClicked(frame, mouseX, mouseY)) {
+            GuiRender.playClickSound(0.85f);
             closeAnimated();
             return true;
         }
-
+ 
         GuiRoute clickedRoute = sidebar.clicked(frame, mouseX, mouseY);
         if (clickedRoute != null) {
+            GuiRender.playTabSound();
             activeRoute = clickedRoute;
             lastRoute = activeRoute;
             return true;
         }
 
         if (playerBar.mouseClicked(frame, mouseX, mouseY)) {
+            if (!GuiRender.soundPlayedThisFrame) {
+                GuiRender.playClickSound(1.0f);
+            }
             return true;
         }
 
         if (content.mouseClicked(frame, activeRoute, mouseX, mouseY, button)) {
+            if (!GuiRender.soundPlayedThisFrame) {
+                GuiRender.playClickSound(1.0f);
+            }
             return true;
         }
 
-        return super.mouseClicked(event, someBool);
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
-        double mouseX = event.x();
-        double mouseY = event.y();
-        GuiFrame frame = GuiFrame.calculate(width, height);
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (isScaleActive()) {
+            mouseX /= 2.0;
+            mouseY /= 2.0;
+        }
+        GuiFrame frame = getEffectiveFrame();
         if (playerBar.mouseReleased(frame, mouseX, mouseY)) {
             return true;
         }
         if (content.mouseReleased(frame, activeRoute, mouseX, mouseY)) {
             return true;
         }
-        return super.mouseReleased(event);
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
-        double mouseX = event.x();
-        double mouseY = event.y();
-        GuiFrame frame = GuiFrame.calculate(width, height);
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (isScaleActive()) {
+            mouseX /= 2.0;
+            mouseY /= 2.0;
+        }
+        GuiFrame frame = getEffectiveFrame();
         if (playerBar.mouseDragged(frame, mouseX, mouseY)) {
             return true;
         }
         if (content.mouseDragged(frame, activeRoute, mouseX, mouseY)) {
             return true;
         }
-        return super.mouseDragged(event, dragX, dragY);
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double amountX, double amountY) {
-        GuiFrame frame = GuiFrame.calculate(width, height);
+        if (isScaleActive()) {
+            mouseX /= 2.0;
+            mouseY /= 2.0;
+        }
+        GuiFrame frame = getEffectiveFrame();
+        if (sidebar.mouseScrolled(frame, mouseX, mouseY, amountY)) {
+            return true;
+        }
         if (content.mouseScrolled(frame, activeRoute, mouseX, mouseY, amountY)) {
             return true;
         }
@@ -234,10 +299,7 @@ public final class XMusicScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(KeyEvent event) {
-        int keyCode = event.key();
-        int scanCode = event.scancode();
-        int modifiers = event.modifiers();
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (playerBar.keyPressed(keyCode, scanCode, modifiers)) {
             return true;
         }
@@ -248,19 +310,18 @@ public final class XMusicScreen extends Screen {
         if (content.keyPressed(activeRoute, keyCode, scanCode, modifiers)) {
             return true;
         }
-        return super.keyPressed(event);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
-    public boolean charTyped(CharacterEvent event) {
-        char codePoint = (char) event.codepoint();
-        if (playerBar.charTyped(codePoint, 0)) {
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (playerBar.charTyped(codePoint, modifiers)) {
             return true;
         }
-        if (content.charTyped(activeRoute, codePoint, 0)) {
+        if (content.charTyped(activeRoute, codePoint, modifiers)) {
             return true;
         }
-        return super.charTyped(event);
+        return super.charTyped(codePoint, modifiers);
     }
 
     @Override
@@ -269,7 +330,7 @@ public final class XMusicScreen extends Screen {
     }
 
     /** Trigger animated close instead of instant close. */
-    private void closeAnimated() {
+    public void closeAnimated() {
         if (!closing) {
             closing = true;
             lastRoute = activeRoute;

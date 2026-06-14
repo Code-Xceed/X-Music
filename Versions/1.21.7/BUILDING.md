@@ -1,8 +1,8 @@
-# Building And Verification — MC 1.21.5 (Fabric)
+# Building And Verification — MC 1.21.4 (Fabric)
 
 ## Location
 
-This is a self-contained project under `Versions/1.21.5/`. Run all Gradle commands from this directory.
+This is a self-contained project under `Versions/1.21.4/`. Run all Gradle commands from this directory.
 
 ## Purpose
 

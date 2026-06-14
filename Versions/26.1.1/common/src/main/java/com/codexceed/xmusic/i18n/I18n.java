@@ -30,7 +30,7 @@ public final class I18n {
     /** Active translations for the current locale. */
     private static Map<String, String> translations = new HashMap<>();
 
-    /** English fallback â€” always populated from defaults. */
+    /** English fallback — always populated from defaults. */
     private static final Map<String, String> fallback = new HashMap<>();
 
     private static Path langDir;

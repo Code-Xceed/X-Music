@@ -63,7 +63,7 @@ public final class ServiceManager {
         sourceRegistry.register(new YouTubeMusicSourceAdapter(youtubeService));
         sourceRegistry.register(new LocalMusicSourceAdapter(localMusicService));
 
-        // Spotify (Client Credentials â€” free, no user login, no Premium)
+        // Spotify (Client Credentials — free, no user login, no Premium)
         spotifyAuth = new SpotifyAuthService();
         spotifySearch = new SpotifySearchService(spotifyAuth);
         spotifySource = new SpotifyMusicSourceAdapter(spotifyAuth, spotifySearch);
@@ -127,6 +127,6 @@ public final class ServiceManager {
         return spotifySource;
     }
 
-    /** No-op â€” Client Credentials tokens are auto-managed, no persistence needed. */
+    /** No-op — Client Credentials tokens are auto-managed, no persistence needed. */
     public static void saveSpotifyTokens() {}
 }

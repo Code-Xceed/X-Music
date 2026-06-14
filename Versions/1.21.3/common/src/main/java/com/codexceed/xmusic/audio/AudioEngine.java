@@ -582,4 +582,12 @@ public class AudioEngine {
     private void notifyVolumeChanged(float v) { for (AudioEventListener l : listeners) l.onVolumeChanged(v); }
     private void notifyBuffering(AudioTrack t) { for (AudioEventListener l : listeners) l.onBuffering(t); }
     private void notifyError(String msg, Exception e) { for (AudioEventListener l : listeners) l.onError(msg, e); }
+
+    public void getWaveform(float[] dest) {
+        output.getWaveform(dest);
+    }
+
+    public float getCurrentAmplitude() {
+        return output.getCurrentAmplitude();
+    }
 }

@@ -10,7 +10,7 @@ import com.codexceed.xmusic.player.PlayerState;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 
 /**
  * Modern "Now Playing" toast notification.
@@ -34,7 +34,7 @@ public class NowPlayingToast {
     private boolean active = false;
     private String lastPlayingTrackId = "";
 
-    public void render(GuiGraphicsExtractor g, float partialTick) {
+    public void render(GuiGraphics g, float partialTick) {
         XMusicConfig cfg = ConfigManager.get();
         if (!cfg.showNowPlayingToast) return;
 
@@ -91,7 +91,7 @@ public class NowPlayingToast {
         int x = (screenW - effectiveW) / 2;
         int y = MARGIN + (int) slideY;
 
-        // â”€â”€ Glow layers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Glow layers ───────────────────────────────────────────────────
         // Outer soft glow (3px)
         int glowAlpha3 = (int) (0x10 * alpha);
         int glowColor3 = (glowAlpha3 << 24) | (GuiTheme.ACCENT & 0x00FFFFFF);
@@ -108,7 +108,7 @@ public class NowPlayingToast {
         g.fill(x - 1, y, x, y + TOAST_H, glowColor1);
         g.fill(x + effectiveW, y, x + effectiveW + 1, y + TOAST_H, glowColor1);
 
-        // â”€â”€ Main panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Main panel ─────────────────────────────────────────────────────
         int bgAlpha = (int) (0xF0 * alpha);
         int bgColor = (bgAlpha << 24) | (GuiTheme.PANEL & 0x00FFFFFF);
         g.fill(x, y, x + effectiveW, y + TOAST_H, bgColor);
@@ -126,11 +126,11 @@ public class NowPlayingToast {
         g.fill(x + effectiveW - 1, y + 2, x + effectiveW, y + TOAST_H, shadowColor);
         g.fill(x, y + TOAST_H - 1, x + effectiveW, y + TOAST_H, shadowColor);
 
-        // â”€â”€ Content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Content ────────────────────────────────────────────────────────
         // "NOW PLAYING" label (small caps style)
         int accentTextAlpha = (int) (0xFF * alpha);
         int accentTextColor = (accentTextAlpha << 24) | (GuiTheme.ACCENT & 0x00FFFFFF);
-        g.text(font, "\u266A NOW PLAYING", x + PAD, y + 5, accentTextColor, true);
+        g.drawString(font, "\u266A NOW PLAYING", x + PAD, y + 5, accentTextColor, true);
 
         // Track info line
         String info = toastTitle + " \u2014 " + toastArtist;

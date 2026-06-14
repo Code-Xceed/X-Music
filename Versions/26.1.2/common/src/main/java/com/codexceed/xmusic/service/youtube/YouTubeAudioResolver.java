@@ -40,7 +40,7 @@ public final class YouTubeAudioResolver {
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
 
-    /** Session cache: videoId â†’ resolved audio URL (URLs expire after ~6 hours on YouTube's side). */
+    /** Session cache: videoId → resolved audio URL (URLs expire after ~6 hours on YouTube's side). */
     private final Map<String, CachedUrl> urlCache = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<ResolvedStream>> inFlight = new ConcurrentHashMap<>();
     private final Map<String, InstanceHealth> instanceHealth = new ConcurrentHashMap<>();
@@ -156,9 +156,9 @@ public final class YouTubeAudioResolver {
         urlCache.clear();
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
     //  Internal
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
 
     private ResolvedStream tryResolve(String instanceBaseUrl, String videoId) throws Exception {
         String endpoint = instanceBaseUrl + "/streams/" + videoId;
@@ -635,9 +635,9 @@ public final class YouTubeAudioResolver {
         return url;
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
     //  Data classes
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
 
     /**
      * Resolved audio stream information.

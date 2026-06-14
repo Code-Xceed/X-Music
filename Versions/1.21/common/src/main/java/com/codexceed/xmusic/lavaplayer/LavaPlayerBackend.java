@@ -47,6 +47,10 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
         this.facade = facade;
     }
 
+    public boolean isResolving() {
+        return resolving;
+    }
+
     // â”€â”€â”€ PlaybackBackend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Override
@@ -85,6 +89,14 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
 
                 // Update display track with resolved metadata (title/artist may differ from search)
                 var info = lavaTrack.getInfo();
+                String resolvedArtwork = (info.artworkUrl != null && !info.artworkUrl.isEmpty()) ? info.artworkUrl : track.getArtworkUrl();
+                if (resolvedArtwork == null || resolvedArtwork.isEmpty()) {
+                    String srcId = track.getSourceId();
+                    if ("youtube".equals(srcId) || "spotify".equals(srcId)) {
+                        resolvedArtwork = "https://img.youtube.com/vi/" + lavaTrack.getIdentifier() + "/mqdefault.jpg";
+                    }
+                }
+
                 currentTrackRef = new TrackRef.Builder()
                         .id(lavaTrack.getIdentifier())
                         .sourceId(track.getSourceId())
@@ -92,7 +104,7 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
                         .artist(info.author != null ? info.author : track.getArtist())
                         .album(track.getAlbum())
                         .durationMs(info.length > 0 ? info.length : track.getDurationMs())
-                        .artworkUrl(info.artworkUrl != null ? info.artworkUrl : track.getArtworkUrl())
+                        .artworkUrl(resolvedArtwork != null ? resolvedArtwork : "")
                         .playbackType(track.getPlaybackType())
                         .remoteUri(lavaTrack.getIdentifier())
                         .externalUrl(info.uri != null ? info.uri : track.getExternalUrl())
@@ -119,6 +131,7 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
                 resolving = false;
                 currentTrackRef = null;
                 XMusic.LOGGER.warn("[LP-{}] No matches for: {}", gen, uri);
+                com.codexceed.xmusic.player.PlayerFacade.getInstance().setLastError("No matching track found");
             }
 
             @Override
@@ -126,6 +139,7 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
                 if (isStale(gen)) return;
                 resolving = false;
                 XMusic.LOGGER.error("[LP-{}] Load failed: {}", gen, exception.getMessage());
+                com.codexceed.xmusic.player.PlayerFacade.getInstance().setLastError(exception.getMessage());
             }
         });
 
@@ -221,10 +235,16 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
             int capturedGen = generation.get();
             XMusic.LOGGER.info("[LP] Track ended ({}): {}", endReason,
                     track != null ? track.getInfo().title : "null");
-            // Advance to next track on a separate thread to avoid blocking LavaPlayer's event loop
+            // Advance/loop on a separate thread to avoid blocking LavaPlayer's event loop
             Thread t = new Thread(() -> {
                 if (generation.get() == capturedGen && facade != null) {
-                    facade.next();
+                    if (facade.shouldLoopCurrentTrack()) {
+                        facade.replayCurrentTrackFromBackend();
+                    } else if (facade.isAutoplay() && !"home".equals(facade.getPlaybackContext())) {
+                        facade.next();
+                    } else {
+                        facade.stop();
+                    }
                 }
             }, "XMusic-LavaAdvance");
             t.setDaemon(true);
@@ -264,5 +284,13 @@ public final class LavaPlayerBackend extends AudioEventAdapter implements Playba
 
     private boolean isStale(int gen) {
         return generation.get() != gen;
+    }
+
+    public void getWaveform(float[] dest) {
+        engine.getWaveform(dest);
+    }
+
+    public float getCurrentAmplitude() {
+        return engine.getCurrentAmplitude();
     }
 }

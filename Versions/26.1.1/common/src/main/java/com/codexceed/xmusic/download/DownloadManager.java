@@ -82,7 +82,7 @@ public final class DownloadManager {
         }
     }
 
-    // â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Public API ────────────────────────────────────────────────────────
 
     /** Start downloading a track. If already downloading or done, no-op. */
     public void download(TrackRef track) {
@@ -250,7 +250,7 @@ public final class DownloadManager {
         }
     }
 
-    // â”€â”€ Internal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Internal ──────────────────────────────────────────────────────────
 
     private void doDownload(DownloadEntry entry) {
         TrackRef track = entry.track;
@@ -451,7 +451,7 @@ public final class DownloadManager {
         return name.replaceAll("[\\/:*?\"<>|]", "_").trim();
     }
 
-    // â”€â”€ Persistence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Persistence ────────────────────────────────────────────────────────
 
     /** Save completed downloads manifest to disk. */
     private void saveManifest() {

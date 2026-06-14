@@ -61,9 +61,9 @@ public class AudioPlayer implements AudioEventListener {
                 (int)(savedVolume * 100), playbackMode.getDisplayName());
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
     //  Queue Management
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
 
     /**
      * Set the queue and start playing from the first track.
@@ -141,9 +141,9 @@ public class AudioPlayer implements AudioEventListener {
         engine.stop();
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
     //  Playback Control
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
 
     public void play() {
         if (engine.isPaused()) {
@@ -236,14 +236,13 @@ public class AudioPlayer implements AudioEventListener {
         engine.seek(positionMs);
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
     //  Volume & Mode
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
 
     public void setVolume(float volume) {
         engine.setVolume(volume);
         ConfigManager.get().volume = volume;
-        ConfigManager.save();
     }
 
     public float getVolume() {
@@ -270,9 +269,9 @@ public class AudioPlayer implements AudioEventListener {
         return playbackMode;
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
     //  State Queries
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
 
     public AudioTrack getCurrentTrack() { return engine.getCurrentTrack(); }
     public boolean isPlaying() { return engine.isPlaying(); }
@@ -303,9 +302,9 @@ public class AudioPlayer implements AudioEventListener {
         this.suppressAutoAdvance = suppress;
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    //  Tick â€” called every game tick
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
+    //  Tick — called every game tick
+    // ─────────────────────────────────────────────
 
     /**
      * Must be called every game tick from the main thread.
@@ -314,14 +313,14 @@ public class AudioPlayer implements AudioEventListener {
         engine.tick();
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    //  AudioEventListener â€” engine callbacks
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
+    //  AudioEventListener — engine callbacks
+    // ─────────────────────────────────────────────
 
     @Override
     public void onTrackEnded(AudioTrack track) {
         // If an external backend (e.g. YouTubeNativeBackend) is handling auto-advance,
-        // don't try to advance through our own queue â€” just forward the event.
+        // don't try to advance through our own queue — just forward the event.
         if (suppressAutoAdvance) {
             for (AudioEventListener l : listeners) l.onTrackEnded(track);
             return;
@@ -368,9 +367,9 @@ public class AudioPlayer implements AudioEventListener {
         for (AudioEventListener l : listeners) l.onError(message, exception);
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
     //  Listener management
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
 
     public void addListener(AudioEventListener listener) {
         listeners.addIfAbsent(listener);
@@ -380,9 +379,9 @@ public class AudioPlayer implements AudioEventListener {
         listeners.remove(listener);
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
     //  Internal
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
 
     private void playCurrentTrack() {
         AudioTrack track;
@@ -415,5 +414,13 @@ public class AudioPlayer implements AudioEventListener {
      */
     public void shutdown() {
         engine.shutdown();
+    }
+
+    public void getWaveform(float[] dest) {
+        engine.getWaveform(dest);
+    }
+
+    public float getCurrentAmplitude() {
+        return engine.getCurrentAmplitude();
     }
 }

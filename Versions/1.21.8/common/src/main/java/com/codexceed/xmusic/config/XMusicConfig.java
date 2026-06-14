@@ -77,16 +77,13 @@ public class XMusicConfig {
     public boolean hudEnabled = true;
 
     /** HUD position preset: TOP_CENTER, TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT. Used when hudX/hudY are -1. */
-    public String hudPosition = "TOP_CENTER";
+    public String hudPosition = "BOTTOM_RIGHT";
 
     /** Custom HUD X position in pixels. -1 = use preset position. */
     public int hudX = -1;
 
     /** Custom HUD Y position in pixels. -1 = use preset position. */
     public int hudY = -1;
-
-    /** Auto-hide HUD after N seconds of inactivity (0 = always visible). */
-    public int hudAutoHideSeconds = 3;
 
     /** Show "Now Playing" toast notification when track changes. */
     public boolean showNowPlayingToast = true;
@@ -95,8 +92,14 @@ public class XMusicConfig {
     /** Whether to auto-resume last playing track on game restart. */
     public boolean autoResume = true;
 
+    /** Whether to allow music playback to continue when in the main menu screen. */
+    public boolean playInMainMenu = false;
+
     /** Last playing track ID for auto-resume. */
     public String resumeTrackId = "";
+
+    /** Last playing track artwork URL for auto-resume. */
+    public String resumeTrackArtworkUrl = "";
 
     /** Last playing track source ID for auto-resume. */
     public String resumeSourceId = "";
@@ -129,20 +132,15 @@ public class XMusicConfig {
     /** Language code for i18n (e.g. "en", "es", "fr", "de", "ja", "zh"). */
     public String locale = "en";
 
-    // ── Playback Context ────────────────────────────────────────────────
-    /**
-     * Where music is allowed to play.
-     * EVERYWHERE = in-world + menus/title screen.
-     * IN_WORLD = only when the player is in a singleplayer or multiplayer world.
-     * MAIN_MENU = only on the title screen / main menu.
-     */
-    public String playbackContext = "EVERYWHERE";
-
     // ── Animation Settings ──────────────────────────────────────────────
     /** Whether GUI intro/outro and hover animations are enabled. */
     public boolean animationsEnabled = true;
 
-    /** Animation speed multiplier: 0.5 = slow, 1.0 = normal, 2.0 = fast. */
-    public float animationSpeed = 3.0f;
+    /** Animation speed multiplier: default is 1.0f (which runs at 3x original speed). */
+    public float animationSpeed = 1.0f;
+
+    // ── Search History ──────────────────────────────────────────────────
+    /** Saved search history, limit to 10. */
+    public java.util.List<String> searchHistory = new java.util.ArrayList<>();
 
 }

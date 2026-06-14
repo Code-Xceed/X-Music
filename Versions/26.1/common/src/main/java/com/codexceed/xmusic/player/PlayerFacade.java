@@ -23,7 +23,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * <h3>Design: Source-Agnostic Active List</h3>
  * All navigation operates on the generic {@code queue} + {@code currentIndex}.
- * The queue can be populated from <em>any</em> source â€” search results,
+ * The queue can be populated from <em>any</em> source — search results,
  * library, playlists, mixes. Controls never know or care about the source.
  *
  * <h3>Two Navigation Axes</h3>
@@ -52,20 +52,35 @@ public final class PlayerFacade {
 
     private PlaybackBackend activeBackend;
     private int currentIndex = -1;
+    private String playbackContext = "none";
+    private String lastError = null;
 
-    // â”€â”€ History (for < > controls) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    public void setPlaybackContext(String context) {
+        this.playbackContext = context;
+        XMusic.LOGGER.info("[Player] Playback context set to: " + context);
+    }
+
+    public String getPlaybackContext() {
+        return playbackContext;
+    }
+
+    public String getLastError() { return lastError; }
+    public void setLastError(String error) { this.lastError = error; }
+    public void clearLastError() { this.lastError = null; }
+
+    // ── History (for < > controls) ─────────────────────────────────────────
     /** Chronological list of all played tracks (most recent last). */
     private final List<TrackRef> playHistory = new ArrayList<>();
     /** Current position in the history list. -1 = at the head (latest). */
     private int historyIndex = -1;
     private static final int MAX_HISTORY = 200;
 
-    // â”€â”€ Loop (per-track repeat) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    /** 0=off, 3=repeat 3Ã—, 5=repeat 5Ã—, -1=infinite */
+    // ── Loop (per-track repeat) ────────────────────────────────────────────
+    /** 0=off, 3=repeat 3×, 5=repeat 5×, -1=infinite */
     private int loopCount = 0;
     /** How many times the current track has been played in this loop cycle */
     private int currentLoopIteration = 0;
-    /** Cycle order: off â†’ 3 â†’ 5 â†’ âˆž â†’ off */
+    /** Cycle order: off → 3 → 5 → ∞ → off */
     private static final int[] LOOP_CYCLE = {0, 3, 5, -1};
 
     private PlayerFacade() {
@@ -74,7 +89,7 @@ public final class PlayerFacade {
             lavaBackend.setFacade(this);
             backends.add(lavaBackend);
         } else {
-            XMusic.LOGGER.warn("[Facade] LavaPlayerBackend not available â€” ServiceManager may not be initialized yet");
+            XMusic.LOGGER.warn("[Facade] LavaPlayerBackend not available — ServiceManager may not be initialized yet");
         }
         backends.add(nativeBackend);
         activeBackend = nativeBackend;
@@ -92,10 +107,11 @@ public final class PlayerFacade {
         backends.add(backend);
     }
 
-    // â”€â”€â”€ Core Play â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Core Play ─────────────────────────────────────────────────────────
 
     public boolean play(TrackRef track) {
         if (track == null) return false;
+        clearLastError();
 
         PlaybackBackend backend = resolveBackend(track);
         if (backend == null) {
@@ -129,6 +145,21 @@ public final class PlayerFacade {
     }
 
     public boolean playQueue(List<TrackRef> tracks, int startIndex) {
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.screen instanceof com.codexceed.xmusic.gui.screen.XMusicScreen) {
+            com.codexceed.xmusic.gui.GuiRoute route = ((com.codexceed.xmusic.gui.screen.XMusicScreen) mc.screen).getActiveRoute();
+            if (route == com.codexceed.xmusic.gui.GuiRoute.HOME) {
+                setPlaybackContext("home");
+            } else if (route == com.codexceed.xmusic.gui.GuiRoute.SEARCH) {
+                setPlaybackContext("search");
+            } else if (route == com.codexceed.xmusic.gui.GuiRoute.LIBRARY) {
+                setPlaybackContext("library");
+            } else if (route == com.codexceed.xmusic.gui.GuiRoute.DOWNLOADS) {
+                setPlaybackContext("downloads");
+            }
+        }
+
+        clearLastError();
         queue.clear();
         if (tracks != null) {
             queue.addAll(tracks);
@@ -149,18 +180,18 @@ public final class PlayerFacade {
         }
 
         if (isNative) {
-            // Filter out tracks with empty nativeUri â€” they can't be played
+            // Filter out tracks with empty nativeUri — they can't be played
             List<TrackRef> playable = new ArrayList<>();
             for (TrackRef t : queue) {
                 String uri = t.getNativeUri();
                 if (uri != null && !uri.isEmpty()) {
                     playable.add(t);
                 } else {
-                    XMusic.LOGGER.warn("[Facade] Skipping track '{}' â€” nativeUri is empty", t.getDisplayName());
+                    XMusic.LOGGER.warn("[Facade] Skipping track '{}' — nativeUri is empty", t.getDisplayName());
                 }
             }
             if (playable.isEmpty()) {
-                XMusic.LOGGER.error("[Facade] No playable tracks in native queue â€” all have empty nativeUri");
+                XMusic.LOGGER.error("[Facade] No playable tracks in native queue — all have empty nativeUri");
                 currentIndex = -1;
                 return false;
             }
@@ -181,7 +212,7 @@ public final class PlayerFacade {
         return play(queue.get(currentIndex));
     }
 
-    // â”€â”€â”€ Transport Controls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Transport Controls ────────────────────────────────────────────────
 
     public void pause() {
         activeBackend.pause();
@@ -214,7 +245,7 @@ public final class PlayerFacade {
         activeBackend.seek(positionMs);
     }
 
-    // â”€â”€â”€ List Navigation (|< >| controls) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── List Navigation (|< >| controls) ──────────────────────────────────
     // Moves within the current active list (queue), regardless of history.
 
     /**
@@ -303,7 +334,7 @@ public final class PlayerFacade {
         play(queue.get(currentIndex));
     }
 
-    // â”€â”€â”€ History Navigation (< > controls) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── History Navigation (< > controls) ─────────────────────────────────
     // Navigates through chronologically played tracks, across all lists.
 
     /**
@@ -361,9 +392,9 @@ public final class PlayerFacade {
         return historyIndex < playHistory.size() - 1;
     }
 
-    // â”€â”€â”€ Loop Control â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Loop Control ──────────────────────────────────────────────────────
 
-    /** Cycle: Off â†’ Ã—3 â†’ Ã—5 â†’ âˆž â†’ Off. Disables autoplay when loop is active. */
+    /** Cycle: Off → ×3 → ×5 → ∞ → Off. Disables autoplay when loop is active. */
     public void cycleLoopMode() {
         int currentIdx = 0;
         for (int i = 0; i < LOOP_CYCLE.length; i++) {
@@ -378,6 +409,8 @@ public final class PlayerFacade {
         // Loop and autoplay are mutually exclusive
         if (loopCount != 0) {
             autoplay = false;
+        } else {
+            autoplay = true;
         }
 
         XMusic.LOGGER.info("[Player] Loop mode: {} (count={}), autoplay={}", getLoopDisplay(), loopCount, autoplay);
@@ -387,12 +420,12 @@ public final class PlayerFacade {
     public int getLoopIteration() { return currentLoopIteration; }
 
     public String getLoopDisplay() {
-        if (loopCount == 0) return "\u2014";     // â€” (off)
-        if (loopCount == -1) return "\u221E";    // âˆž
-        return "\u00D7" + loopCount;              // Ã—3, Ã—5
+        if (loopCount == 0) return "\u2014";     // — (off)
+        if (loopCount == -1) return "\u221E";    // ∞
+        return "\u00D7" + loopCount;              // ×3, ×5
     }
 
-    private boolean shouldLoopCurrentTrack() {
+    public boolean shouldLoopCurrentTrack() {
         if (loopCount == 0) return false;
         if (loopCount == -1) return true; // infinite
         return currentLoopIteration < loopCount - 1; // -1 because first play counts
@@ -414,7 +447,7 @@ public final class PlayerFacade {
         if (currentIndex >= 0 && currentIndex < queue.size()) {
             playWithoutHistory(queue.get(currentIndex));
         } else {
-            // No queue â€” replay via active backend directly
+            // No queue — replay via active backend directly
             PlayerState state = snapshot();
             TrackRef current = state.getCurrentTrack();
             if (current != null) {
@@ -423,15 +456,21 @@ public final class PlayerFacade {
         }
     }
 
-    // â”€â”€â”€ Volume â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Volume ────────────────────────────────────────────────────────────
 
     public void setVolume(float volume) {
+        setVolume(volume, true);
+    }
+
+    public void setVolume(float volume, boolean saveToDisk) {
         float clamped = Math.max(0f, Math.min(1f, volume));
         if (clamped > 0f) {
             ConfigManager.get().lastNonZeroVolume = clamped;
         }
         ConfigManager.get().volume = clamped;
-        ConfigManager.save();
+        if (saveToDisk) {
+            ConfigManager.save();
+        }
         activeBackend.setVolume(clamped);
     }
 
@@ -450,7 +489,7 @@ public final class PlayerFacade {
         setVolume(restore > 0f ? restore : 0.8f);
     }
 
-    // â”€â”€â”€ Playback Mode & Autoplay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Playback Mode & Autoplay ─────────────────────────────────────────
 
     private boolean autoplay = true;
 
@@ -479,7 +518,7 @@ public final class PlayerFacade {
         }
     }
 
-    // â”€â”€â”€ Tick & Snapshot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Tick & Snapshot ───────────────────────────────────────────────────
 
     public void tick() {
         activeBackend.tick();
@@ -508,7 +547,7 @@ public final class PlayerFacade {
         );
     }
 
-    // â”€â”€â”€ Getters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Getters ───────────────────────────────────────────────────────────
 
     /**
      * Add a track to the queue right after the current position.
@@ -546,7 +585,7 @@ public final class PlayerFacade {
         return Collections.unmodifiableList(playHistory);
     }
 
-    // â”€â”€â”€ Internal Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Internal Helpers ──────────────────────────────────────────────────
 
     private void pushToHistory(TrackRef track) {
         if (historyIndex >= 0) {
@@ -673,13 +712,22 @@ public final class PlayerFacade {
         return mapped;
     }
 
-    // â”€â”€â”€ Auto-Resume â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Auto-Resume ──────────────────────────────────────────────────────
 
     /** Save current playback state to config for auto-resume on next launch. */
     public void saveResumeState() {
         XMusicConfig cfg = ConfigManager.get();
         PlayerState state = snapshot();
         TrackRef track = state.getCurrentTrack();
+
+        boolean isResolving = false;
+        if (activeBackend instanceof com.codexceed.xmusic.lavaplayer.LavaPlayerBackend) {
+            isResolving = ((com.codexceed.xmusic.lavaplayer.LavaPlayerBackend) activeBackend).isResolving();
+        }
+        if (isResolving) {
+            return;
+        }
+
         if (track == null || (!state.isPlaying() && !state.isPaused())) {
             cfg.resumeTrackId = "";
             cfg.resumeWasPlaying = false;
@@ -687,6 +735,7 @@ public final class PlayerFacade {
             return;
         }
         cfg.resumeTrackId = track.getId() != null ? track.getId() : "";
+        cfg.resumeTrackArtworkUrl = track.getArtworkUrl() != null ? track.getArtworkUrl() : "";
         cfg.resumeSourceId = track.getSourceId() != null ? track.getSourceId() : "";
         cfg.resumeTrackTitle = track.getTitle() != null ? track.getTitle() : "";
         cfg.resumeTrackArtist = track.getArtist() != null ? track.getArtist() : "";
@@ -711,7 +760,8 @@ public final class PlayerFacade {
                 .artist(cfg.resumeTrackArtist)
                 .nativeUri(cfg.resumeTrackNativeUri)
                 .remoteUri(cfg.resumeTrackRemoteUri)
-                .externalUrl(cfg.resumeTrackExternalUrl);
+                .externalUrl(cfg.resumeTrackExternalUrl)
+                .artworkUrl(cfg.resumeTrackArtworkUrl);
 
         try {
             builder.playbackType(PlaybackType.valueOf(cfg.resumeTrackPlaybackType));
@@ -724,10 +774,29 @@ public final class PlayerFacade {
         if (played && cfg.resumePositionMs > 0) {
             seek(cfg.resumePositionMs);
         }
-        if (played && !cfg.resumeWasPlaying) {
-            togglePlayPause(); // start paused
+        if (played) {
+            pause(); // Always start paused on launch
         }
-        XMusic.LOGGER.info("[AutoResume] Restored track '{}' (pos={}ms, playing={})",
-                cfg.resumeTrackTitle, cfg.resumePositionMs, cfg.resumeWasPlaying);
+        XMusic.LOGGER.info("[AutoResume] Restored track '{}' (pos={}ms, forcePaused=true)",
+                cfg.resumeTrackTitle, cfg.resumePositionMs);
+    }
+
+    public void getWaveform(float[] dest) {
+        if (activeBackend == nativeBackend) {
+            ((com.codexceed.xmusic.player.backend.NativeAudioBackend) nativeBackend).getWaveform(dest);
+        } else if (activeBackend == lavaBackend) {
+            ((com.codexceed.xmusic.lavaplayer.LavaPlayerBackend) lavaBackend).getWaveform(dest);
+        } else {
+            java.util.Arrays.fill(dest, 0f);
+        }
+    }
+
+    public float getCurrentAmplitude() {
+        if (activeBackend == nativeBackend) {
+            return ((com.codexceed.xmusic.player.backend.NativeAudioBackend) nativeBackend).getCurrentAmplitude();
+        } else if (activeBackend == lavaBackend) {
+            return ((com.codexceed.xmusic.lavaplayer.LavaPlayerBackend) lavaBackend).getCurrentAmplitude();
+        }
+        return 0f;
     }
 }

@@ -17,7 +17,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * MusicSource adapter for Spotify â€” Client Credentials (free, no user login).
+ * MusicSource adapter for Spotify — Client Credentials (free, no user login).
  */
 public final class SpotifyMusicSourceAdapter implements MusicSource {
 
@@ -56,7 +56,7 @@ public final class SpotifyMusicSourceAdapter implements MusicSource {
 
     @Override
     public CompletableFuture<Boolean> authenticate() {
-        // Client Credentials â€” always authenticated, no user action needed
+        // Client Credentials — always authenticated, no user action needed
         return CompletableFuture.completedFuture(auth.isAuthenticated());
     }
 

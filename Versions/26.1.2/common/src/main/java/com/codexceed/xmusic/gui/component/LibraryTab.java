@@ -15,7 +15,7 @@ import com.codexceed.xmusic.service.ServiceManager;
 import com.codexceed.xmusic.service.local.LocalMusicService;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 
 import java.awt.Desktop;
 import java.io.File;
@@ -26,12 +26,12 @@ import java.util.*;
  * Combined Library + Groups tab.
  *
  * Two-level drill-down navigation:
- *   CATEGORIES â†’ (FAVORITES | PLAYLIST_LIST | GROUP_ARTIST | GROUP_ALBUM | GROUP_SOURCE)
- *   â†’ drill into a specific playlist or group â†’ track list view
+ *   CATEGORIES → (FAVORITES | PLAYLIST_LIST | GROUP_ARTIST | GROUP_ALBUM | GROUP_SOURCE)
+ *   → drill into a specific playlist or group → track list view
  */
 public final class LibraryTab {
 
-    // â”€â”€ View State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── View State ──────────────────────────────────────────────────────
 
     private enum View { CATEGORIES, FAVORITES, MOST_REPLAYED, HISTORY, PLAYLIST_LIST, PLAYLIST_DETAIL, GROUP_ARTIST, GROUP_ALBUM, GROUP_SOURCE, GROUP_DETAIL, LOCAL }
 
@@ -40,23 +40,23 @@ public final class LibraryTab {
     private String selectedGroup = null;        // for GROUP_DETAIL
     private View selectedGroupType = null;      // GROUP_ARTIST / GROUP_ALBUM / GROUP_SOURCE
 
-    // â”€â”€ Playlist Create State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Playlist Create State ────────────────────────────────────────────
 
     private boolean creatingPlaylist = false;
     private String newPlaylistName = "";
 
-    // â”€â”€ Local View State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Local View State ─────────────────────────────────────────────────
 
     private boolean localSearchExpanded = false;
     private boolean localSearchFocused = false;
     private String localSearchQuery = "";
 
-    // â”€â”€ Scroll â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Scroll ──────────────────────────────────────────────────────────
 
     private double scrollOffset = 0;
     private double maxScroll = 0;
 
-    // â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Constants ───────────────────────────────────────────────────────
 
     private static final int INNER_PAD = 6;
     private static final int SECTION_GAP = 6;
@@ -70,7 +70,7 @@ public final class LibraryTab {
 
     private final TrackRow trackRow = new TrackRow();
 
-    // â”€â”€ Public Navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Public Navigation ────────────────────────────────────────────────
 
     /** Navigate to a specific view from external tabs (e.g. Home "See all"). */
     public void openView(String viewName) {
@@ -82,9 +82,9 @@ public final class LibraryTab {
         }
     }
 
-    // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Render ──────────────────────────────────────────────────────────
 
-    public void render(GuiGraphicsExtractor graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
+    public void render(GuiGraphics graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
         int x = frame.contentX();
         int y = frame.contentY();
         int w = frame.contentWidth();
@@ -107,9 +107,9 @@ public final class LibraryTab {
         }
     }
 
-    // â”€â”€ Category View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Category View ───────────────────────────────────────────────────
 
-    private void renderCategories(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
+    private void renderCategories(GuiGraphics g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
         LibraryManager lib = LibraryManager.getInstance();
         int rowX = x + INNER_PAD;
         int rowW = w - INNER_PAD * 2;
@@ -137,7 +137,7 @@ public final class LibraryTab {
 
             boolean hovered = GuiRender.inside(mx, my, rowX, currentY, rowW, ROW_H);
 
-            // Row background â€” no hover glow on groups, just subtle bg shift
+            // Row background — no hover glow on groups, just subtle bg shift
             int bgColor = hovered ? GuiTheme.PANEL_HOVER : GuiTheme.PANEL;
             g.fill(rowX, currentY, rowX + rowW, currentY + ROW_H, bgColor);
             GuiRender.bevelHover(g, rowX, currentY, rowW, ROW_H, false, hovered);
@@ -177,9 +177,9 @@ public final class LibraryTab {
         }
     }
 
-    // â”€â”€ Playlist List View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Playlist List View ───────────────────────────────────────────────
 
-    private void renderPlaylistList(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
+    private void renderPlaylistList(GuiGraphics g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
         LibraryManager lib = LibraryManager.getInstance();
         int rowX = x + INNER_PAD;
         int rowW = w - INNER_PAD * 2;
@@ -230,7 +230,7 @@ public final class LibraryTab {
             List<TrackRef> tracks = lib.getPlaylist(name);
             boolean hovered = GuiRender.inside(mx, my, rowX, drawY, rowW - 20, ROW_H);
 
-            // Row bg â€” no hover glow on groups
+            // Row bg — no hover glow on groups
             int bgColor = hovered ? GuiTheme.PANEL_HOVER : GuiTheme.PANEL;
             g.fill(rowX, drawY, rowX + rowW - 20, drawY + ROW_H, bgColor);
             GuiRender.bevelHover(g, rowX, drawY, rowW - 20, ROW_H, false, hovered);
@@ -277,18 +277,18 @@ public final class LibraryTab {
         }
     }
 
-    // â”€â”€ Playlist Detail View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Playlist Detail View ─────────────────────────────────────────────
 
-    private void renderPlaylistDetail(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
+    private void renderPlaylistDetail(GuiGraphics g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
         LibraryManager lib = LibraryManager.getInstance();
         List<TrackRef> tracks = selectedPlaylist != null ? lib.getPlaylist(selectedPlaylist) : Collections.emptyList();
         String title = selectedPlaylist != null ? selectedPlaylist : "Playlist";
         renderTrackList(g, f, x, y, w, h, title, tracks, mx, my, sw, sh);
     }
 
-    // â”€â”€ Group List View (artist/album/source) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Group List View (artist/album/source) ────────────────────────────
 
-    private void renderGroupList(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, String title, Map<String, List<TrackRef>> groups, int mx, int my, int sw, int sh) {
+    private void renderGroupList(GuiGraphics g, Font f, int x, int y, int w, int h, String title, Map<String, List<TrackRef>> groups, int mx, int my, int sw, int sh) {
         int rowX = x + INNER_PAD;
         int rowW = w - INNER_PAD * 2;
         int currentY = y + INNER_PAD;
@@ -319,7 +319,7 @@ public final class LibraryTab {
             int count = entry.getValue().size();
             boolean hovered = GuiRender.inside(mx, my, rowX, drawY, rowW, ROW_H);
 
-            // Row bg â€” no hover glow on groups
+            // Row bg — no hover glow on groups
             int bgColor = hovered ? GuiTheme.PANEL_HOVER : GuiTheme.PANEL;
             g.fill(rowX, drawY, rowX + rowW, drawY + ROW_H, bgColor);
             GuiRender.bevelHover(g, rowX, drawY, rowW, ROW_H, false, hovered);
@@ -359,18 +359,18 @@ public final class LibraryTab {
         }
     }
 
-    // â”€â”€ Group Detail View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Group Detail View ────────────────────────────────────────────────
 
-    private void renderGroupDetail(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
+    private void renderGroupDetail(GuiGraphics g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
         Map<String, List<TrackRef>> groups = resolveGroupMap();
         List<TrackRef> tracks = selectedGroup != null ? groups.getOrDefault(selectedGroup, Collections.emptyList()) : Collections.emptyList();
         String title = selectedGroup != null ? selectedGroup : "Group";
         renderTrackList(g, f, x, y, w, h, title, tracks, mx, my, sw, sh);
     }
 
-    // â”€â”€ Shared: Track List View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Shared: Track List View ──────────────────────────────────────────
 
-    private void renderTrackList(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, String title, Collection<TrackRef> trackCollection, int mx, int my, int sw, int sh) {
+    private void renderTrackList(GuiGraphics g, Font f, int x, int y, int w, int h, String title, Collection<TrackRef> trackCollection, int mx, int my, int sw, int sh) {
         List<TrackRef> tracks = trackCollection instanceof List ? (List<TrackRef>) trackCollection : new ArrayList<>(trackCollection);
         int rowX = x + INNER_PAD;
         int rowW = w - INNER_PAD * 2;
@@ -447,9 +447,9 @@ public final class LibraryTab {
         if (scrollOffset > maxScroll) scrollOffset = maxScroll;
     }
 
-    // â”€â”€ Local Files View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Local Files View ────────────────────────────────────────────────
 
-    private void renderLocalView(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
+    private void renderLocalView(GuiGraphics g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
         LocalMusicService localService = ServiceManager.getLocalMusic();
         int rowX = x + INNER_PAD;
         int rowW = w - INNER_PAD * 2;
@@ -652,9 +652,9 @@ public final class LibraryTab {
         return filtered;
     }
 
-    // â”€â”€ Shared: Back Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Shared: Back Header ──────────────────────────────────────────────
 
-    private int renderBackHeader(GuiGraphicsExtractor g, Font f, int x, int y, int w, String title, int mx, int my, int sw, int sh) {
+    private int renderBackHeader(GuiGraphics g, Font f, int x, int y, int w, String title, int mx, int my, int sw, int sh) {
         // Back button
         int backSize = 16;
         boolean backHover = GuiRender.inside(mx, my, x, y, backSize + 4, backSize);
@@ -674,7 +674,7 @@ public final class LibraryTab {
         return y + backSize + 6;
     }
 
-    // â”€â”€ Mouse Click â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Mouse Click ──────────────────────────────────────────────────────
 
     public boolean mouseClicked(GuiFrame frame, double mouseX, double mouseY, int button) {
         int x = frame.contentX();
@@ -857,7 +857,7 @@ public final class LibraryTab {
 
             if (GuiRender.inside(mx, my, rowX, drawY, rowW, TrackRow.HEIGHT)) {
                 TrackRef track = tracks.get(i);
-                // Heart click â€” toggle favorite
+                // Heart click — toggle favorite
                 if (TrackRow.isHeartClicked(rowX, drawY, rowW, mx, my)) {
                     LibraryManager.getInstance().toggleFavorite(track);
                     return true;
@@ -884,7 +884,7 @@ public final class LibraryTab {
         return false;
     }
 
-    // â”€â”€ Mouse Scroll â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Mouse Scroll ─────────────────────────────────────────────────────
 
     public boolean mouseScrolled(GuiFrame frame, double mouseX, double mouseY, double amount) {
         // Only scroll in track list or group list views
@@ -895,7 +895,7 @@ public final class LibraryTab {
         return true;
     }
 
-    // â”€â”€ Key Input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Key Input ─────────────────────────────────────────────────────────
 
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (creatingPlaylist) {
@@ -973,7 +973,7 @@ public final class LibraryTab {
         return false;
     }
 
-    // â”€â”€ Local View Click Handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Local View Click Handler ────────────────────────────────────────
 
     private boolean clickLocalView(int x, int y, int w, int h, double mx, double my, int button) {
         int rowX = x + INNER_PAD;
@@ -1104,7 +1104,7 @@ public final class LibraryTab {
         return false;
     }
 
-    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Helpers ──────────────────────────────────────────────────────────
 
     private void navigateBack() {
         switch (currentView) {
@@ -1138,11 +1138,11 @@ public final class LibraryTab {
         return min + ":" + (sec < 10 ? "0" : "") + sec;
     }
 
-    // â”€â”€ Category Definition Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Category Definition Helper ───────────────────────────────────────
 
     @FunctionalInterface
     private interface IconFactory {
-        void render(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int color);
+        void render(GuiGraphics g, Font f, int x, int y, int w, int h, int color);
     }
 
     private record CategoryDef(String label, int count, IconFactory icon, View target) {}

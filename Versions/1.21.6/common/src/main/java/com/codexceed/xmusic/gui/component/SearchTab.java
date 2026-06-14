@@ -32,16 +32,18 @@ import java.util.regex.Pattern;
 public final class SearchTab {
 
     private final TrackRow trackRow = new TrackRow();
-    private String query = "";
-    private boolean queryFocused = false;
-    private boolean isYoutube = true;
-    private List<TrackRef> searchResults = new ArrayList<>();
-    private boolean isSearching = false;
-    private String searchError = null;
-    private double scrollOffset = 0;
+    private static String query = "";
+    private static boolean queryFocused = false;
+    private static boolean isYoutube = true;
+    private static List<TrackRef> searchResults = new ArrayList<>();
+    private static boolean isSearching = false;
+    private static String searchError = null;
+    private static double scrollOffset = 0;
 
     // Keyboard navigation
-    private int selectedIndex = -1;
+    private static int selectedIndex = -1;
+
+    private String pendingTooltip = null;
 
     // URL input state
     private boolean urlInputOpen = false;
@@ -52,7 +54,12 @@ public final class SearchTab {
     // Search history (deduplicated, most recent first)
     private final List<String> searchHistory = new ArrayList<>();
     private boolean searchHistoryOpen = false;
-    private static final int MAX_SEARCH_HISTORY = 20;
+    private static final int MAX_SEARCH_HISTORY = 10;
+
+    public SearchTab() {
+        this.searchHistory.clear();
+        this.searchHistory.addAll(com.codexceed.xmusic.config.ConfigManager.get().searchHistory);
+    }
 
     // Recently played (from PlayerFacade)
     private boolean recentlyPlayedOpen = false;
@@ -61,8 +68,7 @@ public final class SearchTab {
     private boolean durationFilterOn = false;
     private static final long DURATION_FILTER_MS = 10 * 60 * 1000L; // 10 min
 
-    // Auto-play on search
-    private boolean autoPlayOnSearch = false;
+
 
     // Playlist context popup (right-click on track)
     private TrackRef contextTrack = null;
@@ -94,20 +100,26 @@ public final class SearchTab {
         int w = frame.contentWidth();
         int h = frame.contentHeight();
 
+        boolean compact = frame.compact();
+        int scrollY = compact ? (int) scrollOffset : 0;
+
+        // Scissor for compact mode
+        if (compact) {
+            graphics.enableScissor(x, y, x + w, y + h);
+        }
+
         // 1. Search Bar Header
-        int searchBarY = y + INNER_PAD;
+        int searchBarY = y + INNER_PAD - scrollY;
         int searchBarW = w - INNER_PAD * 2;
         int searchBarX = x + INNER_PAD;
 
+        int toggleWidth = compact ? 44 : 140;
         int urlBtnSpace = isYoutube ? URL_BTN_WIDTH + 4 : 0;
-        int inputW = searchBarW - TOGGLE_WIDTH - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
+        int inputW = searchBarW - toggleWidth - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
         GuiRender.mcWell(graphics, searchBarX, searchBarY, inputW, SEARCH_BAR_HEIGHT);
         // Focus highlight border
         if (queryFocused) {
-            graphics.fill(searchBarX - 1, searchBarY - 1, searchBarX + inputW + 1, searchBarY, GuiTheme.GLOW_ACCENT);
-            graphics.fill(searchBarX - 1, searchBarY + SEARCH_BAR_HEIGHT, searchBarX + inputW + 1, searchBarY + SEARCH_BAR_HEIGHT + 1, GuiTheme.GLOW_ACCENT);
-            graphics.fill(searchBarX - 1, searchBarY, searchBarX, searchBarY + SEARCH_BAR_HEIGHT, GuiTheme.GLOW_ACCENT);
-            graphics.fill(searchBarX + inputW, searchBarY, searchBarX + inputW + 1, searchBarY + SEARCH_BAR_HEIGHT, GuiTheme.GLOW_ACCENT);
+            GuiRender.glowRect(graphics, searchBarX, searchBarY, inputW, SEARCH_BAR_HEIGHT);
         }
 
         // Query text or placeholder
@@ -131,7 +143,7 @@ public final class SearchTab {
             GuiRender.mcButton(graphics, clearBtnX, searchBarY + 3, CLEAR_BTN_WIDTH, SEARCH_BAR_HEIGHT - 6, clearHover, false);
             IconRenderer.clear(graphics, font, clearBtnX, searchBarY + 3, CLEAR_BTN_WIDTH, SEARCH_BAR_HEIGHT - 6, clearHover ? GuiTheme.DANGER : GuiTheme.TEXT_MUTED);
             if (clearHover) {
-                GuiRender.tooltip(graphics, font, "Clear", mouseX, mouseY, frame.x() + frame.width(), frame.y() + frame.height());
+                pendingTooltip = "Clear";
             }
         }
 
@@ -143,13 +155,13 @@ public final class SearchTab {
             IconRenderer.url(graphics, font, urlBtnX, searchBarY, URL_BTN_WIDTH, SEARCH_BAR_HEIGHT,
                     urlInputOpen ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
             if (hover) {
-                GuiRender.tooltip(graphics, font, "Paste URL", mouseX, mouseY, frame.x() + frame.width(), frame.y() + frame.height());
+                pendingTooltip = "Paste URL";
             }
         }
 
         // Source Toggle
-        int toggleX = searchBarX + searchBarW - TOGGLE_WIDTH;
-        renderSourceToggle(graphics, font, toggleX, searchBarY + 4, TOGGLE_WIDTH);
+        int toggleX = searchBarX + searchBarW - toggleWidth;
+        renderSourceToggle(graphics, font, toggleX, searchBarY + 4, toggleWidth, compact);
 
         // URL input row
         int listY = searchBarY + SEARCH_BAR_HEIGHT + SECTION_GAP;
@@ -165,12 +177,14 @@ public final class SearchTab {
         // Search history dropdown
         if (searchHistoryOpen) {
             renderSearchHistory(graphics, font, searchBarX, listY, searchBarW, mouseX, mouseY);
+            if (compact) graphics.disableScissor();
             return; // don't render results while history is open
         }
 
         // Recently played dropdown
         if (recentlyPlayedOpen) {
             renderRecentlyPlayed(graphics, font, x, searchBarX, listY, searchBarW, h, mouseX, mouseY, frame);
+            if (compact) graphics.disableScissor();
             return;
         }
 
@@ -181,37 +195,30 @@ public final class SearchTab {
         // Apply duration filter
         List<TrackRef> displayResults = durationFilterOn ? filterByDuration(searchResults) : searchResults;
 
+        int scissorY1 = compact ? y : listY;
+        int scissorY2 = compact ? y + h : listY + listH;
+
         if (isSearching) {
-            graphics.enableScissor(x, listY, x + w, listY + listH);
+            if (!compact) graphics.enableScissor(x, scissorY1, x + w, scissorY2);
             GuiRender.centeredText(graphics, font, "Searching...", x + w / 2, listY + 20, GuiTheme.TEXT_MUTED);
         } else if (searchError != null) {
-            graphics.enableScissor(x, listY, x + w, listY + listH);
+            if (!compact) graphics.enableScissor(x, scissorY1, x + w, scissorY2);
             GuiRender.centeredText(graphics, font, "Search failed", x + w / 2, listY + 20, GuiTheme.DANGER);
             GuiRender.centeredText(graphics, font, searchError, x + w / 2, listY + 36, GuiTheme.TEXT_MUTED);
         } else if (!query.isEmpty() && searchResults.isEmpty()) {
-            graphics.enableScissor(x, listY, x + w, listY + listH);
+            if (!compact) graphics.enableScissor(x, scissorY1, x + w, scissorY2);
             GuiRender.centeredText(graphics, font, "Press Enter to search for '" + query + "'", x + w / 2, listY + 20, GuiTheme.TEXT_SOFT);
         } else if (searchResults.isEmpty()) {
-            graphics.enableScissor(x, listY, x + w, listY + listH);
+            if (!compact) graphics.enableScissor(x, scissorY1, x + w, scissorY2);
             GuiRender.centeredText(graphics, font, "No results. Try a different query.", x + w / 2, listY + 20, GuiTheme.TEXT_MUTED);
         } else {
-            // Result count — sticky header (outside scissor so it doesn't scroll)
-            String countText = displayResults.size() + (displayResults.size() == 1 ? " track found" : " tracks found");
-            if (durationFilterOn && displayResults.size() != searchResults.size()) {
-                countText += " (filtered from " + searchResults.size() + ")";
-            }
-            GuiRender.text(graphics, font, countText, searchBarX, listY, GuiTheme.TEXT_MUTED);
-            listY += 14;
-            listH -= 14;
+            if (!compact) graphics.enableScissor(x, scissorY1, x + w, scissorY2);
 
-            // Scissor starts after the count header so it doesn't overlap
-            graphics.enableScissor(x, listY, x + w, listY + listH);
-
-            int currentY = listY - (int) scrollOffset;
+            int currentY = listY - (compact ? 0 : (int) scrollOffset);
             for (int i = 0; i < displayResults.size(); i++) {
                 TrackRef track = displayResults.get(i);
 
-                if (currentY + TrackRow.HEIGHT > listY && currentY < listY + listH) {
+                if (currentY + TrackRow.HEIGHT > scissorY1 && currentY < scissorY2) {
                     boolean isPlaying = isTrackPlaying(track);
                     boolean isSelected = (i == selectedIndex);
                     boolean isFav = LibraryManager.getInstance().isFavorite(track);
@@ -225,7 +232,17 @@ public final class SearchTab {
             }
         }
 
-        graphics.disableScissor();
+        if (compact) {
+            graphics.disableScissor();
+        } else {
+            graphics.disableScissor();
+        }
+
+        // Render tooltips outside scissor box
+        if (pendingTooltip != null) {
+            GuiRender.tooltip(graphics, font, pendingTooltip, mouseX, mouseY, frame.x() + frame.width(), frame.y() + frame.height());
+            pendingTooltip = null;
+        }
 
         // Context popup (add to playlist / add to queue)
         if (contextTrack != null) {
@@ -263,7 +280,7 @@ public final class SearchTab {
 
         // Tooltip for paste button
         if (pasteHover) {
-            GuiRender.tooltip(graphics, font, "Paste URL", mouseX, mouseY, frame.x() + frame.width(), frame.y() + frame.height());
+            pendingTooltip = "Paste URL";
         }
     }
 
@@ -291,10 +308,6 @@ public final class SearchTab {
         boolean recentHover = GuiRender.inside(mouseX, mouseY, btnX, y, ToolbarButton.getIconWidth(), btnH);
         btnX += ToolbarButton.renderIconOnly(graphics, font, btnX, y, btnH, IconRenderer::recent, recentHover, recentlyPlayedOpen) + ToolbarButton.GAP;
 
-        // Auto-play toggle — icon only
-        boolean autoHover = GuiRender.inside(mouseX, mouseY, btnX, y, ToolbarButton.getIconWidth(), btnH);
-        ToolbarButton.renderIconOnly(graphics, font, btnX, y, btnH, IconRenderer::autoPlay, autoHover, autoPlayOnSearch);
-
         // Tooltips for action bar buttons
         String actionTooltip = null;
         if (playAllHover) actionTooltip = "Play All";
@@ -302,9 +315,8 @@ public final class SearchTab {
         else if (durHover) actionTooltip = "Duration Filter";
         else if (histHover) actionTooltip = "Search History";
         else if (recentHover) actionTooltip = "Recently Played";
-        else if (autoHover) actionTooltip = "Autoplay";
         if (actionTooltip != null) {
-            GuiRender.tooltip(graphics, font, actionTooltip, mouseX, mouseY, frame.x() + frame.width(), frame.y() + frame.height());
+            pendingTooltip = actionTooltip;
         }
     }
 
@@ -335,7 +347,9 @@ public final class SearchTab {
         }
 
         int maxShow = Math.min(reversed.size(), 15);
-        graphics.enableScissor(clipX, y, clipX + w + 16, y + h);
+        int minY = frame.contentY();
+        int maxY = frame.contentY() + frame.contentHeight();
+        graphics.enableScissor(clipX, Math.max(minY, y), clipX + w + 16, Math.min(maxY, y + h));
         for (int i = 0; i < maxShow; i++) {
             TrackRef track = reversed.get(i);
             int rowY = y + i * (TrackRow.HEIGHT + ROW_SPACING);
@@ -350,7 +364,7 @@ public final class SearchTab {
         graphics.disableScissor();
     }
 
-    private void renderSourceToggle(GuiGraphics graphics, Font font, int x, int y, int width) {
+    private void renderSourceToggle(GuiGraphics graphics, Font font, int x, int y, int width, boolean compact) {
         int youtubeW = width / 2;
 
         // MC-style toggle: active side = inset bevel, inactive = raised
@@ -365,18 +379,21 @@ public final class SearchTab {
         }
 
         // YouTube side: compass icon + "YouTube" text in red when active
-        int ytIconX = x + 4;
+        int ytIconX = compact ? x + (youtubeW - 14) / 2 : x + 4;
         int ytIconY = y + 1;
         int ytColor = isYoutube ? 0xFFFF0000 : GuiTheme.DISABLED;
         IconRenderer.search(graphics, font, ytIconX, ytIconY, 14, 14, ytColor);
-        GuiRender.shadowText(graphics, font, "YouTube", ytIconX + 16, y + 5, ytColor);
-
+        if (!compact) {
+            GuiRender.shadowText(graphics, font, "YouTube", ytIconX + 16, y + 5, ytColor);
+        }
         // Spotify side: disc icon + "Spotify" text in green when active
-        int spIconX = x + youtubeW + 4;
+        int spIconX = compact ? x + youtubeW + (width - youtubeW - 14) / 2 : x + youtubeW + 4;
         int spIconY = y + 1;
         int spColor = !isYoutube ? GuiTheme.SPOTIFY_GREEN : GuiTheme.DISABLED;
         IconRenderer.album(graphics, font, spIconX, spIconY, 14, 14, spColor);
-        GuiRender.shadowText(graphics, font, "Spotify", spIconX + 16, y + 5, spColor);
+        if (!compact) {
+            GuiRender.shadowText(graphics, font, "Spotify", spIconX + 16, y + 5, spColor);
+        }
     }
 
     // ── Mouse ─────────────────────────────────────────────────────────────
@@ -390,15 +407,24 @@ public final class SearchTab {
         int x = frame.contentX();
         int y = frame.contentY();
         int w = frame.contentWidth();
+        int h = frame.contentHeight();
 
-        int searchBarY = y + INNER_PAD;
+        if (!GuiRender.inside(mouseX, mouseY, x, y, w, h)) {
+            return false;
+        }
+
+        boolean compact = frame.compact();
+        int toggleWidth = compact ? 44 : 140;
+        int scrollY = compact ? (int) scrollOffset : 0;
+
+        int searchBarY = y + INNER_PAD - scrollY;
         int searchBarW = w - INNER_PAD * 2;
         int searchBarX = x + INNER_PAD;
 
         // Clear button
         if (!query.isEmpty() && !urlInputOpen) {
             int urlBtnSpace = isYoutube ? URL_BTN_WIDTH + 4 : 0;
-            int inputW = searchBarW - TOGGLE_WIDTH - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
+            int inputW = searchBarW - toggleWidth - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
             int clearBtnX = searchBarX + inputW + 2;
             if (GuiRender.inside(mouseX, mouseY, clearBtnX, searchBarY + 3, CLEAR_BTN_WIDTH, SEARCH_BAR_HEIGHT - 6)) {
                 query = "";
@@ -412,7 +438,7 @@ public final class SearchTab {
         // Click on search bar input area to focus
         {
             int urlBtnSpace = isYoutube ? URL_BTN_WIDTH + 4 : 0;
-            int inputW = searchBarW - TOGGLE_WIDTH - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
+            int inputW = searchBarW - toggleWidth - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
             if (GuiRender.inside(mouseX, mouseY, searchBarX, searchBarY, inputW, SEARCH_BAR_HEIGHT)) {
                 queryFocused = true;
                 selectedIndex = -1;
@@ -423,7 +449,7 @@ public final class SearchTab {
         // URL button
         if (isYoutube) {
             int urlBtnSpace = URL_BTN_WIDTH + 4;
-            int inputW = searchBarW - TOGGLE_WIDTH - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
+            int inputW = searchBarW - toggleWidth - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
             int clearBtnX = searchBarX + inputW + 2;
             int urlBtnX = clearBtnX + CLEAR_BTN_WIDTH + 4;
             if (GuiRender.inside(mouseX, mouseY, urlBtnX, searchBarY, URL_BTN_WIDTH, SEARCH_BAR_HEIGHT)) {
@@ -445,9 +471,10 @@ public final class SearchTab {
         }
 
         // Toggle
-        int toggleX = searchBarX + searchBarW - TOGGLE_WIDTH;
-        if (GuiRender.inside(mouseX, mouseY, toggleX, searchBarY + 4, TOGGLE_WIDTH, 18)) {
+        int toggleX = searchBarX + searchBarW - toggleWidth;
+        if (GuiRender.inside(mouseX, mouseY, toggleX, searchBarY + 4, toggleWidth, 18)) {
             isYoutube = !isYoutube;
+            query = "";
             searchResults.clear(); scrollOffset = 0; selectedIndex = -1;
             urlInputOpen = false; urlInput = ""; urlError = null;
             searchHistoryOpen = false; recentlyPlayedOpen = false;
@@ -502,12 +529,6 @@ public final class SearchTab {
         }
         btnX += ToolbarButton.getIconWidth() + ToolbarButton.GAP;
 
-        // Auto-play
-        if (ToolbarButton.isIconClicked(btnX, actionY, btnH, mouseX, mouseY)) {
-            autoPlayOnSearch = !autoPlayOnSearch;
-            return true;
-        }
-
         // Search history dropdown clicks
         int listY = actionY + ACTION_BAR_HEIGHT + SECTION_GAP;
         if (searchHistoryOpen) {
@@ -556,12 +577,19 @@ public final class SearchTab {
         }
 
         // Result clicks
-        int resultListY = listY + 14; // +14 for result count text
+        int resultListY = listY;
         int listH = frame.contentHeight() - (resultListY - y) - INNER_PAD;
         List<TrackRef> displayResults = durationFilterOn ? filterByDuration(searchResults) : searchResults;
 
-        if (GuiRender.inside(mouseX, mouseY, x, resultListY, w, listH)) {
-            int currentY = resultListY - (int) scrollOffset;
+        boolean canClickResults;
+        if (compact) {
+            canClickResults = GuiRender.inside(mouseX, mouseY, x, y, w, h);
+        } else {
+            canClickResults = GuiRender.inside(mouseX, mouseY, x, resultListY, w, listH);
+        }
+
+        if (canClickResults) {
+            int currentY = resultListY - (compact ? 0 : (int) scrollOffset);
             for (int i = 0; i < displayResults.size(); i++) {
                 if (GuiRender.inside(mouseX, mouseY, searchBarX, currentY, searchBarW, TrackRow.HEIGHT)) {
                     TrackRef track = displayResults.get(i);
@@ -600,16 +628,46 @@ public final class SearchTab {
         int x = frame.contentX();
         int y = frame.contentY();
         int w = frame.contentWidth();
+        int h = frame.contentHeight();
 
+        boolean compact = frame.compact();
         int searchBarY = y + INNER_PAD;
-        int listY = searchBarY + SEARCH_BAR_HEIGHT + SECTION_GAP;
-        if (urlInputOpen && isYoutube) listY += URL_INPUT_HEIGHT + SECTION_GAP;
-        listY += ACTION_BAR_HEIGHT + SECTION_GAP + 14; // action bar + result count
+        int listY = searchBarY + SEARCH_BAR_HEIGHT + SECTION_GAP; // search bar only
+        if (urlInputOpen && isYoutube) {
+            listY += URL_INPUT_HEIGHT + SECTION_GAP;
+        }
+        listY += ACTION_BAR_HEIGHT + SECTION_GAP; // action bar only
         int listH = frame.contentHeight() - (listY - y) - INNER_PAD;
 
-        if (GuiRender.inside(mouseX, mouseY, x, listY, w, listH)) {
+        boolean canScroll;
+        if (compact) {
+            canScroll = GuiRender.inside(mouseX, mouseY, x, y, w, h);
+        } else {
+            canScroll = GuiRender.inside(mouseX, mouseY, x, listY, w, listH);
+        }
+
+        if (canScroll) {
             scrollOffset -= amount * 20;
-            double maxScroll = Math.max(0, searchResults.size() * (TrackRow.HEIGHT + ROW_SPACING) - listH);
+            double maxScroll;
+            if (compact) {
+                int totalContentH = INNER_PAD + SEARCH_BAR_HEIGHT + SECTION_GAP;
+                if (urlInputOpen && isYoutube) {
+                    totalContentH += URL_INPUT_HEIGHT + SECTION_GAP;
+                }
+                totalContentH += ACTION_BAR_HEIGHT + SECTION_GAP;
+                if (searchHistoryOpen) {
+                    totalContentH += Math.max(1, searchHistory.size()) * 18 + 10;
+                } else if (recentlyPlayedOpen) {
+                    int maxShow = Math.min(PlayerFacade.getInstance().getPlayHistory().size(), 15);
+                    totalContentH += maxShow * (TrackRow.HEIGHT + ROW_SPACING) + 10;
+                } else {
+                    totalContentH += searchResults.size() * (TrackRow.HEIGHT + ROW_SPACING);
+                }
+                totalContentH += INNER_PAD;
+                maxScroll = Math.max(0, totalContentH - h);
+            } else {
+                maxScroll = Math.max(0, searchResults.size() * (TrackRow.HEIGHT + ROW_SPACING) - listH);
+            }
             if (scrollOffset < 0) scrollOffset = 0;
             if (scrollOffset > maxScroll) scrollOffset = maxScroll;
             return true;
@@ -765,7 +823,6 @@ public final class SearchTab {
                     searchResults = new ArrayList<>(results);
                     isSearching = false;
                     if (results.isEmpty()) searchError = "No results found";
-                    else if (autoPlayOnSearch) PlayerFacade.getInstance().playQueue(searchResults, 0);
                 }).exceptionally(error -> { isSearching = false; searchError = error.getMessage() != null ? error.getMessage() : "Search failed"; return null; });
         } else {
             ServiceManager.getSpotifySearch().search(searchQuery)
@@ -773,7 +830,6 @@ public final class SearchTab {
                     searchResults = new ArrayList<>(results);
                     isSearching = false;
                     if (results.isEmpty()) searchError = "No results from Spotify";
-                    else if (autoPlayOnSearch) PlayerFacade.getInstance().playQueue(searchResults, 0);
                 }).exceptionally(error -> { isSearching = false; searchError = error.getMessage() != null ? error.getMessage() : "Spotify search failed"; return null; });
         }
     }
@@ -827,6 +883,11 @@ public final class SearchTab {
         searchHistory.remove(query); // remove duplicate
         searchHistory.add(0, query); // add to front
         while (searchHistory.size() > MAX_SEARCH_HISTORY) searchHistory.remove(searchHistory.size() - 1);
+
+        // Save to config
+        com.codexceed.xmusic.config.ConfigManager.get().searchHistory.clear();
+        com.codexceed.xmusic.config.ConfigManager.get().searchHistory.addAll(searchHistory);
+        com.codexceed.xmusic.config.ConfigManager.save();
     }
 
     private String resolveYtInput(String input) {

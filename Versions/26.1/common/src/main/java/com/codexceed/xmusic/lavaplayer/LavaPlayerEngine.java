@@ -28,25 +28,25 @@ import java.util.function.Supplier;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Singleton LavaPlayer engine â€” production-grade, zero-jitter audio output.
+ * Singleton LavaPlayer engine — production-grade, zero-jitter audio output.
  *
  * <h3>Smooth-Playback Guarantees</h3>
  * <ul>
- *   <li><b>5 s frame buffer</b> â€” absorbs network stalls without starving output</li>
- *   <li><b>5 s stream timeout</b> â€” prevents silence insertion on slow connections</li>
- *   <li><b>250 ms SDL buffer</b> â€” absorbs GC pauses and OS scheduling jitter</li>
- *   <li><b>MAX_PRIORITY output thread</b> â€” never preempted by game or GC</li>
- *   <li><b>Crash recovery</b> â€” output loop auto-restarts on any exception</li>
- *   <li><b>Instant pause</b> â€” SDL buffer flushed immediately for zero-latency pause</li>
- *   <li><b>Clean track switch</b> â€” SDL flushed on track change, no old-audio bleed</li>
- *   <li><b>Volume from config</b> â€” initialized at startup, never plays at wrong level</li>
- *   <li><b>Drift-free position</b> â€” read from LavaPlayer's own tracker, not frame count</li>
+ *   <li><b>5 s frame buffer</b> — absorbs network stalls without starving output</li>
+ *   <li><b>5 s stream timeout</b> — prevents silence insertion on slow connections</li>
+ *   <li><b>250 ms SDL buffer</b> — absorbs GC pauses and OS scheduling jitter</li>
+ *   <li><b>MAX_PRIORITY output thread</b> — never preempted by game or GC</li>
+ *   <li><b>Crash recovery</b> — output loop auto-restarts on any exception</li>
+ *   <li><b>Instant pause</b> — SDL buffer flushed immediately for zero-latency pause</li>
+ *   <li><b>Clean track switch</b> — SDL flushed on track change, no old-audio bleed</li>
+ *   <li><b>Volume from config</b> — initialized at startup, never plays at wrong level</li>
+ *   <li><b>Drift-free position</b> — read from LavaPlayer's own tracker, not frame count</li>
  * </ul>
  */
 public final class LavaPlayerEngine {
 
-    // â”€â”€ Format â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    /** 2 ch, 48 kHz, 960 samples/frame â‰ˆ 20 ms per frame, signed 16-bit LE */
+    // ── Format ─────────────────────────────────────────────────────────────
+    /** 2 ch, 48 kHz, 960 samples/frame ≈ 20 ms per frame, signed 16-bit LE */
     public static final AudioDataFormat DATA_FORMAT = new Pcm16AudioDataFormat(2, 48000, 960, true);
 
     /** Stream timeout: how long to block for one frame before returning silence. */
@@ -57,7 +57,7 @@ public final class LavaPlayerEngine {
     private static final int SDL_BUFFER_BYTES =
             (int) (DATA_FORMAT.sampleRate * DATA_FORMAT.channelCount * 2L * SDL_BUFFER_MS / 1000);
 
-    // â”€â”€ Singleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Singleton ──────────────────────────────────────────────────────────
     private static final class Holder {
         static final LavaPlayerEngine INSTANCE = new LavaPlayerEngine();
     }
@@ -66,11 +66,11 @@ public final class LavaPlayerEngine {
         return Holder.INSTANCE;
     }
 
-    // â”€â”€ LavaPlayer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── LavaPlayer ─────────────────────────────────────────────────────────
     private final AudioPlayerManager manager;
     private final AudioPlayer player;
 
-    // â”€â”€ Java Sound output â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Java Sound output ──────────────────────────────────────────────────
     private final AudioFormat javaFormat;
     private final DataLine.Info speakerInfo;
     private volatile Mixer       mixer;
@@ -79,17 +79,23 @@ public final class LavaPlayerEngine {
     /** Position in ms, from LavaPlayer's own per-track tracker. Drift-free. */
     private final AtomicLong currentPositionMs = new AtomicLong(0);
 
-    /** Set to true when a track switch occurs â€” the output loop will flush the SDL. */
+    private volatile float currentRms = 0f;
+
+    /** Set to true when a track switch occurs — the output loop will flush the SDL. */
     private volatile boolean flushRequested = false;
 
-    /** Set to true when pause is requested â€” output loop flushes and sleeps. */
+    /** Set to true when pause is requested — output loop flushes and sleeps. */
     private volatile boolean pauseFlushRequested = false;
 
-    // â”€â”€ Constructor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    private static final int HISTORY_SIZE = 128 * 1024;
+    private final byte[] historyBuffer = new byte[HISTORY_SIZE];
+    private long totalBytesWrittenToLine = 0;
+
+    // ── Constructor ────────────────────────────────────────────────────────
     private LavaPlayerEngine() {
         manager = new DefaultAudioPlayerManager();
 
-        // â”€â”€ Quality-preserving configuration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Quality-preserving configuration ───────────────────────────
         // Frame buffer: 5 seconds of decoded PCM ahead of playback
         manager.setFrameBufferDuration(5_000);
         manager.setPlayerCleanupThreshold(Long.MAX_VALUE);
@@ -102,7 +108,7 @@ public final class LavaPlayerEngine {
 
         // Opus encoding quality 10 (max): only relevant if LavaPlayer
         // internally re-encodes frames to Opus for buffer storage. With our
-        // Pcm16AudioDataFormat output, frames are stored as raw PCM â€” this
+        // Pcm16AudioDataFormat output, frames are stored as raw PCM — this
         // setting is a safety net that has zero effect on our lossless path.
         manager.getConfiguration().setOpusEncodingQuality(10);
 
@@ -136,7 +142,7 @@ public final class LavaPlayerEngine {
         // Find default mixer
         setMixer("");
 
-        // Start the output thread ONCE â€” it loops forever with crash recovery
+        // Start the output thread ONCE — it loops forever with crash recovery
         Thread outputThread = new Thread(this::audioOutputLoopWithRecovery, "XMusic-AudioOutput");
         outputThread.setDaemon(true);
         outputThread.setPriority(Thread.MAX_PRIORITY);
@@ -146,20 +152,20 @@ public final class LavaPlayerEngine {
                 player.getVolume(), SDL_BUFFER_MS);
     }
 
-    // â”€â”€ Source Registration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Source Registration ────────────────────────────────────────────────
 
     private void registerSources() {
-        // â”€â”€ YouTube (highest priority â€” pure Java, no yt-dlp) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── YouTube (highest priority — pure Java, no yt-dlp) ──────────
         //
         // Quality chain (lossless from YouTube to speakers):
         //   1. YouTube Music client requests the highest-quality audio-only stream
         //      (typically Opus codec, up to 160 kbps, natively 48 kHz stereo)
-        //   2. LavaPlayer decodes Opus â†’ raw PCM 48 kHz / 16-bit / stereo
-        //      (lossless â€” Opus 48 kHz matches our output format exactly,
+        //   2. LavaPlayer decodes Opus → raw PCM 48 kHz / 16-bit / stereo
+        //      (lossless — Opus 48 kHz matches our output format exactly,
         //       so NO resampling is needed)
         //   3. Frame buffer stores raw PCM directly (NOT re-encoded to Opus,
         //      because our output format is Pcm16AudioDataFormat)
-        //   4. Output thread reads PCM â†’ SourceDataLine â†’ OS mixer â†’ speakers
+        //   4. Output thread reads PCM → SourceDataLine → OS mixer → speakers
         //      (bit-perfect passthrough, zero quality loss)
         //
         // Client order: Music first (highest quality), then fallbacks.
@@ -173,7 +179,7 @@ public final class LavaPlayerEngine {
                     new dev.lavalink.youtube.clients.AndroidVr(),
                     new dev.lavalink.youtube.clients.Web(),
                     new dev.lavalink.youtube.clients.WebEmbedded(),
-                    new dev.lavalink.youtube.clients.TvHtml5Simply()
+                    new dev.lavalink.youtube.clients.TvHtml5Embedded()
             );
             yt.setPlaylistPageCount(50);
             return yt;
@@ -208,7 +214,7 @@ public final class LavaPlayerEngine {
         }
     }
 
-    // â”€â”€ Audio Output Loop (with crash recovery) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Audio Output Loop (with crash recovery) ────────────────────────────
 
     /**
      * Outer wrapper: restarts the output loop on any crash. Audio is too
@@ -222,7 +228,7 @@ public final class LavaPlayerEngine {
                 Thread.currentThread().interrupt();
                 return; // Clean shutdown
             } catch (Exception ex) {
-                XMusic.LOGGER.error("[LavaPlayer] Audio output loop crashed â€” restarting in 1s: {}",
+                XMusic.LOGGER.error("[LavaPlayer] Audio output loop crashed — restarting in 1s: {}",
                         ex.getMessage(), ex);
                 try {
                     closeLine();
@@ -244,7 +250,7 @@ public final class LavaPlayerEngine {
      *   <li>stream.read() blocks up to STREAM_TIMEOUT_MS waiting for a frame</li>
      *   <li>On pause: immediately flush SDL buffer (instant silence), then sleep</li>
      *   <li>On track switch: flush SDL buffer (no old-audio bleed)</li>
-     *   <li>Position read from LavaPlayer's track.getPosition() â€” drift-free</li>
+     *   <li>Position read from LavaPlayer's track.getPosition() — drift-free</li>
      * </ul>
      */
     private void audioOutputLoop() throws Exception {
@@ -257,7 +263,7 @@ public final class LavaPlayerEngine {
         XMusic.LOGGER.info("[LavaPlayer] Audio output loop running.");
 
         while (true) {
-            // â”€â”€ Ensure SourceDataLine is open â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── Ensure SourceDataLine is open ──────────────────────────
             if (sourceLine == null || !sourceLine.isOpen()) {
                 closeLine();
                 if (!openLine()) {
@@ -266,7 +272,7 @@ public final class LavaPlayerEngine {
                 }
             }
 
-            // â”€â”€ Handle flush request (track switch or seek) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── Handle flush request (track switch or seek) ────────────
             if (flushRequested) {
                 flushRequested = false;
                 if (sourceLine != null && sourceLine.isOpen()) {
@@ -274,7 +280,7 @@ public final class LavaPlayerEngine {
                 }
             }
 
-            // â”€â”€ Paused: flush once for instant silence, then sleep â”€â”€â”€â”€â”€â”€
+            // ── Paused: flush once for instant silence, then sleep ──────
             if (player.isPaused()) {
                 if (pauseFlushRequested) {
                     pauseFlushRequested = false;
@@ -286,24 +292,42 @@ public final class LavaPlayerEngine {
                 continue;
             }
 
-            // â”€â”€ Read one PCM frame (blocks up to STREAM_TIMEOUT_MS) â”€â”€â”€â”€
+            // ── Read one PCM frame (blocks up to STREAM_TIMEOUT_MS) ────
             int bytesRead = stream.read(buf);
             if (bytesRead < 0) {
                 // AudioPlayerInputStream should never return EOF, but handle it
-                XMusic.LOGGER.warn("[LavaPlayer] Stream returned EOF â€” ignoring.");
+                XMusic.LOGGER.warn("[LavaPlayer] Stream returned EOF — ignoring.");
                 Thread.sleep(frameDurationMs);
                 continue;
             }
 
-            // â”€â”€ Write to hardware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // Calculate RMS of decoded buffer
+            int samples = bytesRead / 4; // stereo 16-bit
+            double sum = 0;
+            for (int i = 0; i < samples; i++) {
+                int offset = i * 4;
+                short sample = (short) ((buf[offset + 1] << 8) | (buf[offset] & 0xFF));
+                sum += sample * sample;
+            }
+            double rms = Math.sqrt(sum / (samples > 0 ? samples : 1)) / 32768.0;
+            currentRms = (float) (currentRms * 0.8f + rms * 0.2f);
+
+            // ── Write to hardware ──────────────────────────────────────
+            if (sourceLine != null && sourceLine.isOpen()) {
+                for (int i = 0; i < bytesRead; i++) {
+                    int idx = (int) ((totalBytesWrittenToLine + i) % HISTORY_SIZE);
+                    historyBuffer[idx] = buf[i];
+                }
+                totalBytesWrittenToLine += bytesRead;
+            }
             sourceLine.write(buf, 0, bytesRead);
 
-            // â”€â”€ Update position (drift-free) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── Update position (drift-free) ───────────────────────────
             updatePosition();
         }
     }
 
-    /** Read position from the actual LavaPlayer track â€” never drifts. */
+    /** Read position from the actual LavaPlayer track — never drifts. */
     private void updatePosition() {
         var track = player.getPlayingTrack();
         if (track != null) {
@@ -311,7 +335,7 @@ public final class LavaPlayerEngine {
         }
     }
 
-    // â”€â”€ SourceDataLine Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── SourceDataLine Management ──────────────────────────────────────────
 
     private boolean openLine() {
         if (mixer == null) return false;
@@ -320,6 +344,8 @@ public final class LavaPlayerEngine {
             line.open(javaFormat, SDL_BUFFER_BYTES);
             line.start();
             sourceLine = line;
+            totalBytesWrittenToLine = 0;
+            java.util.Arrays.fill(historyBuffer, (byte) 0);
             XMusic.LOGGER.info("[LavaPlayer] SourceDataLine opened: {} (buf={}B)",
                     mixer.getMixerInfo().getName(), SDL_BUFFER_BYTES);
             return true;
@@ -339,6 +365,8 @@ public final class LavaPlayerEngine {
             } catch (Exception ignored) {}
             sourceLine = null;
         }
+        totalBytesWrittenToLine = 0;
+        java.util.Arrays.fill(historyBuffer, (byte) 0);
     }
 
     /** Find and set the audio mixer by name. Empty = first supported (default). */
@@ -360,7 +388,7 @@ public final class LavaPlayerEngine {
         }
     }
 
-    // â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Public API ─────────────────────────────────────────────────────────
 
     public AudioPlayerManager getManager() { return manager; }
     public AudioPlayer        getPlayer()  { return player; }
@@ -371,7 +399,7 @@ public final class LavaPlayerEngine {
 
     /**
      * Start a track. LavaPlayer's startTrack(track, false) atomically stops
-     * the previous track and starts the new one â€” no need for a separate
+     * the previous track and starts the new one — no need for a separate
      * stopTrack() call, which would create an unnecessary silence gap.
      *
      * The internal onTrackStart listener sets flushRequested=true, so the
@@ -385,6 +413,7 @@ public final class LavaPlayerEngine {
     public void stopTrack() {
         player.stopTrack();
         currentPositionMs.set(0);
+        currentRms = 0f;
         flushRequested = true;
     }
 
@@ -397,12 +426,12 @@ public final class LavaPlayerEngine {
 
     public boolean isPaused() { return player.isPaused(); }
 
-    /** Volume as 0â€“100 integer (LavaPlayer native). */
+    /** Volume as 0–100 integer (LavaPlayer native). */
     public void setVolume(int v) {
         player.setVolume(Math.max(0, Math.min(100, v)));
     }
 
-    /** Current position in ms. Drift-free â€” from LavaPlayer's own tracker. */
+    /** Current position in ms. Drift-free — from LavaPlayer's own tracker. */
     public long getPositionMs() {
         return currentPositionMs.get();
     }
@@ -420,5 +449,49 @@ public final class LavaPlayerEngine {
     /** Request the output loop to flush the SDL buffer (e.g. after seek). */
     public void requestFlush() {
         flushRequested = true;
+    }
+
+    public void getWaveform(float[] dest) {
+        SourceDataLine line = sourceLine;
+        if (line == null || !line.isOpen() || player.isPaused()) {
+            java.util.Arrays.fill(dest, 0f);
+            return;
+        }
+
+        long playBytes = line.getLongFramePosition() * 4;
+        
+        // 160ms total span at 48000Hz = 0.16 * 48000 * 4 = 30720 bytes.
+        // stepBytes = 30720 / 32 = 960 bytes.
+        int stepBytes = 960;
+
+        // 24ms averaging window = 0.024 * 48000 * 4 = 4608 bytes.
+        int avgWindowBytes = 4608;
+        int subSamples = 12;
+        int subStep = 4608 / subSamples; // 384 bytes (multiple of 4)
+
+        for (int i = 0; i < 32; i++) {
+            long centerOffset = playBytes + (long) i * stepBytes;
+            long startOffset = centerOffset - (avgWindowBytes / 2);
+
+            long sum = 0;
+            for (int j = 0; j < subSamples; j++) {
+                long offset = startOffset + (long) j * subStep;
+                int idx = (int) (offset % HISTORY_SIZE);
+                if (idx < 0) idx += HISTORY_SIZE;
+
+                int b1 = historyBuffer[idx] & 0xFF;
+                int b2 = historyBuffer[(idx + 1) % HISTORY_SIZE];
+                short val = (short) ((b2 << 8) | b1);
+                sum += Math.abs(val);
+            }
+
+            float amplitude = (sum / (float) subSamples) / 32768f;
+            if (amplitude > 1f) amplitude = 1f;
+            dest[i] = amplitude;
+        }
+    }
+
+    public float getCurrentAmplitude() {
+        return player.getPlayingTrack() != null && !player.isPaused() ? currentRms : 0f;
     }
 }

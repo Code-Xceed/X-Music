@@ -52,6 +52,21 @@ public final class PlayerFacade {
 
     private PlaybackBackend activeBackend;
     private int currentIndex = -1;
+    private String playbackContext = "none";
+    private String lastError = null;
+
+    public void setPlaybackContext(String context) {
+        this.playbackContext = context;
+        XMusic.LOGGER.info("[Player] Playback context set to: " + context);
+    }
+
+    public String getPlaybackContext() {
+        return playbackContext;
+    }
+
+    public String getLastError() { return lastError; }
+    public void setLastError(String error) { this.lastError = error; }
+    public void clearLastError() { this.lastError = null; }
 
     // ── History (for < > controls) ─────────────────────────────────────────
     /** Chronological list of all played tracks (most recent last). */
@@ -96,6 +111,7 @@ public final class PlayerFacade {
 
     public boolean play(TrackRef track) {
         if (track == null) return false;
+        clearLastError();
 
         PlaybackBackend backend = resolveBackend(track);
         if (backend == null) {
@@ -129,6 +145,21 @@ public final class PlayerFacade {
     }
 
     public boolean playQueue(List<TrackRef> tracks, int startIndex) {
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.screen instanceof com.codexceed.xmusic.gui.screen.XMusicScreen) {
+            com.codexceed.xmusic.gui.GuiRoute route = ((com.codexceed.xmusic.gui.screen.XMusicScreen) mc.screen).getActiveRoute();
+            if (route == com.codexceed.xmusic.gui.GuiRoute.HOME) {
+                setPlaybackContext("home");
+            } else if (route == com.codexceed.xmusic.gui.GuiRoute.SEARCH) {
+                setPlaybackContext("search");
+            } else if (route == com.codexceed.xmusic.gui.GuiRoute.LIBRARY) {
+                setPlaybackContext("library");
+            } else if (route == com.codexceed.xmusic.gui.GuiRoute.DOWNLOADS) {
+                setPlaybackContext("downloads");
+            }
+        }
+
+        clearLastError();
         queue.clear();
         if (tracks != null) {
             queue.addAll(tracks);
@@ -378,6 +409,8 @@ public final class PlayerFacade {
         // Loop and autoplay are mutually exclusive
         if (loopCount != 0) {
             autoplay = false;
+        } else {
+            autoplay = true;
         }
 
         XMusic.LOGGER.info("[Player] Loop mode: {} (count={}), autoplay={}", getLoopDisplay(), loopCount, autoplay);
@@ -392,7 +425,7 @@ public final class PlayerFacade {
         return "\u00D7" + loopCount;              // ×3, ×5
     }
 
-    private boolean shouldLoopCurrentTrack() {
+    public boolean shouldLoopCurrentTrack() {
         if (loopCount == 0) return false;
         if (loopCount == -1) return true; // infinite
         return currentLoopIteration < loopCount - 1; // -1 because first play counts
@@ -426,12 +459,18 @@ public final class PlayerFacade {
     // ─── Volume ────────────────────────────────────────────────────────────
 
     public void setVolume(float volume) {
+        setVolume(volume, true);
+    }
+
+    public void setVolume(float volume, boolean saveToDisk) {
         float clamped = Math.max(0f, Math.min(1f, volume));
         if (clamped > 0f) {
             ConfigManager.get().lastNonZeroVolume = clamped;
         }
         ConfigManager.get().volume = clamped;
-        ConfigManager.save();
+        if (saveToDisk) {
+            ConfigManager.save();
+        }
         activeBackend.setVolume(clamped);
     }
 
@@ -680,6 +719,15 @@ public final class PlayerFacade {
         XMusicConfig cfg = ConfigManager.get();
         PlayerState state = snapshot();
         TrackRef track = state.getCurrentTrack();
+
+        boolean isResolving = false;
+        if (activeBackend instanceof com.codexceed.xmusic.lavaplayer.LavaPlayerBackend) {
+            isResolving = ((com.codexceed.xmusic.lavaplayer.LavaPlayerBackend) activeBackend).isResolving();
+        }
+        if (isResolving) {
+            return;
+        }
+
         if (track == null || (!state.isPlaying() && !state.isPaused())) {
             cfg.resumeTrackId = "";
             cfg.resumeWasPlaying = false;
@@ -687,6 +735,7 @@ public final class PlayerFacade {
             return;
         }
         cfg.resumeTrackId = track.getId() != null ? track.getId() : "";
+        cfg.resumeTrackArtworkUrl = track.getArtworkUrl() != null ? track.getArtworkUrl() : "";
         cfg.resumeSourceId = track.getSourceId() != null ? track.getSourceId() : "";
         cfg.resumeTrackTitle = track.getTitle() != null ? track.getTitle() : "";
         cfg.resumeTrackArtist = track.getArtist() != null ? track.getArtist() : "";
@@ -711,7 +760,8 @@ public final class PlayerFacade {
                 .artist(cfg.resumeTrackArtist)
                 .nativeUri(cfg.resumeTrackNativeUri)
                 .remoteUri(cfg.resumeTrackRemoteUri)
-                .externalUrl(cfg.resumeTrackExternalUrl);
+                .externalUrl(cfg.resumeTrackExternalUrl)
+                .artworkUrl(cfg.resumeTrackArtworkUrl);
 
         try {
             builder.playbackType(PlaybackType.valueOf(cfg.resumeTrackPlaybackType));
@@ -724,10 +774,29 @@ public final class PlayerFacade {
         if (played && cfg.resumePositionMs > 0) {
             seek(cfg.resumePositionMs);
         }
-        if (played && !cfg.resumeWasPlaying) {
-            togglePlayPause(); // start paused
+        if (played) {
+            pause(); // Always start paused on launch
         }
-        XMusic.LOGGER.info("[AutoResume] Restored track '{}' (pos={}ms, playing={})",
-                cfg.resumeTrackTitle, cfg.resumePositionMs, cfg.resumeWasPlaying);
+        XMusic.LOGGER.info("[AutoResume] Restored track '{}' (pos={}ms, forcePaused=true)",
+                cfg.resumeTrackTitle, cfg.resumePositionMs);
+    }
+
+    public void getWaveform(float[] dest) {
+        if (activeBackend == nativeBackend) {
+            ((com.codexceed.xmusic.player.backend.NativeAudioBackend) nativeBackend).getWaveform(dest);
+        } else if (activeBackend == lavaBackend) {
+            ((com.codexceed.xmusic.lavaplayer.LavaPlayerBackend) lavaBackend).getWaveform(dest);
+        } else {
+            java.util.Arrays.fill(dest, 0f);
+        }
+    }
+
+    public float getCurrentAmplitude() {
+        if (activeBackend == nativeBackend) {
+            return ((com.codexceed.xmusic.player.backend.NativeAudioBackend) nativeBackend).getCurrentAmplitude();
+        } else if (activeBackend == lavaBackend) {
+            return ((com.codexceed.xmusic.lavaplayer.LavaPlayerBackend) lavaBackend).getCurrentAmplitude();
+        }
+        return 0f;
     }
 }

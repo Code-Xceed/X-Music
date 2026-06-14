@@ -18,7 +18,7 @@ import com.codexceed.xmusic.service.youtube.YouTubeToolManager;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,13 +26,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Settings tab â€” hybrid layout with collapsible category sections.
+ * Settings tab — hybrid layout with collapsible category sections.
  * Compact toggle/cycle/slider rows for simple settings, expandable panels
  * for categories needing more control.
  */
 public final class SettingsTab {
 
-    // â”€â”€ Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Layout ─────────────────────────────────────────────────────────────
     private static final int PAD = 10;
     private static final int ROW_H = 24;
     private static final int SECTION_HEADER_H = 26;
@@ -44,7 +44,7 @@ public final class SettingsTab {
     private static final int BTN_H = 18;
     private static final int PATH_DISPLAY_W = 120;
 
-    // â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── State ──────────────────────────────────────────────────────────────
     private boolean playbackExpanded = true;
     private boolean hudExpanded = false;
     private boolean youtubeExpanded = false;
@@ -64,9 +64,9 @@ public final class SettingsTab {
     private String editingField = null; // field name being edited
     private String editText = "";
 
-    // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Render ─────────────────────────────────────────────────────────────
 
-    public void render(GuiGraphicsExtractor graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
+    public void render(GuiGraphics graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
         int x = frame.contentX();
         int y = frame.contentY();
         int w = frame.contentWidth();
@@ -124,21 +124,21 @@ public final class SettingsTab {
         if (scrollOffset > maxScroll) { scrollOffset = maxScroll; targetScroll = maxScroll; }
     }
 
-    // â”€â”€ Section rendering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Section rendering ──────────────────────────────────────────────────
 
     @FunctionalInterface
     private interface SectionRenderer {
-        int render(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my);
+        int render(GuiGraphics g, Font f, int x, int y, int w, int mx, int my);
     }
 
-    private int renderSection(GuiGraphicsExtractor g, Font f, int x, int y, int w,
+    private int renderSection(GuiGraphics g, Font f, int x, int y, int w,
                               int mx, int my, String title, String id,
                               boolean expanded, SectionRenderer renderer) {
         // Section header with premium styling
         boolean headerHover = GuiRender.inside(mx, my, x, y, w, SECTION_HEADER_H);
         float lerp = HoverTracker.tick("settings_sec_" + id, headerHover);
 
-        // Header background â€” smooth interpolation between states
+        // Header background — smooth interpolation between states
         int headerBg = AnimationHelper.lerpColor(GuiTheme.PANEL_DARK, GuiTheme.PANEL_HOVER, lerp);
         g.fill(x, y, x + w, y + SECTION_HEADER_H, headerBg);
 
@@ -180,9 +180,9 @@ public final class SettingsTab {
         return y;
     }
 
-    // â”€â”€ Playback rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Playback rows ──────────────────────────────────────────────────────
 
-    private int renderPlaybackRows(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
+    private int renderPlaybackRows(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
         XMusicConfig cfg = ConfigManager.get();
         PlayerFacade player = PlayerFacade.getInstance();
 
@@ -190,21 +190,15 @@ public final class SettingsTab {
         y = renderToggleRow(g, f, x, y, w, mx, my, "Autoplay",
                 "autoplay", player.isAutoplay());
 
+        // Play in Main Menu toggle
+        y = renderToggleRow(g, f, x, y, w, mx, my, "Play in Main Menu",
+                "playInMainMenu", cfg.playInMainMenu);
+
         // Playback Mode cycle
         PlaybackMode mode = player.getPlaybackMode();
         String modeLabel = mode.getDisplayName();
         y = renderCycleRow(g, f, x, y, w, mx, my, "Playback Mode",
                 "playbackMode", modeLabel);
-
-        // Playback Context cycle (WHERE music plays)
-        String contextLabel;
-        switch (cfg.playbackContext) {
-            case "IN_WORLD": contextLabel = "In-World Only"; break;
-            case "MAIN_MENU": contextLabel = "Main Menu Only"; break;
-            default: contextLabel = "Everywhere"; break;
-        }
-        y = renderCycleRow(g, f, x, y, w, mx, my, "Play Music In",
-                "playbackContext", contextLabel);
 
         // Volume Step
         y = renderSliderRow(g, f, x, y, w, mx, my, "Volume Step",
@@ -214,9 +208,9 @@ public final class SettingsTab {
         return y;
     }
 
-    // â”€â”€ HUD rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── HUD rows ────────────────────────────────────────────────────────────
 
-    private int renderHudRows(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
+    private int renderHudRows(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
         XMusicConfig cfg = ConfigManager.get();
 
         // HUD Enabled toggle
@@ -228,11 +222,6 @@ public final class SettingsTab {
         y = renderCycleRow(g, f, x, y, w, mx, my, "HUD Position",
                 "hudPosition", posLabel);
 
-        // Auto-Hide slider
-        y = renderSliderRow(g, f, x, y, w, mx, my, "Auto-Hide",
-                "hudAutoHideSeconds", cfg.hudAutoHideSeconds, 0, 30, 1,
-                cfg.hudAutoHideSeconds == 0 ? "Always" : cfg.hudAutoHideSeconds + "s");
-
         // Now Playing Toast toggle
         y = renderToggleRow(g, f, x, y, w, mx, my, "Now Playing Toast",
                 "showNowPlayingToast", cfg.showNowPlayingToast);
@@ -243,9 +232,9 @@ public final class SettingsTab {
         return y;
     }
 
-    // â”€â”€ YouTube rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── YouTube rows ───────────────────────────────────────────────────────
 
-    private int renderYouTubeRows(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
+    private int renderYouTubeRows(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
         XMusicConfig cfg = ConfigManager.get();
         YouTubeToolManager tools = ServiceManager.getYouTubeToolManager();
 
@@ -259,7 +248,7 @@ public final class SettingsTab {
             YouTubeToolManager.SetupState st = tools.getState();
             switch (st) {
                 case READY:
-                    statusText = "âœ“ Ready";
+                    statusText = "✓ Ready";
                     statusColor = GuiTheme.ACCENT;
                     break;
                 case INSTALLING:
@@ -314,14 +303,14 @@ public final class SettingsTab {
 
         // Cookies File
         y = renderPathRow(g, f, x, y, w, mx, my, "Cookies File",
-                "youtubeCookiesFile", cfg.youtubeCookiesFile.isEmpty() ? "â€”" : cfg.youtubeCookiesFile);
+                "youtubeCookiesFile", cfg.youtubeCookiesFile.isEmpty() ? "—" : cfg.youtubeCookiesFile);
 
         return y;
     }
 
-    // â”€â”€ Storage rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Storage rows ───────────────────────────────────────────────────────
 
-    private int renderStorageRows(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
+    private int renderStorageRows(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
         XMusicConfig cfg = ConfigManager.get();
 
         // Local Music Folder
@@ -354,9 +343,9 @@ public final class SettingsTab {
         return y;
     }
 
-    // â”€â”€ About rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── About rows ─────────────────────────────────────────────────────────
 
-    private int renderAboutRows(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
+    private int renderAboutRows(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
         // Version
         y = renderLabelRow(g, f, x, y, w, "Version", "CodeX Music Player v" + XMusic.getVersion());
 
@@ -371,9 +360,9 @@ public final class SettingsTab {
         return y;
     }
 
-    // â”€â”€ Animations rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Animations rows ─────────────────────────────────────────────────────
 
-    private int renderAnimationsRows(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
+    private int renderAnimationsRows(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
         XMusicConfig cfg = ConfigManager.get();
 
         // Animations Enabled toggle
@@ -383,22 +372,21 @@ public final class SettingsTab {
         // Animation Speed slider (only shown when animations are enabled)
         if (cfg.animationsEnabled) {
             String speedLabel;
-            if (cfg.animationSpeed <= 0.5f) speedLabel = "Slow";
-            else if (cfg.animationSpeed <= 0.8f) speedLabel = "Relaxed";
-            else if (cfg.animationSpeed <= 1.2f) speedLabel = "Normal";
+            if (cfg.animationSpeed <= 1.0f) speedLabel = "Normal";
             else if (cfg.animationSpeed <= 2.0f) speedLabel = "Fast";
+            else if (cfg.animationSpeed <= 3.0f) speedLabel = "Very Fast";
             else speedLabel = "Instant";
             y = renderSliderRow(g, f, x, y, w, mx, my, "Animation Speed",
-                    "animationSpeed", cfg.animationSpeed, 0.5f, 3.0f, 0.25f,
+                    "animationSpeed", cfg.animationSpeed, 1.0f, 4.0f, 0.25f,
                     String.format("%.1fx (%s)", cfg.animationSpeed, speedLabel));
         }
 
         return y;
     }
 
-    // â”€â”€ Row type renderers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Row type renderers ─────────────────────────────────────────────────
 
-    private int renderToggleRow(GuiGraphicsExtractor g, Font f, int x, int y, int w,
+    private int renderToggleRow(GuiGraphics g, Font f, int x, int y, int w,
                                 int mx, int my, String label, String id, boolean value) {
         // Row background with smooth hover
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
@@ -440,7 +428,7 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    private int renderCycleRow(GuiGraphicsExtractor g, Font f, int x, int y, int w,
+    private int renderCycleRow(GuiGraphics g, Font f, int x, int y, int w,
                                int mx, int my, String label, String id, String value) {
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
         float hover = HoverTracker.tick("scyc_" + id, rowHover);
@@ -476,7 +464,7 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    private int renderSliderRow(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my,
+    private int renderSliderRow(GuiGraphics g, Font f, int x, int y, int w, int mx, int my,
                                 String label, String field, double value, double min, double max,
                                 double step, String displayValue) {
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
@@ -534,7 +522,7 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    private int renderStatusRow(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my,
+    private int renderStatusRow(GuiGraphics g, Font f, int x, int y, int w, int mx, int my,
                                 String label, String status, int statusColor) {
         GuiRender.shadowText(g, f, label, x + 6, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
 
@@ -545,7 +533,7 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    private int renderPathRow(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my,
+    private int renderPathRow(GuiGraphics g, Font f, int x, int y, int w, int mx, int my,
                               String label, String field, String value) {
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
         float hover = HoverTracker.tick("spath_" + field, rowHover);
@@ -569,7 +557,7 @@ public final class SettingsTab {
             // Truncate from left
             String fits = f.plainSubstrByWidth(display, PATH_DISPLAY_W - 6);
             if (!fits.equals(display) && display.length() > fits.length()) {
-                fits = "â€¦" + display.substring(display.length() - fits.length());
+                fits = "…" + display.substring(display.length() - fits.length());
             }
             GuiRender.text(g, f, fits, pathX + 3, pathY + 3, GuiTheme.TEXT);
             // Cursor blink
@@ -579,7 +567,7 @@ public final class SettingsTab {
             }
         } else {
             // Read-only display
-            int textColor = value.equals("auto") || value.equals("â€”")
+            int textColor = value.equals("auto") || value.equals("—")
                     ? GuiTheme.TEXT_MUTED : GuiTheme.TEXT_SOFT;
             GuiRender.truncated(g, f, value, pathX + 2, pathY + 3, PATH_DISPLAY_W - 4, textColor);
         }
@@ -587,7 +575,7 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    private int renderFolderRow(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my,
+    private int renderFolderRow(GuiGraphics g, Font f, int x, int y, int w, int mx, int my,
                                 String label, String actionId, String path) {
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
         float hover = HoverTracker.tick("sfld_" + actionId, rowHover);
@@ -627,7 +615,7 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    private int renderActionRow(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my,
+    private int renderActionRow(GuiGraphics g, Font f, int x, int y, int w, int mx, int my,
                                 String label, String actionId, String btnLabel) {
         if (!label.isEmpty()) {
             GuiRender.shadowText(g, f, label, x + 6, y + (ROW_H - 8) / 2, GuiTheme.TEXT_SOFT);
@@ -661,7 +649,7 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    private int renderLabelRow(GuiGraphicsExtractor g, Font f, int x, int y, int w,
+    private int renderLabelRow(GuiGraphics g, Font f, int x, int y, int w,
                                String label, String value) {
         GuiRender.shadowText(g, f, label, x + 6, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
         int valW = f.width(value);
@@ -670,13 +658,17 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    // â”€â”€ Mouse Click â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Mouse Click ────────────────────────────────────────────────────────
 
     public boolean mouseClicked(GuiFrame frame, double mouseX, double mouseY, int button) {
         int x = frame.contentX();
         int y = frame.contentY();
         int w = frame.contentWidth();
         int h = frame.contentHeight();
+
+        if (mouseX < x || mouseX > x + w || mouseY < y || mouseY > y + h) {
+            return false;
+        }
 
         int contentX = x + PAD;
         int contentW = w - PAD * 2;
@@ -685,43 +677,71 @@ public final class SettingsTab {
         // Title (must match render offset of 18px)
         drawY += 18;
 
-        // Check section headers
-        drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
-                "playback", playbackExpanded);
+        // Check playback
+        int nextY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY, "playback", playbackExpanded);
+        if (nextY == -1) return true;
+        drawY = nextY;
         if (playbackExpanded) {
-            drawY = checkPlaybackClicks(contentX, drawY, contentW, mouseX, mouseY);
-            drawY += SECTION_GAP;
+            nextY = checkPlaybackClicks(contentX, drawY, contentW, mouseX, mouseY);
+            if (nextY == -1) return true;
+            drawY = nextY;
         }
-        drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
-                "hud", hudExpanded);
+        drawY += SECTION_GAP;
+
+        // Check hud
+        nextY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY, "hud", hudExpanded);
+        if (nextY == -1) return true;
+        drawY = nextY;
         if (hudExpanded) {
-            drawY = checkHudClicks(contentX, drawY, contentW, mouseX, mouseY);
-            drawY += SECTION_GAP;
+            nextY = checkHudClicks(contentX, drawY, contentW, mouseX, mouseY);
+            if (nextY == -1) return true;
+            drawY = nextY;
         }
-        drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
-                "youtube", youtubeExpanded);
+        drawY += SECTION_GAP;
+
+        // Check youtube
+        nextY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY, "youtube", youtubeExpanded);
+        if (nextY == -1) return true;
+        drawY = nextY;
         if (youtubeExpanded) {
-            drawY = checkYouTubeClicks(contentX, drawY, contentW, mouseX, mouseY);
-            drawY += SECTION_GAP;
+            nextY = checkYouTubeClicks(contentX, drawY, contentW, mouseX, mouseY);
+            if (nextY == -1) return true;
+            drawY = nextY;
         }
-        drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
-                "storage", storageExpanded);
+        drawY += SECTION_GAP;
+
+        // Check storage
+        nextY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY, "storage", storageExpanded);
+        if (nextY == -1) return true;
+        drawY = nextY;
         if (storageExpanded) {
-            drawY = checkStorageClicks(contentX, drawY, contentW, mouseX, mouseY);
-            drawY += SECTION_GAP;
+            nextY = checkStorageClicks(contentX, drawY, contentW, mouseX, mouseY);
+            if (nextY == -1) return true;
+            drawY = nextY;
         }
-        drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
-                "about", aboutExpanded);
+        drawY += SECTION_GAP;
+
+        // Check about
+        nextY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY, "about", aboutExpanded);
+        if (nextY == -1) return true;
+        drawY = nextY;
         if (aboutExpanded) {
-            drawY = checkAboutClicks(contentX, drawY, contentW, mouseX, mouseY);
-            drawY += SECTION_GAP;
+            nextY = checkAboutClicks(contentX, drawY, contentW, mouseX, mouseY);
+            if (nextY == -1) return true;
+            drawY = nextY;
         }
-        drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
-                "animations", animationsExpanded);
+        drawY += SECTION_GAP;
+
+        // Check animations
+        nextY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY, "animations", animationsExpanded);
+        if (nextY == -1) return true;
+        drawY = nextY;
         if (animationsExpanded) {
-            drawY = checkAnimationsClicks(contentX, drawY, contentW, mouseX, mouseY);
-            drawY += SECTION_GAP;
+            nextY = checkAnimationsClicks(contentX, drawY, contentW, mouseX, mouseY);
+            if (nextY == -1) return true;
+            drawY = nextY;
         }
+        drawY += SECTION_GAP;
 
         return false;
     }
@@ -730,11 +750,9 @@ public final class SettingsTab {
                                   String id, boolean expanded) {
         if (GuiRender.inside(mx, my, x, y, w, SECTION_HEADER_H)) {
             toggleSection(id);
-            return y + SECTION_HEADER_H + 2 + (expanded ? 0 : SECTION_GAP);
+            return -1;
         }
         y += SECTION_HEADER_H + 2;
-        // Skip rows if expanded (we don't know exact height here, but click handling
-        // will check each row individually)
         return y;
     }
 
@@ -749,7 +767,7 @@ public final class SettingsTab {
         }
     }
 
-    // â”€â”€ Playback click handling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Playback click handling ────────────────────────────────────────────
 
     private int checkPlaybackClicks(int x, int y, int w, double mx, double my) {
         XMusicConfig cfg = ConfigManager.get();
@@ -757,97 +775,107 @@ public final class SettingsTab {
 
         // Autoplay toggle
         if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
-            int toggleX = x + w - TOGGLE_W - 4;
+            int toggleX = x + w - TOGGLE_W - 6;
             int toggleY = y + (ROW_H - TOGGLE_H) / 2;
             if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
                 player.toggleAutoplay();
-                return y + ROW_H;
+                return -1;
+            }
+        }
+        y += ROW_H;
+
+        // Play in Main Menu toggle
+        if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
+            int toggleX = x + w - TOGGLE_W - 6;
+            int toggleY = y + (ROW_H - TOGGLE_H) / 2;
+            if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
+                cfg.playInMainMenu = !cfg.playInMainMenu;
+                ConfigManager.save();
+                return -1;
             }
         }
         y += ROW_H;
 
         // Playback Mode cycle
         if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
-            player.cyclePlaybackMode();
-            return y + ROW_H;
-        }
-        y += ROW_H;
-
-        // Playback Context cycle
-        if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
-            switch (cfg.playbackContext) {
-                case "EVERYWHERE": cfg.playbackContext = "IN_WORLD"; break;
-                case "IN_WORLD": cfg.playbackContext = "MAIN_MENU"; break;
-                default: cfg.playbackContext = "EVERYWHERE"; break;
+            Font font = Minecraft.getInstance().font;
+            int btnW = font.width(player.getPlaybackMode().getDisplayName()) + 16;
+            int btnX = x + w - btnW - 6;
+            int btnY = y + (ROW_H - BTN_H) / 2;
+            if (GuiRender.inside(mx, my, btnX, btnY, btnW, BTN_H)) {
+                player.cyclePlaybackMode();
+                return -1;
             }
-            ConfigManager.save();
-            return y + ROW_H;
         }
         y += ROW_H;
 
         // Volume Step slider
         y = checkSliderClick(x, y, w, mx, my, "volumeStep");
+        if (y == -1) return -1;
         y += ROW_H;
 
         return y;
     }
 
-    // â”€â”€ HUD click handling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── HUD click handling ──────────────────────────────────────────────────
 
     private int checkHudClicks(int x, int y, int w, double mx, double my) {
         XMusicConfig cfg = ConfigManager.get();
 
         // HUD Enabled toggle
         if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
-            int toggleX = x + w - TOGGLE_W - 4;
+            int toggleX = x + w - TOGGLE_W - 6;
             int toggleY = y + (ROW_H - TOGGLE_H) / 2;
             if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
                 cfg.hudEnabled = !cfg.hudEnabled;
                 ConfigManager.save();
-                return y + ROW_H;
+                return -1;
             }
         }
         y += ROW_H;
 
         // HUD Position cycle
         if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
-            String[] positions = {"TOP_CENTER", "TOP_LEFT", "TOP_RIGHT", "BOTTOM_RIGHT", "BOTTOM_LEFT"};
-            int idx = 0;
-            for (int i = 0; i < positions.length; i++) {
-                if (positions[i].equals(cfg.hudPosition)) { idx = i; break; }
+            Font font = Minecraft.getInstance().font;
+            String posLabel = cfg.hudPosition.replace("_", " ");
+            int btnW = font.width(posLabel) + 16;
+            int btnX = x + w - btnW - 6;
+            int btnY = y + (ROW_H - BTN_H) / 2;
+            if (GuiRender.inside(mx, my, btnX, btnY, btnW, BTN_H)) {
+                String[] positions = {"TOP_CENTER", "TOP_LEFT", "TOP_RIGHT", "BOTTOM_RIGHT", "BOTTOM_LEFT"};
+                int idx = 0;
+                for (int i = 0; i < positions.length; i++) {
+                    if (positions[i].equals(cfg.hudPosition)) { idx = i; break; }
+                }
+                cfg.hudPosition = positions[(idx + 1) % positions.length];
+                cfg.hudX = -1;
+                cfg.hudY = -1;
+                ConfigManager.save();
+                return -1;
             }
-            cfg.hudPosition = positions[(idx + 1) % positions.length];
-            // Reset custom position when using presets
-            cfg.hudX = -1;
-            cfg.hudY = -1;
-            ConfigManager.save();
-            return y + ROW_H;
         }
-        y += ROW_H;
-
-        // Auto-Hide slider
-        y = checkSliderClick(x, y, w, mx, my, "hudAutoHideSeconds");
         y += ROW_H;
 
         // Now Playing Toast toggle
         if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
-            int toggleX = x + w - TOGGLE_W - 4;
+            int toggleX = x + w - TOGGLE_W - 6;
             int toggleY = y + (ROW_H - TOGGLE_H) / 2;
             if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
                 cfg.showNowPlayingToast = !cfg.showNowPlayingToast;
                 ConfigManager.save();
-                return y + ROW_H;
+                return -1;
             }
         }
         y += ROW_H;
 
         // Edit HUD Position button
         y = checkActionClick(x, y, w, mx, my, "editHudPosition");
+        if (y == -1) return -1;
 
         return y;
     }
 
-    // â”€â”€ YouTube click handling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── YouTube click handling ─────────────────────────────────────────────
 
     private int checkYouTubeClicks(int x, int y, int w, double mx, double my) {
         YouTubeToolManager tools = ServiceManager.getYouTubeToolManager();
@@ -859,46 +887,58 @@ public final class SettingsTab {
         if (tools != null && (tools.getState() == YouTubeToolManager.SetupState.MISSING
                 || tools.getState() == YouTubeToolManager.SetupState.ERROR)) {
             y = checkActionClick(x, y, w, mx, my, "installTools");
+            if (y == -1) return -1;
         } else if (tools != null && tools.getState() == YouTubeToolManager.SetupState.READY) {
             y = checkActionClick(x, y, w, mx, my, "reinstallTools");
+            if (y == -1) return -1;
         }
 
-        // yt-dlp Path â€” click to edit
+        // yt-dlp Path — click to edit
         y = checkPathClick(x, y, w, mx, my, "youtubeYtDlpPath");
+        if (y == -1) return -1;
         // ffmpeg Path
         y = checkPathClick(x, y, w, mx, my, "youtubeFfmpegPath");
+        if (y == -1) return -1;
         // Download Timeout slider
         y = checkSliderClick(x, y, w, mx, my, "youtubeDownloadTimeoutSeconds");
+        if (y == -1) return -1;
         y += ROW_H;
         // Concurrent Fragments slider
         y = checkSliderClick(x, y, w, mx, my, "youtubeDownloadConcurrentFragments");
+        if (y == -1) return -1;
         y += ROW_H;
         // Cookies File
         y = checkPathClick(x, y, w, mx, my, "youtubeCookiesFile");
+        if (y == -1) return -1;
 
         return y;
     }
 
-    // â”€â”€ Storage click handling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Storage click handling ─────────────────────────────────────────────
 
     private int checkStorageClicks(int x, int y, int w, double mx, double my) {
-        // Local Music Folder â€” Open button
+        // Local Music Folder — Open button
         y = checkFolderClick(x, y, w, mx, my, "openLocalFolder");
-        // Downloads Folder â€” Open button
+        if (y == -1) return -1;
+        // Downloads Folder — Open button
         y = checkFolderClick(x, y, w, mx, my, "openDownloadsFolder");
+        if (y == -1) return -1;
         // Cache Limit slider
         y = checkSliderClick(x, y, w, mx, my, "youtubeCacheMaxSizeMb");
+        if (y == -1) return -1;
         y += ROW_H;
         // Max Cached Tracks slider
         y = checkSliderClick(x, y, w, mx, my, "youtubeCacheMaxTracks");
+        if (y == -1) return -1;
         y += ROW_H;
         // Clear Cache
         y = checkActionClick(x, y, w, mx, my, "clearCache");
+        if (y == -1) return -1;
 
         return y;
     }
 
-    // â”€â”€ About click handling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── About click handling ───────────────────────────────────────────────
 
     private int checkAboutClicks(int x, int y, int w, double mx, double my) {
         // Version row (no click)
@@ -907,27 +947,30 @@ public final class SettingsTab {
         // Reset / Confirm
         if (confirmReset) {
             y = checkActionClick(x, y, w, mx, my, "confirmReset");
+            if (y == -1) return -1;
             y = checkActionClick(x, y, w, mx, my, "cancelReset");
+            if (y == -1) return -1;
         } else {
             y = checkActionClick(x, y, w, mx, my, "resetAll");
+            if (y == -1) return -1;
         }
 
         return y;
     }
 
-    // â”€â”€ Animations click handling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Animations click handling ─────────────────────────────────────────
 
     private int checkAnimationsClicks(int x, int y, int w, double mx, double my) {
         XMusicConfig cfg = ConfigManager.get();
 
         // Animations Enabled toggle
         if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
-            int toggleX = x + w - TOGGLE_W - 4;
+            int toggleX = x + w - TOGGLE_W - 6;
             int toggleY = y + (ROW_H - TOGGLE_H) / 2;
             if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
                 cfg.animationsEnabled = !cfg.animationsEnabled;
                 ConfigManager.save();
-                return y + ROW_H;
+                return -1;
             }
         }
         y += ROW_H;
@@ -935,16 +978,17 @@ public final class SettingsTab {
         // Animation Speed slider (only if animations enabled)
         if (cfg.animationsEnabled) {
             y = checkSliderClick(x, y, w, mx, my, "animationSpeed");
+            if (y == -1) return -1;
             y += ROW_H;
         }
 
         return y;
     }
 
-    // â”€â”€ Generic click helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Generic click helpers ──────────────────────────────────────────────
 
     private int checkSliderClick(int x, int y, int w, double mx, double my, String field) {
-        int sliderX = x + w - SLIDER_W - 4;
+        int sliderX = x + w - SLIDER_W - 6;
         int sliderY = y + (ROW_H - SLIDER_H) / 2;
         if (GuiRender.inside(mx, my, sliderX, sliderY, SLIDER_W, SLIDER_H)) {
             draggingSlider = field;
@@ -976,7 +1020,7 @@ public final class SettingsTab {
         String btnLabel = "Open Folder";
         Font font = Minecraft.getInstance().font;
         int btnW = font.width(btnLabel) + 12;
-        int btnX = x + w - btnW - 4;
+        int btnX = x + w - btnW - 6;
         int btnY = y + (ROW_H - BTN_H) / 2;
         if (GuiRender.inside(mx, my, btnX, btnY, btnW, BTN_H)) {
             executeAction(actionId);
@@ -990,7 +1034,7 @@ public final class SettingsTab {
         // Estimate button width based on action
         String btnLabel = getActionLabel(actionId);
         int btnW = font.width(btnLabel) + 16;
-        int btnX = x + w - btnW - 4;
+        int btnX = x + w - btnW - 6;
         int btnY = y + (ROW_H - BTN_H) / 2;
         if (GuiRender.inside(mx, my, btnX, btnY, btnW, BTN_H)) {
             executeAction(actionId);
@@ -1012,7 +1056,7 @@ public final class SettingsTab {
         }
     }
 
-    // â”€â”€ Action execution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Action execution ───────────────────────────────────────────────────
 
     private void executeAction(String actionId) {
         switch (actionId) {
@@ -1072,12 +1116,12 @@ public final class SettingsTab {
         }
     }
 
-    // â”€â”€ Slider drag â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Slider drag ────────────────────────────────────────────────────────
 
     private void updateSliderFromMouse(int x, int w, double mx) {
         if (draggingSlider == null) return;
 
-        int sliderX = x + w - SLIDER_W - 4;
+        int sliderX = x + w - SLIDER_W - 6;
         float pct = (float) ((mx - sliderX) / SLIDER_W);
         if (pct < 0) pct = 0;
         if (pct > 1) pct = 1;
@@ -1102,14 +1146,11 @@ public final class SettingsTab {
                 cfg.youtubeCacheMaxTracks = (int) (8 + pct * 56);
                 cfg.youtubeCacheMaxTracks = Math.round(cfg.youtubeCacheMaxTracks / 4f) * 4;
                 break;
-            case "hudAutoHideSeconds":
-                cfg.hudAutoHideSeconds = (int) (0 + pct * 30);
-                break;
             case "animationSpeed":
-                cfg.animationSpeed = 0.5f + pct * 2.5f;
+                cfg.animationSpeed = 1.0f + pct * 3.0f; // 1.0 to 4.0
                 cfg.animationSpeed = Math.round(cfg.animationSpeed * 4f) / 4f; // snap to 0.25
-                if (cfg.animationSpeed < 0.5f) cfg.animationSpeed = 0.5f;
-                if (cfg.animationSpeed > 3.0f) cfg.animationSpeed = 3.0f;
+                if (cfg.animationSpeed < 1.0f) cfg.animationSpeed = 1.0f;
+                if (cfg.animationSpeed > 4.0f) cfg.animationSpeed = 4.0f;
                 break;
         }
         ConfigManager.save();
@@ -1133,16 +1174,23 @@ public final class SettingsTab {
         return false;
     }
 
-    // â”€â”€ Scroll â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Scroll ─────────────────────────────────────────────────────────────
 
     public boolean mouseScrolled(GuiFrame frame, double mouseX, double mouseY, double amount) {
+        int x = frame.contentX();
+        int y = frame.contentY();
+        int w = frame.contentWidth();
+        int h = frame.contentHeight();
+        if (mouseX < x || mouseX > x + w || mouseY < y || mouseY > y + h) {
+            return false;
+        }
         targetScroll -= amount * 20;
         if (targetScroll < 0) targetScroll = 0;
         if (targetScroll > maxScroll) targetScroll = maxScroll;
         return true;
     }
 
-    // â”€â”€ Keyboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Keyboard ───────────────────────────────────────────────────────────
 
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (editingField != null) {

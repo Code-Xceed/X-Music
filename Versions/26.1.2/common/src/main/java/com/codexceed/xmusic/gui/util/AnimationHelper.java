@@ -9,7 +9,7 @@ public final class AnimationHelper {
 
     private AnimationHelper() {}
 
-    // â”€â”€ Easing Curves â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Easing Curves ────────────────────────────────────────────────────
 
     public static float easeInOut(float t) {
         t = clamp(t);
@@ -42,13 +42,13 @@ public final class AnimationHelper {
         return 1f - inv * inv * inv * inv * inv;
     }
 
-    /** Expo ease-out â€” aggressive start, gentle finish. */
+    /** Expo ease-out — aggressive start, gentle finish. */
     public static float easeOutExpo(float t) {
         t = clamp(t);
         return t >= 1f ? 1f : 1f - (float) Math.pow(2, -10 * t);
     }
 
-    /** Back ease-out â€” slight overshoot for spring-like feel. */
+    /** Back ease-out — slight overshoot for spring-like feel. */
     public static float easeOutBack(float t) {
         t = clamp(t);
         float c1 = 1.70158f;
@@ -61,7 +61,7 @@ public final class AnimationHelper {
         return (float) (1.0 + Math.pow(2, -10 * t) * Math.sin((t - 0.075) * (2 * Math.PI) / 0.3));
     }
 
-    // â”€â”€ Smooth Approach (delta-time lerp) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Smooth Approach (delta-time lerp) ────────────────────────────────
 
     /**
      * Delta-time based smooth approach (for continuous animations).
@@ -69,7 +69,7 @@ public final class AnimationHelper {
      *
      * @param current Current value
      * @param target  Target value
-     * @param speed   Approach speed (higher = faster, e.g. 8â€“15)
+     * @param speed   Approach speed (higher = faster, e.g. 8–15)
      * @param delta   Delta time in seconds (partialTick / 20.0)
      */
     public static float approach(float current, float target, float speed, float delta) {
@@ -78,7 +78,7 @@ public final class AnimationHelper {
         return current + diff * (1f - (float) Math.exp(-speed * delta));
     }
 
-    // â”€â”€ Time-Based Progress â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Time-Based Progress ──────────────────────────────────────────────
 
     /**
      * Calculate animation progress given start time and duration.
@@ -93,17 +93,17 @@ public final class AnimationHelper {
         return System.currentTimeMillis() - startTimeMs >= durationMs;
     }
 
-    // â”€â”€ Staggered Cascade Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Staggered Cascade Animations ─────────────────────────────────────
 
     /**
      * Returns a staggered progress value for a child element in a cascade.
      * Each child starts its animation slightly after the previous one.
      *
-     * @param parentProgress Overall parent progress 0â†’1
+     * @param parentProgress Overall parent progress 0→1
      * @param index          Child index (0-based)
      * @param totalChildren  Total number of children in the cascade
      * @param overlap        How much animations overlap (0.0 = none, 1.0 = full)
-     * @return The individual child's progress 0â†’1
+     * @return The individual child's progress 0→1
      */
     public static float stagger(float parentProgress, int index, int totalChildren, float overlap) {
         if (totalChildren <= 1) return clamp(parentProgress);
@@ -114,10 +114,10 @@ public final class AnimationHelper {
         return clamp(t);
     }
 
-    // â”€â”€ Color Interpolation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Color Interpolation ──────────────────────────────────────────────
 
     /**
-     * Interpolates between two ARGB colors by factor t (0â†’1).
+     * Interpolates between two ARGB colors by factor t (0→1).
      * Blends each channel independently for smooth color transitions.
      */
     public static int lerpColor(int from, int to, float t) {
@@ -141,14 +141,14 @@ public final class AnimationHelper {
 
     /**
      * Creates a pulsing alpha value for glow effects.
-     * Returns 0â†’1 sine-based pulse at the given frequency.
+     * Returns 0→1 sine-based pulse at the given frequency.
      */
     public static float pulse(float frequencyHz) {
         double t = System.currentTimeMillis() / 1000.0;
         return (float) (Math.sin(t * Math.PI * 2 * frequencyHz) * 0.5 + 0.5);
     }
 
-    // â”€â”€ Linear Interpolation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Linear Interpolation ─────────────────────────────────────────────
 
     public static float lerp(float a, float b, float t) {
         return a + (b - a) * clamp(t);
@@ -158,9 +158,9 @@ public final class AnimationHelper {
         return a + (int) ((b - a) * clamp(t));
     }
 
-    // â”€â”€ Utility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Utility ──────────────────────────────────────────────────────────
 
-    /** Public clamp to 0â€“1 range. */
+    /** Public clamp to 0–1 range. */
     public static float clamp01(float t) {
         return Math.max(0f, Math.min(1f, t));
     }

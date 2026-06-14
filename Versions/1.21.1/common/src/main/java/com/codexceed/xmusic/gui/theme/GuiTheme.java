@@ -5,24 +5,25 @@ public final class GuiTheme {
 
     // ── Backgrounds ─────────────────────────────────────────────────────
     public static final int OVERLAY       = 0x80000000;
-    public static final int FRAME         = 0xFF1E1E1E;
-    public static final int FRAME_EDGE    = 0xFF0A0A0A;
-    public static final int PANEL         = 0xFF2A2A2A;
-    public static final int PANEL_DARK    = 0xFF1A1A1A;
-    public static final int PANEL_HOVER   = 0xFF3A3A3A;
-    public static final int PANEL_ACTIVE  = 0xFF2A1A1A;
+    public static final int FRAME         = 0xFF16171E; // Slate black
+    public static final int FRAME_EDGE    = 0xFF08080C;
+    public static final int PANEL         = 0xFF20222B; // Dark slate panel
+    public static final int PANEL_DARK    = 0xFF121319; // Inset slate dark
+    public static final int PANEL_HOVER   = 0xFF2B2E3A; // Highlight hover slate
+    public static final int PANEL_ACTIVE  = 0xFF192530; // Active selection slate-cyan
 
     // ── Gradient Backgrounds (for depth layers) ─────────────────────────
-    public static final int FRAME_TOP     = 0xFF262626;   // lighter top for gradient
-    public static final int FRAME_BOTTOM  = 0xFF161616;   // darker bottom for gradient
-    public static final int PANEL_GRAD_TOP    = 0xFF303030;
-    public static final int PANEL_GRAD_BOTTOM = 0xFF222222;
+    public static final int FRAME_TOP     = 0xFF1F212B;   // gradient top
+    public static final int FRAME_BOTTOM  = 0xFF0F1014;   // gradient bottom
+    public static final int PANEL_GRAD_TOP    = 0xFF282B36;
+    public static final int PANEL_GRAD_BOTTOM = 0xFF1A1C23;
 
     // ── Accents ─────────────────────────────────────────────────────────
-    public static final int ACCENT        = 0xFF3BF0FF; // MC cyan
-    public static final int ACCENT_DARK   = 0xFF2A9DB5;
-    public static final int ACCENT_BRIGHT = 0xFF70F8FF; // brighter accent for hover highlight
+    public static final int ACCENT        = 0xFF00E5FF; // Electric neon cyan
+    public static final int ACCENT_DARK   = 0xFF00A0B2;
+    public static final int ACCENT_BRIGHT = 0xFF80F3FF; // Brighter neon hover
     public static final int SPOTIFY_GREEN = 0xFF1DB954;
+
     public static final int DANGER        = 0xFFFF3B4B;
 
     // ── Bevel depth (dark-mode: lighter = highlight, darker = shadow) ──

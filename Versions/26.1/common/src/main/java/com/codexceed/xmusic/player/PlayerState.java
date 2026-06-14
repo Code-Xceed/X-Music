@@ -21,13 +21,13 @@ public final class PlayerState {
     private final int currentIndex;
     private final int queueSize;
 
-    // â”€â”€ Loop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Loop ───────────────────────────────────────────────────────────────
     /** 0=off, 3/5=repeat N times, -1=infinite */
     private final int loopCount;
     /** How many times the current track has played so far in this loop cycle */
     private final int loopIteration;
 
-    // â”€â”€ History navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── History navigation ─────────────────────────────────────────────────
     private final boolean canHistoryBack;
     private final boolean canHistoryForward;
     private final boolean autoplay;
@@ -87,7 +87,7 @@ public final class PlayerState {
                 PlaybackMode.SEQUENTIAL, -1, 0, 0, 0, false, false, true);
     }
 
-    // â”€â”€ Getters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Getters ────────────────────────────────────────────────────────────
 
     public String getBackendId()       { return backendId; }
     public TrackRef getCurrentTrack()  { return currentTrack; }
@@ -107,12 +107,12 @@ public final class PlayerState {
 
     /**
      * Display string for the loop mode button.
-     * @return "â€”" (off), "Ã—3", "Ã—5", or "âˆž"
+     * @return "—" (off), "×3", "×5", or "∞"
      */
     public String getLoopDisplay() {
-        if (loopCount == 0)  return "\u2014";  // â€” (em dash = off)
-        if (loopCount == -1) return "\u221E";  // âˆž
-        return "\u00D7" + loopCount;            // Ã—3, Ã—5
+        if (loopCount == 0)  return "\u2014";  // — (em dash = off)
+        if (loopCount == -1) return "\u221E";  // ∞
+        return "\u00D7" + loopCount;            // ×3, ×5
     }
 
     /** True if loop is active (not off). */

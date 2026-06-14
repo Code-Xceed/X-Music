@@ -1,14 +1,14 @@
 package com.codexceed.xmusic.gui.render;
 
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 /**
  * Hybrid icon renderer:
- *  â€¢ Minecraft ItemStack icons â€” pixel-perfect MC art for static icons
- *  â€¢ Scaled unicode â€” for icons that need per-state color control
+ *  • Minecraft ItemStack icons — pixel-perfect MC art for static icons
+ *  • Scaled unicode — for icons that need per-state color control
  * Every icon auto-fits its parent container.
  */
 public final class IconRenderer {
@@ -17,12 +17,12 @@ public final class IconRenderer {
     /** Functional interface for icon renderers, used by ToolbarButton. */
     @FunctionalInterface
     public interface IconFunc {
-        void render(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int color);
+        void render(GuiGraphics g, Font f, int x, int y, int w, int h, int color);
     }
 
     private static final float FILL = 0.75f;
 
-    // â”€â”€ Pre-built ItemStacks (no per-frame allocation) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Pre-built ItemStacks (no per-frame allocation) ──────────────────
 
     private static final ItemStack STK_BED        = new ItemStack(Items.RED_BED);
     private static final ItemStack STK_COMPASS    = new ItemStack(Items.COMPASS);
@@ -39,7 +39,7 @@ public final class IconRenderer {
     private static final ItemStack STK_RS_TORCH   = new ItemStack(Items.REDSTONE_TORCH);
     private static final ItemStack STK_CHEST      = new ItemStack(Items.CHEST);
     private static final ItemStack STK_BARRIER    = new ItemStack(Items.BARRIER);
-    private static final ItemStack STK_CHAIN      = new ItemStack(Items.IRON_CHAIN);
+    private static final ItemStack STK_CHAIN      = new ItemStack(Items.CHAIN);
     private static final ItemStack STK_PAPER      = new ItemStack(Items.PAPER);
     private static final ItemStack STK_WRITABLE   = new ItemStack(Items.WRITABLE_BOOK);
     private static final ItemStack STK_LEVER      = new ItemStack(Items.LEVER);
@@ -65,256 +65,256 @@ public final class IconRenderer {
     private static final ItemStack STK_DISC_WAIT     = new ItemStack(Items.MUSIC_DISC_WAIT);     // purple
     private static final ItemStack STK_DISC_PIGSTEP  = new ItemStack(Items.MUSIC_DISC_PIGSTEP);  // crimson
 
-    // â”€â”€ Sidebar Icons (MC items) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Sidebar Icons (MC items) ────────────────────────────────────────
 
-    public static void home(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void home(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_BED, x, y, w, h);
     }
 
-    public static void search(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void search(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_COMPASS, x, y, w, h);
     }
 
-    public static void library(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void library(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_BOOK, x, y, w, h);
     }
 
-    public static void groups(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void groups(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_HEAD, x, y, w, h);
     }
 
-    public static void downloads(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void downloads(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_HOPPER, x, y, w, h);
     }
 
-    public static void settings(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void settings(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_COMPARATOR, x, y, w, h);
     }
 
-    // â”€â”€ Playback Icons (unicode â€” need color control for active/hover) â”€â”€
+    // ── Playback Icons (unicode — need color control for active/hover) ──
 
-    public static void play(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void play(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u25B6", x, y, w, h, c);
     }
 
-    public static void pause(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void pause(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u275A\u275A", x, y, w, h, c);
     }
 
-    public static void prev(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void prev(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u25C0", x, y, w, h, c);
     }
 
-    public static void next(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void next(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u25B6", x, y, w, h, c);
     }
 
-    public static void skipBack(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void skipBack(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u23EE", x, y, w, h, c);
     }
 
-    public static void skipForward(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void skipForward(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u23ED", x, y, w, h, c);
     }
 
-    // â”€â”€ PlayerBar Right Icons (MC items) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── PlayerBar Right Icons (MC items) ────────────────────────────────
 
-    public static void volume(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void volume(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_NOTE_BLOCK, x, y, w, h);
     }
 
-    public static void loop(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void loop(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_REPEATER, x, y, w, h);
     }
 
-    // â”€â”€ Search Tab Icons (MC items where possible) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Search Tab Icons (MC items where possible) ──────────────────────
 
-    public static void playAll(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void playAll(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u25B6", x, y, w, h, c);
     }
 
-    public static void shuffle(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void shuffle(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u21C4", x, y, w, h, c);
     }
 
-    public static void durationFilter(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void durationFilter(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_CLOCK, x, y, w, h);
     }
 
-    public static void history(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void history(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_SPYGLASS, x, y, w, h);
     }
 
-    public static void recent(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void recent(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_DISC, x, y, w, h);
     }
 
-    public static void autoPlay(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void autoPlay(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_LEVER, x, y, w, h);
     }
 
-    // â”€â”€ Track Row Icons (unicode heart â€” needs color; MC item download) â”€â”€
+    // ── Track Row Icons (unicode heart — needs color; MC item download) ──
 
-    public static void heart(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void heart(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u2665", x, y, w, h, c);
     }
 
-    public static void heartFilled(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void heartFilled(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u2764", x, y, w, h, c);
     }
 
-    public static void download(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void download(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_CHEST, x, y, w, h);
     }
 
-    public static void checkmark(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void checkmark(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u2713", x, y, w, h, c);
     }
 
-    public static void cross(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void cross(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u2717", x, y, w, h, c);
     }
 
-    // â”€â”€ Utility Icons (MC items) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Utility Icons (MC items) ────────────────────────────────────────
 
-    public static void clear(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void clear(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_BARRIER, x, y, w, h);
     }
 
-    public static void url(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void url(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_CHAIN, x, y, w, h);
     }
 
-    public static void paste(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void paste(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_PAPER, x, y, w, h);
     }
 
-    public static void copy(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void copy(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_WRITABLE, x, y, w, h);
     }
 
-    public static void musicNote(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void musicNote(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_NOTE_BLOCK, x, y, w, h);
     }
 
-    public static void nowPlaying(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void nowPlaying(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_DISC_ALT, x, y, w, h);
     }
 
-    // â”€â”€ Library Tab Icons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Library Tab Icons ──────────────────────────────────────────────
 
-    public static void chevronRight(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void chevronRight(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u25B8", x, y, w, h, c);
     }
 
-    public static void plus(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void plus(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "+", x, y, w, h, c);
     }
 
-    public static void backArrow(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void backArrow(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u25C0", x, y, w, h, c);
     }
 
-    public static void album(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void album(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_DISC, x, y, w, h);
     }
 
-    public static void source(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void source(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_COMPASS, x, y, w, h);
     }
 
-    public static void playlistBook(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void playlistBook(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_KNOWLEDGE, x, y, w, h);
     }
 
-    public static void mapIcon(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void mapIcon(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_MAP, x, y, w, h);
     }
 
-    public static void delete(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void delete(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_BARRIER, x, y, w, h);
     }
 
-    // â”€â”€ Home Page Icons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Home Page Icons ────────────────────────────────────────────────
 
-    public static void fire(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void fire(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_BLAZE_POWDER, x, y, w, h);
     }
 
-    public static void clockRecent(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void clockRecent(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_CLOCK, x, y, w, h);
     }
 
-    public static void star(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void star(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_STAR, x, y, w, h);
     }
 
-    // â”€â”€ Category Disc Icons (different colored MC discs) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Category Disc Icons (different colored MC discs) ────────────────
 
-    public static void discMostPlayed(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, STK_DISC_CHIRP, x, y, w, h);    // red disc â€” hot/fire
+    public static void discMostPlayed(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
+        item(g, STK_DISC_CHIRP, x, y, w, h);    // red disc — hot/fire
     }
 
-    public static void discRecent(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, STK_DISC_BLOCKS, x, y, w, h);   // orange disc â€” recent/warm
+    public static void discRecent(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
+        item(g, STK_DISC_BLOCKS, x, y, w, h);   // orange disc — recent/warm
     }
 
-    public static void discAlbums(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, STK_DISC_MELLOHI, x, y, w, h);  // pink disc â€” albums
+    public static void discAlbums(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
+        item(g, STK_DISC_MELLOHI, x, y, w, h);  // pink disc — albums
     }
 
-    public static void discArtists(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, STK_DISC_STAL, x, y, w, h);     // brown disc â€” artists
+    public static void discArtists(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
+        item(g, STK_DISC_STAL, x, y, w, h);     // brown disc — artists
     }
 
-    public static void discPlaylists(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, STK_DISC_WAIT, x, y, w, h);     // purple disc â€” playlists
+    public static void discPlaylists(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
+        item(g, STK_DISC_WAIT, x, y, w, h);     // purple disc — playlists
     }
 
-    public static void folder(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void folder(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         item(g, STK_CHEST, x, y, w, h);
     }
 
-    public static void rescan(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
+    public static void rescan(GuiGraphics g, Font f, int x, int y, int w, int h, int c) {
         fit(g, f, "\u21BB", x, y, w, h, c);
     }
 
-    // â”€â”€ Generic helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Generic helpers ─────────────────────────────────────────────────
 
-    public static void symbol(GuiGraphicsExtractor g, Font f, String sym, int x, int y, int w, int h, int c) {
+    public static void symbol(GuiGraphics g, Font f, String sym, int x, int y, int w, int h, int c) {
         fit(g, f, sym, x, y, w, h, c);
     }
 
-    public static void itemIcon(GuiGraphicsExtractor g, ItemStack stack, int x, int y, int w, int h) {
+    public static void itemIcon(GuiGraphics g, ItemStack stack, int x, int y, int w, int h) {
         item(g, stack, x, y, w, h);
     }
 
-    // â”€â”€ Core: MC Item Rendering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Core: MC Item Rendering ─────────────────────────────────────────
 
     /**
      * Renders a Minecraft ItemStack scaled and centered to fill
      * FILL% of the given area. Items render at 16x16 base size.
      */
-    private static void item(GuiGraphicsExtractor g, ItemStack stack, int x, int y, int areaW, int areaH) {
+    private static void item(GuiGraphics g, ItemStack stack, int x, int y, int areaW, int areaH) {
         float scale = Math.min(areaW, areaH) * FILL / 16.0f;
         float drawnW = 16.0f * scale;
         float drawnH = 16.0f * scale;
         float offX = (areaW - drawnW) / 2.0f;
         float offY = (areaH - drawnH) / 2.0f;
-        g.pose().pushMatrix();
-        g.pose().translate(x + offX, y + offY);
-        g.pose().scale(scale, scale);
-        g.item(stack, 0, 0);
-        g.pose().popMatrix();
+        g.pose().pushPose();
+        g.pose().translate(x + offX, y + offY, 0.0f);
+        g.pose().scale(scale, scale, 1.0f);
+        g.renderItem(stack, 0, 0);
+        g.pose().popPose();
     }
 
-    // â”€â”€ Core: Scaled Unicode Rendering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Core: Scaled Unicode Rendering ──────────────────────────────────
 
     /**
      * Auto-scales a unicode symbol to fill FILL% of (areaW x areaH),
      * then centers it. Used for icons that need color control.
      */
-    private static void fit(GuiGraphicsExtractor g, Font f, String symbol, int x, int y, int areaW, int areaH, int color) {
+    private static void fit(GuiGraphics g, Font f, String symbol, int x, int y, int areaW, int areaH, int color) {
         float baseW = f.width(symbol);
         float baseH = 9.0f;
         float scaleX = (areaW * FILL) / baseW;
@@ -327,11 +327,11 @@ public final class IconRenderer {
         drawScaled(g, f, symbol, scale, x + offX, y + offY, color);
     }
 
-    private static void drawScaled(GuiGraphicsExtractor g, Font f, String text, float scale, float x, float y, int color) {
-        g.pose().pushMatrix();
-        g.pose().translate(x, y);
-        g.pose().scale(scale, scale);
-        g.text(f, text, 0, 0, color, false);
-        g.pose().popMatrix();
+    private static void drawScaled(GuiGraphics g, Font f, String text, float scale, float x, float y, int color) {
+        g.pose().pushPose();
+        g.pose().translate(x, y, 0.0f);
+        g.pose().scale(scale, scale, 1.0f);
+        g.drawString(f, text, 0, 0, color, false);
+        g.pose().popPose();
     }
 }

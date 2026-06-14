@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class OpenALOutput {
     private static final int BUFFER_COUNT = 8;
-    private static final int BUFFER_SIZE = 32768; // 32KB â€” ~170ms at 48kHz stereo 16-bit
+    private static final int BUFFER_SIZE = 32768; // 32KB — ~170ms at 48kHz stereo 16-bit
 
     /** Gain multiplier applied to OpenAL source so music is loud enough relative to Minecraft sounds. */
     private static final float GAIN_MULTIPLIER = 2.5f;
@@ -46,6 +46,11 @@ public class OpenALOutput {
     private int stallTickCounter = 0;
     private long totalBytesProcessed = 0;
 
+    private static final int HISTORY_SIZE = 128 * 1024;
+    private final byte[] historyBuffer = new byte[HISTORY_SIZE];
+    private long totalBytesWrittenToOpenAL = 0;
+    private volatile float currentRms = 0f;
+
     private final byte[] readBuffer = new byte[BUFFER_SIZE];
     private final ByteBuffer nativeBuffer = BufferUtils.createByteBuffer(BUFFER_SIZE);
 
@@ -55,6 +60,14 @@ public class OpenALOutput {
      */
     public boolean init() {
         try {
+            // Safety check: ensure OpenAL capabilities have been set by Minecraft
+            try {
+                org.lwjgl.openal.AL.getCapabilities();
+            } catch (Throwable t) {
+                XMusic.LOGGER.warn("OpenAL capabilities not set yet. Deferring initialization.");
+                return false;
+            }
+
             source = AL10.alGenSources();
             AL10.alGenBuffers(buffers);
 
@@ -87,6 +100,8 @@ public class OpenALOutput {
         this.streamExhausted = false;
         this.stallTickCounter = 0;
         this.totalBytesProcessed = 0;
+        this.totalBytesWrittenToOpenAL = 0;
+        java.util.Arrays.fill(historyBuffer, (byte) 0);
 
         // All buffers start free
         freeBufferIds.clear();
@@ -142,7 +157,7 @@ public class OpenALOutput {
         while (!freeBufferIds.isEmpty()) {
             Integer bufId = freeBufferIds.peekFirst();
             if (!fillBuffer(bufId)) break;
-            freeBufferIds.pollFirst(); // consumed â€” remove from free pool
+            freeBufferIds.pollFirst(); // consumed — remove from free pool
         }
 
         int queued = AL10.alGetSourcei(source, AL10.AL_BUFFERS_QUEUED);
@@ -161,7 +176,7 @@ public class OpenALOutput {
                 AL10.alSourcePlay(source);
                 stallTickCounter = 0;
             } else if (!streamExhausted) {
-                // No buffers queued â€” try to fill from ring buffer
+                // No buffers queued — try to fill from ring buffer
                 boolean refilled = false;
                 Integer bufId = freeBufferIds.pollFirst();
                 if (bufId != null && fillBuffer(bufId)) {
@@ -181,7 +196,7 @@ public class OpenALOutput {
                     }
                     stallTickCounter++;
                     if (stallTickCounter >= STALL_TICK_LIMIT) {
-                        XMusic.LOGGER.warn("Audio stream stalled for {}+ ticks â€” declaring track dead.", STALL_TICK_LIMIT);
+                        XMusic.LOGGER.warn("Audio stream stalled for {}+ ticks — declaring track dead.", STALL_TICK_LIMIT);
                         streamExhausted = true;
                         playing.set(false);
                         stallTickCounter = 0;
@@ -217,6 +232,35 @@ public class OpenALOutput {
 
             nativeBuffer.clear();
             nativeBuffer.put(readBuffer, 0, bytesRead).flip();
+
+            // Copy to circular history buffer
+            for (int i = 0; i < bytesRead; i++) {
+                int index = (int) ((totalBytesWrittenToOpenAL + i) % HISTORY_SIZE);
+                historyBuffer[index] = readBuffer[i];
+            }
+            totalBytesWrittenToOpenAL += bytesRead;
+
+            // Calculate RMS of readBuffer
+            if (format != null) {
+                int frameSize = format.getFrameSize();
+                int bytesPerSample = format.getSampleSizeInBits() / 8;
+                if (frameSize > 0) {
+                    int samples = bytesRead / frameSize;
+                    double sum = 0;
+                    for (int i = 0; i < samples; i++) {
+                        int offset = i * frameSize;
+                        short sample = 0;
+                        if (bytesPerSample == 2) {
+                            sample = (short) ((readBuffer[offset + 1] << 8) | (readBuffer[offset] & 0xFF));
+                        } else {
+                            sample = (short) ((readBuffer[offset] - 128) << 8);
+                        }
+                        sum += sample * sample;
+                    }
+                    double rms = Math.sqrt(sum / (samples > 0 ? samples : 1)) / 32768.0;
+                    currentRms = (float) (currentRms * 0.8f + rms * 0.2f);
+                }
+            }
 
             int alFormat = getALFormat(format);
             AL10.alBufferData(buffer, alFormat, nativeBuffer, (int) format.getSampleRate());
@@ -264,6 +308,10 @@ public class OpenALOutput {
         playing.set(false);
         streamExhausted = false;
         stallTickCounter = 0;
+        totalBytesProcessed = 0;
+        totalBytesWrittenToOpenAL = 0;
+        currentRms = 0f;
+        java.util.Arrays.fill(historyBuffer, (byte) 0);
         freeBufferIds.clear();
 
         if (pcmBuffer != null) {
@@ -272,8 +320,68 @@ public class OpenALOutput {
         }
     }
 
+    public void getWaveform(float[] dest) {
+        if (!playing.get() || format == null) {
+            java.util.Arrays.fill(dest, 0f);
+            return;
+        }
+
+        long playBytes = getPositionMs() * (format.getFrameSize() * (int) format.getSampleRate()) / 1000L;
+        int bytesPerSample = format.getSampleSizeInBits() / 8;
+        int channels = format.getChannels();
+        int frameSize = bytesPerSample * channels;
+        if (frameSize <= 0) {
+            java.util.Arrays.fill(dest, 0f);
+            return;
+        }
+
+        float sampleRate = format.getSampleRate();
+        if (sampleRate <= 0) sampleRate = 48000f;
+        
+        int totalSpanBytes = (int) (0.16f * sampleRate * frameSize);
+        int stepBytes = (totalSpanBytes / 32 / frameSize) * frameSize;
+        if (stepBytes <= 0) stepBytes = frameSize;
+
+        int avgWindowBytes = (int) (0.024f * sampleRate * frameSize);
+        int subSamples = 12;
+        int subStep = (avgWindowBytes / subSamples / frameSize) * frameSize;
+        if (subStep <= 0) subStep = frameSize;
+
+        for (int i = 0; i < 32; i++) {
+            long centerOffset = playBytes + (long) i * stepBytes;
+            long startOffset = centerOffset - (avgWindowBytes / 2);
+
+            long sum = 0;
+            for (int j = 0; j < subSamples; j++) {
+                long offset = startOffset + (long) j * subStep;
+                int idx = (int) (offset % HISTORY_SIZE);
+                if (idx < 0) idx += HISTORY_SIZE;
+
+                int val = 0;
+                if (bytesPerSample == 2) {
+                    int b1 = historyBuffer[idx] & 0xFF;
+                    int b2 = historyBuffer[(idx + 1) % HISTORY_SIZE];
+                    val = (short) ((b2 << 8) | b1);
+                } else if (bytesPerSample == 1) {
+                    val = historyBuffer[idx] & 0xFF;
+                    if (format.getEncoding() == AudioFormat.Encoding.PCM_SIGNED) {
+                        val = (byte) val;
+                    } else {
+                        val -= 128;
+                    }
+                    val = val << 8;
+                }
+                sum += Math.abs(val);
+            }
+
+            float amplitude = (sum / (float) subSamples) / 32768f;
+            if (amplitude > 1f) amplitude = 1f;
+            dest[i] = amplitude;
+        }
+    }
+
     /**
-     * Set the volume (0.0 â€“ 1.0).
+     * Set the volume (0.0 – 1.0).
      */
     public void setVolume(float vol) {
         this.volume = Math.max(0f, Math.min(1f, vol));
@@ -344,5 +452,9 @@ public class OpenALOutput {
                     ? AL10.AL_FORMAT_STEREO16
                     : AL10.AL_FORMAT_STEREO8;
         }
+    }
+
+    public float getCurrentAmplitude() {
+        return playing.get() ? currentRms : 0f;
     }
 }

@@ -24,11 +24,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <h3>Resolution Strategy (Resilient Multi-Source)</h3>
  * <ol>
- *   <li><b>Cache</b> â€” If a still-valid URL is cached, return immediately.</li>
- *   <li><b>Piped/Invidious API</b> â€” Try the existing Piped+Invidious resolver first.
+ *   <li><b>Cache</b> — If a still-valid URL is cached, return immediately.</li>
+ *   <li><b>Piped/Invidious API</b> — Try the existing Piped+Invidious resolver first.
  *       This is the fastest path (~200ms) and doesn't hit YouTube from your IP,
  *       avoiding rate limiting entirely.</li>
- *   <li><b>yt-dlp</b> â€” If Piped fails, fall back to local yt-dlp with
+ *   <li><b>yt-dlp</b> — If Piped fails, fall back to local yt-dlp with
  *       {@code --no-cache-dir} to avoid concurrent cache corruption.
  *       Includes one retry with a 3s delay on failure.</li>
  * </ol>
@@ -61,7 +61,7 @@ public final class YouTubeStreamResolver {
     private final ScheduledExecutorService batchScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
         Thread thread = new Thread(runnable, "XMusic-StreamBatchResolve");
         thread.setDaemon(true);
-        thread.setPriority(Thread.MIN_PRIORITY + 1); // Low priority â€” don't compete with game
+        thread.setPriority(Thread.MIN_PRIORITY + 1); // Low priority — don't compete with game
         return thread;
     });
 
@@ -113,7 +113,7 @@ public final class YouTubeStreamResolver {
             return existing;
         }
 
-        // 3. Multi-source resolution: Piped â†’ yt-dlp â†’ yt-dlp retry
+        // 3. Multi-source resolution: Piped → yt-dlp → yt-dlp retry
         CompletableFuture<ResolvedStream> created = resolveMultiSource(track, videoId)
                 .whenComplete((stream, error) -> inFlight.remove(videoId));
 
@@ -135,7 +135,7 @@ public final class YouTubeStreamResolver {
 
     /**
      * Pre-resolve a batch of tracks with serialized delays to prevent rate limiting.
-     * Uses the full multi-source pipeline (Piped â†’ yt-dlp â†’ retry).
+     * Uses the full multi-source pipeline (Piped → yt-dlp → retry).
      */
     public void preResolveBatch(List<TrackRef> tracks, int limit) {
         if (tracks == null || !isStreamingAvailable()) {
@@ -196,13 +196,13 @@ public final class YouTubeStreamResolver {
                 continue;
             }
 
-            // 300ms stagger â€” Piped can handle this easily since it's a proxy
+            // 300ms stagger — Piped can handle this easily since it's a proxy
             final int delay = i * 300;
             batchScheduler.schedule(() -> {
                 if (batchGeneration.get() != generation) {
                     return;
                 }
-                // Piped-only resolution â€” fast and doesn't touch YouTube from our IP
+                // Piped-only resolution — fast and doesn't touch YouTube from our IP
                 resolvePiped(videoId)
                         .thenAccept(result -> {
                             if (result != null) {
@@ -219,9 +219,9 @@ public final class YouTubeStreamResolver {
         }
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
     //  Multi-source resolution pipeline
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
 
     private CompletableFuture<ResolvedStream> resolveMultiSource(TrackRef track, String videoId) {
         // Piped first (~200ms, no fork, no rate limiting from user's IP)
@@ -231,7 +231,7 @@ public final class YouTubeStreamResolver {
                         cache.put(videoId, new CachedStream(pipedResult, System.currentTimeMillis()));
                         return CompletableFuture.completedFuture(pipedResult);
                     }
-                    // Piped failed â†’ yt-dlp fallback (~2-3s, forks Python)
+                    // Piped failed → yt-dlp fallback (~2-3s, forks Python)
                     XMusic.LOGGER.info("Piped failed for {}; trying yt-dlp.", videoId);
                     return resolveYtDlp(track, videoId);
                 })
@@ -240,7 +240,7 @@ public final class YouTubeStreamResolver {
                         cache.put(videoId, new CachedStream(result, System.currentTimeMillis()));
                         return CompletableFuture.completedFuture(result);
                     }
-                    // Both failed â†’ retry yt-dlp once after 3s delay
+                    // Both failed → retry yt-dlp once after 3s delay
                     return retryYtDlpAfterDelay(track, videoId);
                 })
                 .exceptionally(error -> {
@@ -325,9 +325,9 @@ public final class YouTubeStreamResolver {
         return delayed;
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
     //  yt-dlp process execution
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
 
     private ResolvedStream resolveNowYtDlp(TrackRef track, String videoId) throws Exception {
         if (toolManager == null || !toolManager.hasYtDlp() || toolManager.getYtDlpExecutable().isBlank()) {
@@ -405,9 +405,9 @@ public final class YouTubeStreamResolver {
         return new ResolvedStream(videoId, url, ext, acodec, System.currentTimeMillis() + URL_TTL_MS);
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
     //  Helpers
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
 
     private String firstUrl(List<String> lines) {
         for (String line : lines) {

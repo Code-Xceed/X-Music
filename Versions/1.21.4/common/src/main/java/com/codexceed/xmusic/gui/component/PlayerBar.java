@@ -1,5 +1,6 @@
 package com.codexceed.xmusic.gui.component;
 
+import com.codexceed.xmusic.config.ConfigManager;
 import com.codexceed.xmusic.gui.layout.GuiFrame;
 import com.codexceed.xmusic.gui.render.ArtworkRenderer;
 import com.codexceed.xmusic.gui.render.GuiRender;
@@ -18,6 +19,7 @@ import com.codexceed.xmusic.source.TrackRef;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
@@ -25,15 +27,12 @@ public final class PlayerBar {
     private static final int BTN_W = 22;
     private static final int PLAY_BTN_W = 28;
     private static final int BTN_H = 22;
-
-    // Waveform bar animation state
-    private static final int BAR_COUNT = 32;
-    private static final int BAR_MAX_H = 10;
+    private static final int BAR_COUNT = 36;
+    private static final int BAR_MAX_H = 14;
     private static final int BAR_MIN_H = 1;
+    private static final long START_TIME = System.currentTimeMillis();
     private final float[] barHeights = new float[BAR_COUNT];
-    private final float[] barTargets = new float[BAR_COUNT];
     private final float[] barVelocity = new float[BAR_COUNT];
-    private long lastBarUpdate = 0;
 
     private boolean draggingProgress = false;
     private boolean draggingVolume = false;
@@ -92,43 +91,62 @@ public final class PlayerBar {
             GuiRender.shadowText(graphics, font, posStr, x + 8, y + 6, GuiTheme.TEXT_MUTED);
             GuiRender.shadowText(graphics, font, durStr, x + w - font.width(durStr) - 8, y + 6, GuiTheme.TEXT_MUTED);
         }
+        boolean compact = frame.compact();
 
         // 3. Center (Playback Controls)
-        int hSpacing = 10;
-        int controlsW = (BTN_W * 4) + PLAY_BTN_W + (hSpacing * 4);
+        int btnW = compact ? 16 : 22;
+        int playBtnW = compact ? 20 : 28;
+        int btnH = compact ? 16 : 22;
+        int hSpacing = compact ? 4 : 10;
+        int controlsW = (btnW * 4) + playBtnW + (hSpacing * 4);
         int controlsX = x + w / 2 - controlsW / 2;
-        int controlsY = y + 32; 
+        int controlsY = y + (compact ? 37 : 34); 
 
         int bx = controlsX;
-        boolean hoverBack = GuiRender.inside(mouseX, mouseY, bx, controlsY, BTN_W, BTN_H);
-        float hoverBackLerp = HoverTracker.tick("pb_skipback", hoverBack);
-        renderIconButtonSmooth(graphics, font, bx, controlsY, BTN_W, BTN_H, false, hoverBackLerp, IconRenderer::skipBack);
-        bx += BTN_W + hSpacing;
-        boolean hoverPrev = GuiRender.inside(mouseX, mouseY, bx, controlsY, BTN_W, BTN_H);
-        float hoverPrevLerp = HoverTracker.tick("pb_prev", hoverPrev);
-        renderIconButtonSmooth(graphics, font, bx, controlsY, BTN_W, BTN_H, false, hoverPrevLerp, IconRenderer::prev);
-        bx += BTN_W + hSpacing;
-        
-        boolean hoverPlay = GuiRender.inside(mouseX, mouseY, bx, controlsY, PLAY_BTN_W, BTN_H);
-        float hoverPlayLerp = HoverTracker.tick("pb_play", hoverPlay);
+        boolean hoverBack = false;
+        float hoverBackLerp = 0;
+        boolean hoverPrev = false;
+        float hoverPrevLerp = 0;
+        boolean hoverPlay = false;
+        float hoverPlayLerp = 0;
+        boolean hoverNext = false;
+        float hoverNextLerp = 0;
+        boolean hoverFwd = false;
+        float hoverFwdLerp = 0;
+
+        // Button 1: Previous Track (skipBack)
+        hoverBack = GuiRender.inside(mouseX, mouseY, bx, controlsY, btnW, btnH);
+        hoverBackLerp = HoverTracker.tick("pb_skipback", hoverBack);
+        renderIconButtonSmooth(graphics, font, bx, controlsY, btnW, btnH, false, hoverBackLerp, IconRenderer::skipBack);
+        bx += btnW + hSpacing;
+
+        // Button 2: Rewind 5s (prev)
+        hoverPrev = GuiRender.inside(mouseX, mouseY, bx, controlsY, btnW, btnH);
+        hoverPrevLerp = HoverTracker.tick("pb_prev", hoverPrev);
+        renderIconButtonSmooth(graphics, font, bx, controlsY, btnW, btnH, false, hoverPrevLerp, IconRenderer::prev);
+        bx += btnW + hSpacing;
+
+        // Button 3: Play/Pause
+        hoverPlay = GuiRender.inside(mouseX, mouseY, bx, controlsY, playBtnW, btnH);
+        hoverPlayLerp = HoverTracker.tick("pb_play", hoverPlay);
         if (state.isPlaying()) {
-            renderIconButtonSmooth(graphics, font, bx, controlsY, PLAY_BTN_W, BTN_H, true, hoverPlayLerp, IconRenderer::pause);
-            // Accent glow around play button when playing
-            GuiRender.accentGlow(graphics, bx, controlsY, PLAY_BTN_W, BTN_H);
+            renderIconButtonSmooth(graphics, font, bx, controlsY, playBtnW, btnH, true, hoverPlayLerp, IconRenderer::pause);
+            GuiRender.accentGlow(graphics, bx, controlsY, playBtnW, btnH);
         } else {
-            renderIconButtonSmooth(graphics, font, bx, controlsY, PLAY_BTN_W, BTN_H, false, hoverPlayLerp, IconRenderer::play);
+            renderIconButtonSmooth(graphics, font, bx, controlsY, playBtnW, btnH, false, hoverPlayLerp, IconRenderer::play);
         }
-        bx += PLAY_BTN_W + hSpacing;
-        
-        boolean hoverNext = GuiRender.inside(mouseX, mouseY, bx, controlsY, BTN_W, BTN_H);
-        float hoverNextLerp = HoverTracker.tick("pb_next", hoverNext);
-        renderIconButtonSmooth(graphics, font, bx, controlsY, BTN_W, BTN_H, false, hoverNextLerp, IconRenderer::next);
-        bx += BTN_W + hSpacing;
-        boolean hoverFwd = GuiRender.inside(mouseX, mouseY, bx, controlsY, BTN_W, BTN_H);
-        float hoverFwdLerp = HoverTracker.tick("pb_skipfwd", hoverFwd);
-        renderIconButtonSmooth(graphics, font, bx, controlsY, BTN_W, BTN_H, false, hoverFwdLerp, IconRenderer::skipForward);
-        
-        int bx_end = bx + BTN_W; // Right edge of controls
+        bx += playBtnW + hSpacing;
+
+        // Button 4: Forward 5s (next)
+        hoverNext = GuiRender.inside(mouseX, mouseY, bx, controlsY, btnW, btnH);
+        hoverNextLerp = HoverTracker.tick("pb_next", hoverNext);
+        renderIconButtonSmooth(graphics, font, bx, controlsY, btnW, btnH, false, hoverNextLerp, IconRenderer::next);
+        bx += btnW + hSpacing;
+
+        // Button 5: Next Track (skipForward)
+        hoverFwd = GuiRender.inside(mouseX, mouseY, bx, controlsY, btnW, btnH);
+        hoverFwdLerp = HoverTracker.tick("pb_skipfwd", hoverFwd);
+        renderIconButtonSmooth(graphics, font, bx, controlsY, btnW, btnH, false, hoverFwdLerp, IconRenderer::skipForward);
 
         // Tooltips for playback controls only
         String tooltipText = null;
@@ -145,83 +163,110 @@ public final class PlayerBar {
         int rightEdge = x + w - 24; 
         float vol = state.getVolume();
         String pctStr = String.format("%d%%", (int)(vol * 100));
-        int pctSlotW = font.width("100%"); // fixed width for stable layout
-        
-        int volY = y + 48;
+        int volY = y + (compact ? 43 : 48);
+
+        int pctSlotW = compact ? 22 : font.width("100%");
         int pctX = rightEdge - pctSlotW;
         GuiRender.text(graphics, font, pctStr, pctX + (pctSlotW - font.width(pctStr)), volY - 3, GuiTheme.TEXT_SOFT);
-        
-        int volW = 70;
-        int volX = pctX - 8 - volW;
-        IconRenderer.volume(graphics, font, volX - 18, volY - 10, 14, 14, GuiTheme.TEXT_MUTED); 
+
+        int volW = compact ? 30 : 70;
+        int volX = pctX - (compact ? 4 : 8) - volW;
+        int volIconSize = compact ? 10 : 14;
+        int volIconX = volX - volIconSize - (compact ? 2 : 4);
+        int volIconY = volY - (compact ? 7 : 10);
+
+        IconRenderer.volume(graphics, font, volIconX, volIconY, volIconSize, volIconSize, vol == 0f ? GuiTheme.TEXT_MUTED : GuiTheme.TEXT_SOFT);
 
         // Volume: MC inset well track
-        boolean hoverVol = GuiRender.inside(mouseX, mouseY, volX - 4, volY - 4, volW + 8, 12);
+        boolean hoverVol = GuiRender.inside(mouseX, mouseY, volX - 2, volY - 6, volW + 4, 12);
         GuiRender.mcWell(graphics, volX, volY, volW, 3);
         int volFilled = (int)(volW * vol);
         graphics.fill(volX + 1, volY + 1, volX + volFilled, volY + 2, GuiTheme.ACCENT);
-        
+
         if (hoverVol || draggingVolume) {
-            GuiRender.mcButton(graphics, volX + volFilled - 3, volY - 3, 6, 6, true, false);
+            GuiRender.mcButton(graphics, volX + volFilled - (compact ? 2 : 3), volY - (compact ? 2 : 3), compact ? 4 : 6, compact ? 4 : 6, true, false);
         } else if (volFilled > 0) {
-            graphics.fill(volX + volFilled - 2, volY - 2, volX + volFilled + 2, volY + 4, GuiTheme.TEXT_SOFT);
+            graphics.fill(volX + volFilled - 1, volY - 1, volX + volFilled + 1, volY + 3, GuiTheme.TEXT_SOFT);
         }
 
-        // Top right buttons
-        int topBtnY = y + 20;
-        int topBtnW = 54;
-        int topBtnH = 16;
-        int autoplayX = rightEdge - topBtnW;
-        int loopX = autoplayX - topBtnW - 8;
-        
-        String loopLabel = state.getLoopDisplay();
-        String autoLabel = state.isAutoplay() ? "ON" : "OFF";
-        
-        boolean hoverLoop = GuiRender.inside(mouseX, mouseY, loopX, topBtnY, topBtnW, topBtnH);
-        boolean hoverAuto = GuiRender.inside(mouseX, mouseY, autoplayX, topBtnY, topBtnW, topBtnH);
-        
-        renderIconBadge(graphics, font, loopLabel, loopX, topBtnY, topBtnW, topBtnH, state.isLooping(), hoverLoop, IconRenderer::loop);
-        renderIconBadge(graphics, font, autoLabel, autoplayX, topBtnY, topBtnW, topBtnH, state.isAutoplay(), hoverAuto, IconRenderer::autoPlay);
+        int btnSize = compact ? 16 : 54;
+        int autoplayX = volIconX - btnSize - 6;
+        int loopX = autoplayX - btnSize - 6;
 
-        // Tooltips for loop/autoplay (restored per user request)
-        if (hoverLoop) {
-            GuiRender.tooltip(graphics, font, "Loop: " + loopLabel, mouseX, mouseY, frame.x() + frame.width(), frame.y() + frame.height());
-        } else if (hoverAuto) {
-            GuiRender.tooltip(graphics, font, "Autoplay: " + autoLabel, mouseX, mouseY, frame.x() + frame.width(), frame.y() + frame.height());
+        if (compact) {
+            // Render compact loop button (icon only)
+            boolean hoverLoop = GuiRender.inside(mouseX, mouseY, loopX, volY - 8, btnSize, btnSize);
+            float hoverLoopLerp = HoverTracker.tick("pb_loop_c", hoverLoop);
+            renderIconButtonSmooth(graphics, font, loopX, volY - 8, btnSize, btnSize, state.isLooping(), hoverLoopLerp, IconRenderer::loop);
+            if (hoverLoop) {
+                GuiRender.tooltip(graphics, font, "Loop: " + state.getLoopDisplay(), mouseX, mouseY, frame.x() + frame.width(), frame.y() + frame.height());
+            }
+
+            // Render compact autoplay button (icon only)
+            boolean hoverAuto = GuiRender.inside(mouseX, mouseY, autoplayX, volY - 8, btnSize, btnSize);
+            float hoverAutoLerp = HoverTracker.tick("pb_auto_c", hoverAuto);
+            renderIconButtonSmooth(graphics, font, autoplayX, volY - 8, btnSize, btnSize, state.isAutoplay(), hoverAutoLerp, IconRenderer::autoPlay);
+            if (hoverAuto) {
+                GuiRender.tooltip(graphics, font, "Autoplay: " + (state.isAutoplay() ? "ON" : "OFF"), mouseX, mouseY, frame.x() + frame.width(), frame.y() + frame.height());
+            }
+        } else {
+            // Non-compact layout: badges
+            int topBtnY = y + 20;
+            int topBtnW = 54;
+            int topBtnH = 16;
+            int badgeAutoplayX = rightEdge - topBtnW;
+            int badgeLoopX = badgeAutoplayX - topBtnW - 8;
+            
+            String loopLabel = state.getLoopDisplay();
+            String autoLabel = state.isAutoplay() ? "ON" : "OFF";
+            
+            boolean hoverLoop = GuiRender.inside(mouseX, mouseY, badgeLoopX, topBtnY, topBtnW, topBtnH);
+            boolean hoverAuto = GuiRender.inside(mouseX, mouseY, badgeAutoplayX, topBtnY, topBtnW, topBtnH);
+            
+            renderIconBadge(graphics, font, loopLabel, badgeLoopX, topBtnY, topBtnW, topBtnH, state.isLooping(), hoverLoop, IconRenderer::loop);
+            renderIconBadge(graphics, font, autoLabel, badgeAutoplayX, topBtnY, topBtnW, topBtnH, state.isAutoplay(), hoverAuto, IconRenderer::autoPlay);
+
+            if (hoverLoop) {
+                GuiRender.tooltip(graphics, font, "Loop: " + loopLabel, mouseX, mouseY, frame.x() + frame.width(), frame.y() + frame.height());
+            } else if (hoverAuto) {
+                GuiRender.tooltip(graphics, font, "Autoplay: " + autoLabel, mouseX, mouseY, frame.x() + frame.width(), frame.y() + frame.height());
+            }
         }
 
         // 5. Draw track info (Left) — two-line layout: title on top, artist + action buttons below
-        int art = 34;
+        int artW = compact ? 32 : 64;
+        int artH = compact ? 24 : 36;
         int artX = x + 10;
-        int artY = y + 22;
+        int artY = y + (h - artH) / 2;
 
-        // Music logo box — show album art if available, else noteblock icon
-        GuiRender.mcSlot(graphics, artX, artY, art, art);
-        if (track != null && track.getArtworkUrl() != null && !track.getArtworkUrl().isEmpty()) {
-            ArtworkRenderer.renderArtwork(graphics, track.getArtworkUrl(), artX + 2, artY + 2, art - 4);
-        } else if (state.isPlaying() && track != null) {
-            GuiRender.accentGlow(graphics, artX, artY, art, art);
-            IconRenderer.musicNote(graphics, font, artX, artY, art, art, GuiTheme.ACCENT);
+        // Music logo box — show album art if available, else track-aware placeholder
+        GuiRender.mcWell(graphics, artX - 1, artY - 1, artW + 2, artH + 2);
+        if (track != null) {
+            if (state.isPlaying()) {
+                GuiRender.accentGlow(graphics, artX, artY, artW, artH);
+            }
+            ArtworkRenderer.renderArtwork(graphics, track, artX, artY, artW, artH);
         } else {
-            IconRenderer.musicNote(graphics, font, artX, artY, art, art, GuiTheme.TEXT_MUTED);
+            ArtworkRenderer.renderPlaceholder(graphics, null, artX, artY, artW, artH);
         }
 
-        int infoX = artX + art + 10;
-        // Action buttons size
-        int actionBtnSize = 12;
-        int actionBtnPad = 2;
-        int actionBtnStep = actionBtnSize + actionBtnPad * 2; // 16
-        int actionBtnGap = 3;
-        int actionsW = actionBtnStep * 3 + actionBtnGap * 2; // 3 buttons
+        if (track != null) {
+            long now = System.currentTimeMillis();
+            float borderPulse = state.isPlaying() ? 0.6f + 0.4f * (float) Math.sin(now / 200.0) : 0.4f;
+            int borderA = (int) (0xFF * borderPulse);
+            int borderColor = (borderA << 24) | (GuiTheme.ACCENT & 0xFFFFFF);
+            GuiRender.drawRoundedBorder(graphics, artX - 1, artY - 1, artW + 2, artH + 2, 4, borderColor);
 
-        // Line 1: Title — full width available (up to controls)
+            if (state.isPlaying()) {
+                GuiRender.smoothHoverGlow(graphics, artX - 2, artY - 2, artW + 4, artH + 4, borderPulse * 0.8f);
+            }
+        }
+
+        int infoX = artX + artW + 10;
         int maxTitleW = controlsX - infoX - 8;
-        if (maxTitleW < 60) maxTitleW = 60;
+        if (maxTitleW < 40) maxTitleW = 40;
         int textY1 = y + 20;
-
-        // Line 2: Artist text + heart + download inline
         int textY2 = textY1 + 18;
-        int artistTextW = maxTitleW - actionsW - 4;
 
         if (track == null) {
             GuiRender.shadowText(graphics, font, "Nothing playing", infoX, textY1, GuiTheme.TEXT_SOFT);
@@ -244,50 +289,115 @@ public final class PlayerBar {
                 secondary = ServiceManager.getYouTube().getNativePlaybackMessage();
             }
 
-            // Artist text (left portion of line 2)
-            GuiRender.truncated(graphics, font, secondary, infoX, textY2, artistTextW, GuiTheme.TEXT_MUTED);
+            if (compact) {
+                // Action buttons size in compact mode
+                int actionBtnSize = 10;
+                int actionBtnPad = 1;
+                int actionBtnStep = actionBtnSize + actionBtnPad * 2; // 12
+                int actionBtnGap = 2;
+                int actionsW = actionBtnStep * 3 + actionBtnGap * 2; // 3 buttons
+                int artistTextW = maxTitleW - actionsW - 4;
+                if (artistTextW < 20) artistTextW = 20;
 
-            // Heart + Playlist + Download buttons (right portion of line 2)
-            int heartBtnX = infoX + artistTextW + 4;
-            int heartBtnY = textY2 - 2;
-            boolean isFav = LibraryManager.getInstance().isFavorite(track);
-            boolean heartHover = GuiRender.inside(mouseX, mouseY, heartBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize);
-            GuiRender.mcButton(graphics, heartBtnX, heartBtnY, actionBtnStep, actionBtnStep, heartHover, false);
-            if (isFav) {
-                IconRenderer.heartFilled(graphics, font, heartBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, GuiTheme.DANGER);
-            } else {
-                IconRenderer.heart(graphics, font, heartBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, heartHover ? GuiTheme.DANGER : GuiTheme.TEXT_MUTED);
-            }
+                // Artist text (left portion of line 2)
+                GuiRender.truncated(graphics, font, secondary, infoX, textY2, artistTextW, GuiTheme.TEXT_MUTED);
 
-            // Playlist button
-            int plBtnX = heartBtnX + actionBtnStep + actionBtnGap;
-            boolean plHover = GuiRender.inside(mouseX, mouseY, plBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize);
-            GuiRender.mcButton(graphics, plBtnX, heartBtnY, actionBtnStep, actionBtnStep, plHover, showPlaylistPopup);
-            if (showPlaylistPopup) {
-                GuiRender.accentGlow(graphics, plBtnX, heartBtnY, actionBtnStep, actionBtnStep);
-                IconRenderer.playlistBook(graphics, font, plBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, GuiTheme.ACCENT);
-            } else {
-                IconRenderer.playlistBook(graphics, font, plBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, plHover ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
-            }
+                // Heart + Playlist + Download buttons (right portion of line 2 next to artist name)
+                int heartBtnX = infoX + artistTextW + 4;
+                int heartBtnY = textY2 - 1;
+                boolean isFav = LibraryManager.getInstance().isFavorite(track);
+                boolean heartHover = GuiRender.inside(mouseX, mouseY, heartBtnX, heartBtnY, actionBtnStep, actionBtnStep);
+                GuiRender.mcButton(graphics, heartBtnX, heartBtnY, actionBtnStep, actionBtnStep, heartHover, false);
+                if (isFav) {
+                    IconRenderer.heartFilled(graphics, font, heartBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, GuiTheme.DANGER);
+                } else {
+                    IconRenderer.heart(graphics, font, heartBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, heartHover ? GuiTheme.DANGER : GuiTheme.TEXT_MUTED);
+                }
 
-            int dlBtnX = plBtnX + actionBtnStep + actionBtnGap;
-            DownloadState dlState = DownloadManager.getInstance().getState(track);
-            boolean dlHover = GuiRender.inside(mouseX, mouseY, dlBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize);
-            GuiRender.mcButton(graphics, dlBtnX, heartBtnY, actionBtnStep, actionBtnStep, dlHover, dlState == DownloadState.COMPLETED);
-            if (dlState == DownloadState.DOWNLOADING) {
-                // Pulsing download icon with glow
-                float pulse = (float)(Math.sin(System.currentTimeMillis() / 300.0) * 0.4 + 0.6);
-                int pulseColor = ((int)(0x60 + 0x60 * pulse) << 24) | (GuiTheme.ACCENT & 0x00FFFFFF);
-                graphics.fill(dlBtnX, heartBtnY, dlBtnX + actionBtnStep, heartBtnY + actionBtnStep, pulseColor);
-                IconRenderer.download(graphics, font, dlBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, GuiTheme.ACCENT);
-                // Mini progress bar at bottom of button
-                int barY2 = heartBtnY + actionBtnStep - 3;
-                int barW2 = (int)(actionBtnSize * DownloadManager.getInstance().getProgress(track));
-                graphics.fill(dlBtnX + actionBtnPad, barY2, dlBtnX + actionBtnPad + barW2, barY2 + 2, GuiTheme.ACCENT);
-            } else if (dlState == DownloadState.COMPLETED) {
-                IconRenderer.checkmark(graphics, font, dlBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, GuiTheme.ACCENT);
+                // Playlist button
+                int plBtnX = heartBtnX + actionBtnStep + actionBtnGap;
+                boolean plHover = GuiRender.inside(mouseX, mouseY, plBtnX, heartBtnY, actionBtnStep, actionBtnStep);
+                GuiRender.mcButton(graphics, plBtnX, heartBtnY, actionBtnStep, actionBtnStep, plHover, showPlaylistPopup);
+                if (showPlaylistPopup) {
+                    GuiRender.accentGlow(graphics, plBtnX, heartBtnY, actionBtnStep, actionBtnStep);
+                    IconRenderer.playlistBook(graphics, font, plBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, GuiTheme.ACCENT);
+                } else {
+                    IconRenderer.playlistBook(graphics, font, plBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, plHover ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
+                }
+
+                int dlBtnX = plBtnX + actionBtnStep + actionBtnGap;
+                DownloadState dlState = DownloadManager.getInstance().getState(track);
+                boolean dlHover = GuiRender.inside(mouseX, mouseY, dlBtnX, heartBtnY, actionBtnStep, actionBtnStep);
+                GuiRender.mcButton(graphics, dlBtnX, heartBtnY, actionBtnStep, actionBtnStep, dlHover, dlState == DownloadState.COMPLETED);
+                if (dlState == DownloadState.DOWNLOADING) {
+                    // Pulsing download icon with glow
+                    float pulse = (float)(Math.sin(System.currentTimeMillis() / 300.0) * 0.4 + 0.6);
+                    int pulseColor = ((int)(0x60 + 0x60 * pulse) << 24) | (GuiTheme.ACCENT & 0x00FFFFFF);
+                    graphics.fill(dlBtnX, heartBtnY, dlBtnX + actionBtnStep, heartBtnY + actionBtnStep, pulseColor);
+                    IconRenderer.download(graphics, font, dlBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, GuiTheme.ACCENT);
+                    // Mini progress bar at bottom of button
+                    int barY2 = heartBtnY + actionBtnStep - 2;
+                    int barW2 = (int)(actionBtnSize * DownloadManager.getInstance().getProgress(track));
+                    graphics.fill(dlBtnX + actionBtnPad, barY2, dlBtnX + actionBtnPad + barW2, barY2 + 1, GuiTheme.ACCENT);
+                } else if (dlState == DownloadState.COMPLETED) {
+                    IconRenderer.checkmark(graphics, font, dlBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, GuiTheme.ACCENT);
+                } else {
+                    IconRenderer.download(graphics, font, dlBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, dlHover ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
+                }
             } else {
-                IconRenderer.download(graphics, font, dlBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, dlHover ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
+                // Action buttons size
+                int actionBtnSize = 12;
+                int actionBtnPad = 2;
+                int actionBtnStep = actionBtnSize + actionBtnPad * 2; // 16
+                int actionBtnGap = 3;
+                int actionsW = actionBtnStep * 3 + actionBtnGap * 2; // 3 buttons
+                int artistTextW = maxTitleW - actionsW - 4;
+
+                // Artist text (left portion of line 2)
+                GuiRender.truncated(graphics, font, secondary, infoX, textY2, artistTextW, GuiTheme.TEXT_MUTED);
+
+                // Heart + Playlist + Download buttons (right portion of line 2)
+                int heartBtnX = infoX + artistTextW + 4;
+                int heartBtnY = textY2 - 2;
+                boolean isFav = LibraryManager.getInstance().isFavorite(track);
+                boolean heartHover = GuiRender.inside(mouseX, mouseY, heartBtnX, heartBtnY, actionBtnStep, actionBtnStep);
+                GuiRender.mcButton(graphics, heartBtnX, heartBtnY, actionBtnStep, actionBtnStep, heartHover, false);
+                if (isFav) {
+                    IconRenderer.heartFilled(graphics, font, heartBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, GuiTheme.DANGER);
+                } else {
+                    IconRenderer.heart(graphics, font, heartBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, heartHover ? GuiTheme.DANGER : GuiTheme.TEXT_MUTED);
+                }
+
+                // Playlist button
+                int plBtnX = heartBtnX + actionBtnStep + actionBtnGap;
+                boolean plHover = GuiRender.inside(mouseX, mouseY, plBtnX, heartBtnY, actionBtnStep, actionBtnStep);
+                GuiRender.mcButton(graphics, plBtnX, heartBtnY, actionBtnStep, actionBtnStep, plHover, showPlaylistPopup);
+                if (showPlaylistPopup) {
+                    GuiRender.accentGlow(graphics, plBtnX, heartBtnY, actionBtnStep, actionBtnStep);
+                    IconRenderer.playlistBook(graphics, font, plBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, GuiTheme.ACCENT);
+                } else {
+                    IconRenderer.playlistBook(graphics, font, plBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, plHover ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
+                }
+
+                int dlBtnX = plBtnX + actionBtnStep + actionBtnGap;
+                DownloadState dlState = DownloadManager.getInstance().getState(track);
+                boolean dlHover = GuiRender.inside(mouseX, mouseY, dlBtnX, heartBtnY, actionBtnStep, actionBtnStep);
+                GuiRender.mcButton(graphics, dlBtnX, heartBtnY, actionBtnStep, actionBtnStep, dlHover, dlState == DownloadState.COMPLETED);
+                if (dlState == DownloadState.DOWNLOADING) {
+                    // Pulsing download icon with glow
+                    float pulse = (float)(Math.sin(System.currentTimeMillis() / 300.0) * 0.4 + 0.6);
+                    int pulseColor = ((int)(0x60 + 0x60 * pulse) << 24) | (GuiTheme.ACCENT & 0x00FFFFFF);
+                    graphics.fill(dlBtnX, heartBtnY, dlBtnX + actionBtnStep, heartBtnY + actionBtnStep, pulseColor);
+                    IconRenderer.download(graphics, font, dlBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, GuiTheme.ACCENT);
+                    // Mini progress bar at bottom of button
+                    int barY2 = heartBtnY + actionBtnStep - 3;
+                    int barW2 = (int)(actionBtnSize * DownloadManager.getInstance().getProgress(track));
+                    graphics.fill(dlBtnX + actionBtnPad, barY2, dlBtnX + actionBtnPad + barW2, barY2 + 2, GuiTheme.ACCENT);
+                } else if (dlState == DownloadState.COMPLETED) {
+                    IconRenderer.checkmark(graphics, font, dlBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, GuiTheme.ACCENT);
+                } else {
+                    IconRenderer.download(graphics, font, dlBtnX + actionBtnPad, heartBtnY + actionBtnPad, actionBtnSize, actionBtnSize, dlHover ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
+                }
             }
         }
 
@@ -317,69 +427,92 @@ public final class PlayerBar {
         }
     }
 
-    /** Renders smooth DJ-bar waveform animation at the bottom of the footer. */
+    /** Renders smooth, procedurally animated DJ-bar visualizer at the bottom of the footer. */
     private void renderWaveformBars(GuiGraphics graphics, int x, int y, int w, int h, boolean isPlaying) {
-        long now = System.currentTimeMillis();
         int barW = Math.max(2, (w - BAR_COUNT - 1) / BAR_COUNT);
         int totalBarsW = BAR_COUNT * (barW + 1) - 1;
         int barsX = x + (w - totalBarsW) / 2;
         int barsBaseY = y + h - BAR_MAX_H - 2;
 
-        // Update target heights every ~60ms for smoother sync feel
-        if (now - lastBarUpdate > 60) {
-            lastBarUpdate = now;
-            for (int i = 0; i < BAR_COUNT; i++) {
-                if (isPlaying) {
-                    float center = BAR_COUNT / 2f;
-                    float distFromCenter = Math.abs(i - center) / center;
-                    // Multi-frequency beat pattern for music-synced feel
-                    long tick = now / 60;
-                    float beat1 = (float)Math.sin(tick * 0.4 + i * 0.5) * 0.5f + 0.5f;
-                    float beat2 = (float)Math.sin(tick * 0.25 + i * 1.1) * 0.3f + 0.5f;
-                    float beat3 = (float)Math.sin(tick * 0.7 + i * 0.3) * 0.2f + 0.5f;
-                    float pulse = (float)Math.sin(tick * 0.12) * 0.25f + 0.75f;
-                    float envelope = (1f - distFromCenter * 0.3f) * pulse;
-                    float combined = (beat1 * 0.5f + beat2 * 0.3f + beat3 * 0.2f);
-                    barTargets[i] = BAR_MIN_H + (BAR_MAX_H - BAR_MIN_H) * envelope * combined;
-                } else {
-                    barTargets[i] = BAR_MIN_H;
-                }
-            }
-        }
+        PlayerState state = PlayerFacade.getInstance().snapshot();
+        float amp = PlayerFacade.getInstance().getCurrentAmplitude();
 
-        // Spring-like smooth interpolation with velocity
+        long now = System.currentTimeMillis();
+        float time = (now - START_TIME) / 1000.0f;
+
+        // Calculate target heights with smooth procedural wave when playing/paused
         for (int i = 0; i < BAR_COUNT; i++) {
-            float diff = barTargets[i] - barHeights[i];
-            barVelocity[i] += diff * 0.18f;  // spring constant
-            barVelocity[i] *= 0.72f;         // damping
-            barHeights[i] += barVelocity[i];
-            if (barHeights[i] < BAR_MIN_H) { barHeights[i] = BAR_MIN_H; barVelocity[i] = 0; }
-            if (barHeights[i] > BAR_MAX_H) { barHeights[i] = BAR_MAX_H; barVelocity[i] = 0; }
+            float target;
+            if (isPlaying) {
+                float center = BAR_COUNT / 2f;
+                float distFromCenter = Math.abs(i - center) / center; // 0 at center, 1 at edges
+
+                float combined = 0f;
+                if (distFromCenter < 0.35f) {
+                    // Bass zone (center): large solid beat reactions
+                    float speed = 2.0f + amp * 5.0f;
+                    float wave = (float) Math.sin(i * 0.3f - time * speed) * 0.3f + 0.7f;
+                    combined = wave * (0.4f + 0.6f * amp);
+                    // Stronger beat bounce
+                    combined += amp * 0.35f * (float) (Math.sin(time * 20.0) * 0.5 + 0.5);
+                } else if (distFromCenter < 0.75f) {
+                    // Mid zone: smooth flowing waves
+                    float speed = 4.0f + amp * 6.0f;
+                    float wave = (float) Math.sin(i * 0.45f + time * speed) * 0.4f + 0.4f;
+                    combined = wave * (0.5f + 0.5f * amp);
+                } else {
+                    // Treble zone (edges): fast jittery ripples
+                    float speed = 8.0f + amp * 12.0f;
+                    float wave = (float) Math.sin(i * 1.1f - time * speed) * 0.25f + 0.25f;
+                    float noise = (float) Math.sin(time * 40.0f + i * 5.0f) * 0.15f + 0.15f;
+                    combined = (wave * 0.6f + noise * 0.4f) * (0.3f + 0.7f * amp);
+                }
+
+                // Global background hum
+                combined += 0.04f * (float) Math.sin(time * 3.0f);
+
+                // Shape with an envelope: taller in the middle, tapering to the edges
+                float envelope = 1.0f - distFromCenter * 0.55f;
+                target = BAR_MIN_H + (BAR_MAX_H - BAR_MIN_H) * combined * envelope;
+            } else if (state.isPaused()) {
+                float center = BAR_COUNT / 2f;
+                float distFromCenter = Math.abs(i - center) / center;
+                // Paused: slow breathing ripple that flows outwards from the center
+                float wave = (float) Math.sin(distFromCenter * 3.5f - time * 1.8f) * 0.25f + 0.25f;
+                float envelope = 1.0f - distFromCenter * 0.35f;
+                target = BAR_MIN_H + (BAR_MAX_H - BAR_MIN_H) * wave * envelope;
+            } else {
+                target = BAR_MIN_H;
+            }
+
+            // Lerp current height to target height for organic physics behavior
+            float lerpSpeed = isPlaying ? 0.28f : 0.12f;
+            barHeights[i] += (target - barHeights[i]) * lerpSpeed;
         }
 
-        // Draw bars with actual glow
+        // Render bars with a smooth vertical layout and clean premium glow
         for (int i = 0; i < BAR_COUNT; i++) {
             int bh = Math.round(barHeights[i]);
             int bx = barsX + i * (barW + 1);
             int by = barsBaseY + BAR_MAX_H - bh;
 
-            float ratio = (bh - BAR_MIN_H) / (float)(BAR_MAX_H - BAR_MIN_H);
+            float ratio = (bh - BAR_MIN_H) / (float) (BAR_MAX_H - BAR_MIN_H);
 
-            // Glow halo around each bar (when playing and tall enough)
-            if (isPlaying && ratio > 0.2f) {
-                int glowAlpha = (int)(0x15 * ratio);
+            // Glow halo around each bar when active
+            if (isPlaying && ratio > 0.15f) {
+                int glowAlpha = (int) (0x1C * ratio);
                 int glowColor = (glowAlpha << 24) | (GuiTheme.ACCENT & 0x00FFFFFF);
                 graphics.fill(bx - 1, by - 1, bx + barW + 1, by + bh + 1, glowColor);
             }
 
             // Bar body: gradient from dim at bottom to bright at top
-            int bodyAlpha = isPlaying ? (int)(0x60 + 0x60 * ratio) : 0x30;
+            int bodyAlpha = isPlaying ? (int) (0x5A + 0x6A * ratio) : 0x22;
             int bodyColor = (bodyAlpha << 24) | (GuiTheme.ACCENT & 0x00FFFFFF);
             graphics.fill(bx, by, bx + barW, by + bh, bodyColor);
 
             // Bright cap at top of bar
             if (bh > BAR_MIN_H && isPlaying) {
-                int capAlpha = (int)(0x80 + 0x70 * ratio);
+                int capAlpha = (int) (0x7F + 0x80 * ratio);
                 int capColor = (capAlpha << 24) | (GuiTheme.ACCENT & 0x00FFFFFF);
                 graphics.fill(bx, by, bx + barW, by + 1, capColor);
             }
@@ -395,50 +528,84 @@ public final class PlayerBar {
         int w = frame.playerWidth();
 
         // Center Buttons
-        int hSpacing = 10;
-        int controlsW = (BTN_W * 4) + PLAY_BTN_W + (hSpacing * 4);
+        boolean compact = frame.compact();
+        int btnW = compact ? 16 : 22;
+        int playBtnW = compact ? 20 : 28;
+        int btnH = compact ? 16 : 22;
+        int hSpacing = compact ? 4 : 10;
+        int controlsW = (btnW * 4) + playBtnW + (hSpacing * 4);
         int controlsX = x + w / 2 - controlsW / 2;
-        int controlsY = y + 36;
+        int controlsY = y + (compact ? 37 : 34);
 
         int bx = controlsX;
-        if (GuiRender.inside(mouseX, mouseY, bx, controlsY, BTN_W, BTN_H)) { player.previous(); return true; }
-        bx += BTN_W + hSpacing;
-        if (GuiRender.inside(mouseX, mouseY, bx, controlsY, BTN_W, BTN_H)) { player.seek(Math.max(0, state.getPositionMs() - 5000)); return true; }
-        bx += BTN_W + hSpacing;
+        // Button 1: Previous Track (skipBack)
+        if (GuiRender.inside(mouseX, mouseY, bx, controlsY, btnW, btnH)) {
+            GuiRender.playActionSound();
+            player.previous();
+            return true;
+        }
+        bx += btnW + hSpacing;
 
-        if (GuiRender.inside(mouseX, mouseY, bx, controlsY, PLAY_BTN_W, BTN_H)) { player.togglePlayPause(); return true; }
-        bx += PLAY_BTN_W + hSpacing;
+        // Button 2: Rewind 5s (prev)
+        if (GuiRender.inside(mouseX, mouseY, bx, controlsY, btnW, btnH)) {
+            GuiRender.playClickSound(1.1f);
+            player.seek(Math.max(0, state.getPositionMs() - 5000));
+            return true;
+        }
+        bx += btnW + hSpacing;
 
-        if (GuiRender.inside(mouseX, mouseY, bx, controlsY, BTN_W, BTN_H)) { player.seek(Math.min(state.getDurationMs(), state.getPositionMs() + 5000)); return true; }
-        bx += BTN_W + hSpacing;
-        if (GuiRender.inside(mouseX, mouseY, bx, controlsY, BTN_W, BTN_H)) { player.next(); return true; }
+        // Button 3: Play/Pause
+        if (GuiRender.inside(mouseX, mouseY, bx, controlsY, playBtnW, btnH)) {
+            GuiRender.playActionSound();
+            player.togglePlayPause();
+            return true;
+        }
+        bx += playBtnW + hSpacing;
+
+        // Button 4: Forward 5s (next)
+        if (GuiRender.inside(mouseX, mouseY, bx, controlsY, btnW, btnH)) {
+            GuiRender.playClickSound(1.1f);
+            player.seek(Math.min(state.getDurationMs(), state.getPositionMs() + 5000));
+            return true;
+        }
+        bx += btnW + hSpacing;
+
+        // Button 5: Next Track (skipForward)
+        if (GuiRender.inside(mouseX, mouseY, bx, controlsY, btnW, btnH)) {
+            GuiRender.playActionSound();
+            player.next();
+            return true;
+        }
 
         // Heart + Playlist + Download buttons in track info area (line 2)
         TrackRef track = state.getCurrentTrack();
         if (track != null) {
-            int art = 36;
-            int artX = x + 13;
-            int infoX = artX + art + 10;
-            int actionBtnSize = 12;
-            int actionBtnPad = 2;
+            int artW = compact ? 32 : 46;
+            int artX = x + 10;
+            int infoX = artX + artW + 10;
+            int actionBtnSize = compact ? 10 : 12;
+            int actionBtnPad = compact ? 1 : 2;
             int actionBtnStep = actionBtnSize + actionBtnPad * 2;
-            int actionBtnGap = 3;
+            int actionBtnGap = compact ? 2 : 3;
             int actionsW = actionBtnStep * 3 + actionBtnGap * 2;
             int maxTitleW = controlsX - infoX - 8;
-            if (maxTitleW < 60) maxTitleW = 60;
+            if (maxTitleW < (compact ? 40 : 60)) maxTitleW = compact ? 40 : 60;
             int artistTextW = maxTitleW - actionsW - 4;
-            int textY2 = y + 44;
+            if (compact && artistTextW < 20) artistTextW = 20;
+            int textY2 = y + (compact ? 38 : 44);
 
             int heartBtnX = infoX + artistTextW + 4;
-            int heartBtnY = textY2 - 2;
+            int heartBtnY = textY2 - (compact ? 1 : 2);
 
             if (GuiRender.inside(mouseX, mouseY, heartBtnX, heartBtnY, actionBtnStep, actionBtnStep)) {
+                GuiRender.playClickSound(1.3f);
                 LibraryManager.getInstance().toggleFavorite(track);
                 return true;
             }
             // Playlist button
             int plBtnX = heartBtnX + actionBtnStep + actionBtnGap;
             if (GuiRender.inside(mouseX, mouseY, plBtnX, heartBtnY, actionBtnStep, actionBtnStep)) {
+                GuiRender.playClickSound(1.1f);
                 showPlaylistPopup = !showPlaylistPopup;
                 creatingNewPlaylist = false;
                 newPlaylistName = "";
@@ -446,6 +613,7 @@ public final class PlayerBar {
             }
             int dlBtnX = plBtnX + actionBtnStep + actionBtnGap;
             if (GuiRender.inside(mouseX, mouseY, dlBtnX, heartBtnY, actionBtnStep, actionBtnStep)) {
+                GuiRender.playClickSound(1.2f);
                 DownloadState dlState = DownloadManager.getInstance().getState(track);
                 if (dlState == DownloadState.NONE || dlState == DownloadState.FAILED) {
                     DownloadManager.getInstance().download(track);
@@ -474,6 +642,7 @@ public final class PlayerBar {
             int progressX = x;
             int progressY = y;
             if (GuiRender.inside(mouseX, mouseY, progressX, progressY, progressW, 12)) {
+                GuiRender.playClickSound(0.95f);
                 draggingProgress = true;
                 updateProgress(player, state, progressX, progressW, mouseX);
                 return true;
@@ -482,31 +651,63 @@ public final class PlayerBar {
 
         // Right Side Controls
         int rightEdge = x + w - 24;
-        int volW = 70;
-        int pctSlotW = 27; // fixed: font.width("100%") ≈ 27
-        int pctX = rightEdge - pctSlotW;
-        int volX = pctX - 8 - volW;
-        int volY = y + 54;
+        int volY = y + (compact ? 43 : 48);
+        float vol = state.getVolume();
+        String pctStr = String.format("%d%%", (int)(vol * 100));
 
-        if (GuiRender.inside(mouseX, mouseY, volX - 4, volY - 4, volW + 8, 12)) {
+        int pctSlotW = compact ? 22 : 27; // fixed: font.width("100%") ≈ 27
+        int pctX = rightEdge - pctSlotW;
+        int volW = compact ? 30 : 70;
+        int volX = pctX - (compact ? 4 : 8) - volW;
+        int volIconSize = compact ? 10 : 14;
+        int volIconX = volX - volIconSize - (compact ? 2 : 4);
+        int volIconY = volY - (compact ? 7 : 10);
+
+        if (GuiRender.inside(mouseX, mouseY, volIconX - 2, volIconY - 2, volIconSize + 4, volIconSize + 4)) {
+            GuiRender.playClickSound(1.05f);
+            player.toggleMute();
+            return true;
+        }
+
+        if (GuiRender.inside(mouseX, mouseY, volX - 2, volY - 6, volW + 4, 12)) {
+            GuiRender.playClickSound(1.05f);
             draggingVolume = true;
             updateVolume(player, volX, volW, mouseX);
             return true;
         }
 
-        int topBtnY = y + 24;
-        int topBtnW = 54;
-        int topBtnH = 16;
-        int autoplayX = rightEdge - topBtnW;
-        int loopX = autoplayX - topBtnW - 8;
+        int btnSize = compact ? 16 : 54;
+        int autoplayX = volIconX - btnSize - 6;
+        int loopX = autoplayX - btnSize - 6;
 
-        if (GuiRender.inside(mouseX, mouseY, loopX, topBtnY, topBtnW, topBtnH)) {
-            player.cycleLoopMode();
-            return true;
-        }
-        if (GuiRender.inside(mouseX, mouseY, autoplayX, topBtnY, topBtnW, topBtnH)) {
-            player.toggleAutoplay();
-            return true;
+        if (compact) {
+            if (GuiRender.inside(mouseX, mouseY, loopX, volY - 8, btnSize, btnSize)) {
+                GuiRender.playClickSound(1.0f);
+                player.cycleLoopMode();
+                return true;
+            }
+            if (GuiRender.inside(mouseX, mouseY, autoplayX, volY - 8, btnSize, btnSize)) {
+                GuiRender.playClickSound(1.0f);
+                player.toggleAutoplay();
+                return true;
+            }
+        } else {
+            int topBtnY = y + 24;
+            int topBtnW = 54;
+            int topBtnH = 16;
+            int badgeAutoplayX = rightEdge - topBtnW;
+            int badgeLoopX = badgeAutoplayX - topBtnW - 8;
+
+            if (GuiRender.inside(mouseX, mouseY, badgeLoopX, topBtnY, topBtnW, topBtnH)) {
+                GuiRender.playClickSound(1.0f);
+                player.cycleLoopMode();
+                return true;
+            }
+            if (GuiRender.inside(mouseX, mouseY, badgeAutoplayX, topBtnY, topBtnW, topBtnH)) {
+                GuiRender.playClickSound(1.0f);
+                player.toggleAutoplay();
+                return true;
+            }
         }
 
         return false;
@@ -514,6 +715,9 @@ public final class PlayerBar {
 
     public boolean mouseReleased(GuiFrame frame, double mouseX, double mouseY) {
         if (draggingProgress || draggingVolume) {
+            if (draggingVolume) {
+                ConfigManager.save();
+            }
             draggingProgress = false;
             draggingVolume = false;
             return true;
@@ -523,6 +727,7 @@ public final class PlayerBar {
 
     public boolean mouseDragged(GuiFrame frame, double mouseX, double mouseY) {
         PlayerFacade player = PlayerFacade.getInstance();
+        boolean compact = frame.compact();
         if (draggingProgress) {
             int progressX = frame.playerX();
             int progressW = frame.playerWidth();
@@ -531,10 +736,10 @@ public final class PlayerBar {
         }
         if (draggingVolume) {
             int rightEdge = frame.playerX() + frame.playerWidth() - 24;
-            int volW = 70;
-            int pctSlotW = 27; // fixed: font.width("100%") ≈ 27
+            int volW = compact ? 30 : 70;
+            int pctSlotW = compact ? 22 : 27; // fixed: font.width("100%") ≈ 27
             int pctX = rightEdge - pctSlotW;
-            int volX = pctX - 8 - volW;
+            int volX = pctX - (compact ? 4 : 8) - volW;
             updateVolume(player, volX, volW, mouseX);
             return true;
         }
@@ -551,7 +756,7 @@ public final class PlayerBar {
 
     private void updateVolume(PlayerFacade player, int x, int w, double mouseX) {
         double pct = (mouseX - x) / (double) w;
-        player.setVolume((float) Math.max(0, Math.min(1, pct)));
+        player.setVolume((float) Math.max(0, Math.min(1, pct)), false);
     }
 
     /** Renders the "Add to Playlist" popup overlay above the footer. */
@@ -571,7 +776,17 @@ public final class PlayerBar {
         int popupH = contentH;
 
         // Position: centered above the player bar's track info area
-        int infoAreaCenter = barX + 13 + 36 + 10 + (barW / 4);
+        boolean compact = barW < 560;
+        int artW = compact ? 32 : 46;
+        int infoX = barX + 10 + artW + 10;
+        int btnW = compact ? 16 : 22;
+        int playBtnW = compact ? 20 : 28;
+        int hSpacing = compact ? 4 : 10;
+        int controlsW = (btnW * 4) + playBtnW + (hSpacing * 4);
+        int controlsX = barX + barW / 2 - controlsW / 2;
+        int maxTitleW = controlsX - infoX - 8;
+        if (maxTitleW < (compact ? 40 : 60)) maxTitleW = compact ? 40 : 60;
+        int infoAreaCenter = infoX + (maxTitleW / 2);
         int popupX = infoAreaCenter - popupW / 2;
         // Clamp so popup stays within screen
         if (popupX < barX + 4) popupX = barX + 4;
@@ -684,7 +899,17 @@ public final class PlayerBar {
         int popupH = headerH + separatorH + names.size() * rowH + createRowH + 6;
 
         // Match render positioning
-        int infoAreaCenter = barX + 13 + 36 + 10 + (barW / 4);
+        boolean compact = barW < 560;
+        int artW = compact ? 32 : 46;
+        int infoX = barX + 10 + artW + 10;
+        int btnW = compact ? 16 : 22;
+        int playBtnW = compact ? 20 : 28;
+        int hSpacing = compact ? 4 : 10;
+        int controlsW = (btnW * 4) + playBtnW + (hSpacing * 4);
+        int controlsX = barX + barW / 2 - controlsW / 2;
+        int maxTitleW = controlsX - infoX - 8;
+        if (maxTitleW < (compact ? 40 : 60)) maxTitleW = compact ? 40 : 60;
+        int infoAreaCenter = infoX + (maxTitleW / 2);
         int popupX = infoAreaCenter - popupW / 2;
         if (popupX < barX + 4) popupX = barX + 4;
         if (popupX + popupW > barX + barW - 4) popupX = barX + barW - popupW - 4;

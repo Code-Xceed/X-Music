@@ -235,7 +235,7 @@ public class AudioEngine {
 
                                     // Fallback: estimate from file size + PCM format
                                     if (estimatedDurationMs <= 0) {
-                                        // Rough estimate â€” will be corrected by exact PCM count after decode finishes
+                                        // Rough estimate — will be corrected by exact PCM count after decode finishes
                                         // Assume ~128kbps for MP3 (ratio ~11), ~192kbps for OGG (ratio ~8)
                                         String lowerUri = uri.toLowerCase();
                                         long ratio;
@@ -271,7 +271,7 @@ public class AudioEngine {
                 buffer.markEof();
                 pcm.close();
 
-                // Compute exact duration from actual decoded PCM bytes â€” only for tracks
+                // Compute exact duration from actual decoded PCM bytes — only for tracks
                 // that didn't provide their own duration (don't override valid YouTube durations).
                 // PCM bytes are the most accurate source since they measure actual decoded audio,
                 // unlike bitrate+filesize which overestimates due to ID3 tags and album art.
@@ -290,7 +290,7 @@ public class AudioEngine {
                 XMusic.LOGGER.info("[AudioEngine] Decoder finished for '{}'", track.getDisplayName());
 
             } catch (Exception e) {
-                // InterruptedException is expected when seeking â€” don't log as error
+                // InterruptedException is expected when seeking — don't log as error
                 if (e instanceof InterruptedException || e.getCause() instanceof InterruptedException) {
                     XMusic.LOGGER.debug("[AudioEngine] Decoder interrupted (seek/stop)");
                     return;
@@ -382,7 +382,7 @@ public class AudioEngine {
         if (s == State.PLAYING) {
             boolean stillPlaying = output.update();
             if (!stillPlaying) {
-                // ALWAYS transition state â€” never leave it stuck at PLAYING
+                // ALWAYS transition state — never leave it stuck at PLAYING
                 AudioTrack finished = currentTrack;
                 state.set(State.IDLE);
                 // Notify listeners so auto-advance can happen
@@ -401,7 +401,7 @@ public class AudioEngine {
     }
 
     /**
-     * Set volume (0.0â€“1.0).
+     * Set volume (0.0–1.0).
      */
     public void setVolume(float volume) {
         output.setVolume(volume);
@@ -470,9 +470,9 @@ public class AudioEngine {
         decoderThread.shutdownNow();
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
     //  Helpers
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
 
     private InputStream openStream(AudioTrack track) throws Exception {
         String uri = track.getUri();
@@ -561,9 +561,9 @@ public class AudioEngine {
         }
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
     //  Listener Management
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────
 
     public void addListener(AudioEventListener listener) {
         listeners.addIfAbsent(listener);
@@ -582,4 +582,12 @@ public class AudioEngine {
     private void notifyVolumeChanged(float v) { for (AudioEventListener l : listeners) l.onVolumeChanged(v); }
     private void notifyBuffering(AudioTrack t) { for (AudioEventListener l : listeners) l.onBuffering(t); }
     private void notifyError(String msg, Exception e) { for (AudioEventListener l : listeners) l.onError(msg, e); }
+
+    public void getWaveform(float[] dest) {
+        output.getWaveform(dest);
+    }
+
+    public float getCurrentAmplitude() {
+        return output.getCurrentAmplitude();
+    }
 }

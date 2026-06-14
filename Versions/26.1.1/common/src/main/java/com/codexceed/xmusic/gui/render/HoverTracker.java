@@ -9,7 +9,7 @@ import java.util.Map;
  * transitions at any frame rate.
  * 
  * Each region is identified by a string key. The tracker stores a float
- * 0â†’1 value that smoothly ramps up when hovered and ramps down when not.
+ * 0→1 value that smoothly ramps up when hovered and ramps down when not.
  */
 public final class HoverTracker {
     private HoverTracker() {}
@@ -39,7 +39,7 @@ public final class HoverTracker {
      *
      * @param key     Unique identifier for this region
      * @param hovered Whether the mouse is currently over this region
-     * @return Current hover factor 0â†’1 (smoothly interpolated)
+     * @return Current hover factor 0→1 (smoothly interpolated)
      */
     public static float tick(String key, boolean hovered) {
         float current = VALUES.getOrDefault(key, 0f);

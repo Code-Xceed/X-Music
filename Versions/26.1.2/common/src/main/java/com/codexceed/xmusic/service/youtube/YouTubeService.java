@@ -530,15 +530,18 @@ public final class YouTubeService {
             if (artist.contains(token)) score += 8;
         }
 
-        if (title.contains("official audio")) score += 22;
-        if (title.contains("official video")) score += 12;
-        if (artist.contains("topic") || title.contains("provided to youtube")) score += 14;
-        if (title.contains("lyrics") || title.contains("lyric")) score += 4;
+        if (title.contains("official audio")) score += 60;
+        if (title.contains("official video") || title.contains("music video")) score += 50;
+        if (artist.contains("topic") || title.contains("provided to youtube")) score += 40;
+        if (artist.contains("vevo")) score += 50;
+        if (title.contains("lyrics") || title.contains("lyric")) score += 20;
 
-        if (title.contains("reaction") || title.contains("review") || title.contains("tutorial")) score -= 45;
-        if (title.contains("cover") || title.contains("karaoke") || title.contains("instrumental")) score -= 12;
-        if (title.contains("live") || title.contains("concert")) score -= 8;
-        if (title.contains("shorts") || title.contains("#shorts")) score -= 40;
+        if (title.contains("reaction") || title.contains("review") || title.contains("tutorial")) score -= 120;
+        if (title.contains("cover") && !normalizedQuery.contains("cover")) score -= 100;
+        if ((title.contains("karaoke") || title.contains("instrumental")) && !normalizedQuery.contains("karaoke") && !normalizedQuery.contains("instrumental")) score -= 90;
+        if ((title.contains("loop") || title.contains("1 hour") || title.contains("10 hour")) && !normalizedQuery.contains("loop") && !normalizedQuery.contains("hour")) score -= 110;
+        if (title.contains("live") && !normalizedQuery.contains("live")) score -= 40;
+        if (title.contains("shorts") || title.contains("#shorts")) score -= 50;
 
         long durationMs = track.getDurationMs();
         if (durationMs > 0L) {

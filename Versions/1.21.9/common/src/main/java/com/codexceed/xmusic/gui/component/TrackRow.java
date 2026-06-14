@@ -2,6 +2,7 @@ package com.codexceed.xmusic.gui.component;
 
 import com.codexceed.xmusic.download.DownloadManager;
 import com.codexceed.xmusic.download.DownloadState;
+import com.codexceed.xmusic.gui.render.ArtworkRenderer;
 import com.codexceed.xmusic.gui.render.GuiRender;
 import com.codexceed.xmusic.gui.render.HoverTracker;
 import com.codexceed.xmusic.gui.render.IconRenderer;
@@ -12,7 +13,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
 public final class TrackRow {
-    public static final int HEIGHT = 26;
+    public static final int HEIGHT = 52;
     private static final int BTN_SIZE = 12;
     private static final int BTN_PAD = 2;
     private static final int BTN_STEP = BTN_SIZE + BTN_PAD * 2; // 16
@@ -68,21 +69,23 @@ public final class TrackRow {
             GuiRender.bevel(graphics, x, y, width, HEIGHT, false);
         }
 
-        int iconX = x + 5;
-        int iconY = y + (HEIGHT - 14) / 2;
+        int slotW = 72;
+        int slotH = 40;
+        int iconX = x + 4;
+        int iconY = y + (HEIGHT - slotH) / 2;
         // Icon area: MC inventory slot style
-        GuiRender.mcSlot(graphics, iconX, iconY, 14, 14);
-        // Animate noteblock like vanilla MC: always noteblock, glow when playing
-        int iconColor = isPlaying ? GuiTheme.ACCENT : (isSelected ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
-        if (isPlaying) {
-            // Glow in icon frame when playing
-            GuiRender.accentGlow(graphics, iconX, iconY, 14, 14);
-            IconRenderer.musicNote(graphics, font, iconX, iconY, 14, 14, iconColor);
+        GuiRender.mcSlot(graphics, iconX, iconY, slotW, slotH);
+
+        if (trackRef != null && trackRef.getArtworkUrl() != null && !trackRef.getArtworkUrl().isEmpty()) {
+            ArtworkRenderer.renderArtwork(graphics, trackRef, iconX + 1, iconY + 1, slotW - 2, slotH - 2);
         } else {
-            IconRenderer.musicNote(graphics, font, iconX, iconY, 14, 14, iconColor);
+            if (isPlaying) {
+                GuiRender.accentGlow(graphics, iconX, iconY, slotW, slotH);
+            }
+            ArtworkRenderer.renderPlaceholder(graphics, trackRef, iconX + 1, iconY + 1, slotW - 2, slotH - 2);
         }
 
-        int textX = x + 24;
+        int textX = x + 82;
         int metaW = Math.min(52, Math.max(34, width / 5));
 
         // Buttons — far right with gap + right margin so they don't overflow
@@ -92,54 +95,53 @@ public final class TrackRow {
 
         int titleColor = isPlaying ? GuiTheme.ACCENT : (isSelected ? GuiTheme.TEXT : GuiTheme.TEXT_SOFT);
         int textW = metaX - textX;
-        GuiRender.truncated(graphics, font, title, textX, y + 4, textW, titleColor);
-        GuiRender.truncated(graphics, font, subtitle, textX, y + 15, textW, GuiTheme.TEXT_MUTED);
-        GuiRender.truncated(graphics, font, meta, metaX, y + 9, metaW, GuiTheme.TEXT_MUTED);
+        GuiRender.truncated(graphics, font, title, textX, y + 11, textW, titleColor);
+        GuiRender.truncated(graphics, font, subtitle, textX, y + 27, textW, GuiTheme.TEXT_MUTED);
+        GuiRender.truncated(graphics, font, meta, metaX, y + 21, metaW, GuiTheme.TEXT_MUTED);
 
         // Heart icon: MC button style with hover + favorite state
-        int heartBtnY = y + (HEIGHT - BTN_SIZE) / 2;
-        boolean heartHover = GuiRender.inside(mouseX, mouseY, heartX + BTN_PAD, heartBtnY, BTN_SIZE, BTN_SIZE);
+        int btnY = y + (HEIGHT - BTN_STEP) / 2;
+        boolean heartHover = GuiRender.inside(mouseX, mouseY, heartX + BTN_PAD, btnY + BTN_PAD, BTN_SIZE, BTN_SIZE);
         float heartLerp = HoverTracker.tick("tr_heart_" + x + "_" + y, heartHover);
-        GuiRender.mcButton(graphics, heartX, heartBtnY - BTN_PAD, BTN_STEP, BTN_STEP, heartHover, false);
-        if (heartLerp > 0) GuiRender.glowRect(graphics, heartX, heartBtnY - BTN_PAD, BTN_STEP, BTN_STEP);
+        GuiRender.mcButton(graphics, heartX, btnY, BTN_STEP, BTN_STEP, heartHover, false);
+        if (heartLerp > 0) GuiRender.glowRect(graphics, heartX, btnY, BTN_STEP, BTN_STEP);
         if (isFavorite) {
             // Filled red heart with glow for active state
-            GuiRender.accentGlow(graphics, heartX, heartBtnY - BTN_PAD, BTN_STEP, BTN_STEP);
-            IconRenderer.heartFilled(graphics, font, heartX + BTN_PAD, heartBtnY, BTN_SIZE, BTN_SIZE, GuiTheme.DANGER);
+            GuiRender.accentGlow(graphics, heartX, btnY, BTN_STEP, BTN_STEP);
+            IconRenderer.heartFilled(graphics, font, heartX + BTN_PAD, btnY + BTN_PAD, BTN_SIZE, BTN_SIZE, GuiTheme.DANGER);
         } else {
             int heartColor = heartHover ? GuiTheme.DANGER : GuiTheme.TEXT_MUTED;
-            IconRenderer.heart(graphics, font, heartX + BTN_PAD, heartBtnY, BTN_SIZE, BTN_SIZE, heartColor);
+            IconRenderer.heart(graphics, font, heartX + BTN_PAD, btnY + BTN_PAD, BTN_SIZE, BTN_SIZE, heartColor);
         }
 
         // Download icon: dynamic state (default / downloading / completed / failed)
-        int downBtnY = y + (HEIGHT - BTN_SIZE) / 2;
-        boolean downHover = GuiRender.inside(mouseX, mouseY, downX + BTN_PAD, downBtnY, BTN_SIZE, BTN_SIZE);
+        boolean downHover = GuiRender.inside(mouseX, mouseY, downX + BTN_PAD, btnY + BTN_PAD, BTN_SIZE, BTN_SIZE);
         DownloadState dlState = trackRef != null ? DownloadManager.getInstance().getState(trackRef) : DownloadState.NONE;
         float dlProgress = trackRef != null ? DownloadManager.getInstance().getProgress(trackRef) : 0f;
 
-        GuiRender.mcButton(graphics, downX, downBtnY - BTN_PAD, BTN_STEP, BTN_STEP, downHover, dlState == DownloadState.COMPLETED);
+        GuiRender.mcButton(graphics, downX, btnY, BTN_STEP, BTN_STEP, downHover, dlState == DownloadState.COMPLETED);
         float downLerp = HoverTracker.tick("tr_down_" + x + "_" + y, downHover);
-        if (downLerp > 0) GuiRender.glowRect(graphics, downX, downBtnY - BTN_PAD, BTN_STEP, BTN_STEP);
+        if (downLerp > 0) GuiRender.glowRect(graphics, downX, btnY, BTN_STEP, BTN_STEP);
 
         if (dlState == DownloadState.DOWNLOADING) {
             // Pulsing download icon with glow + mini progress bar
             float pulse = (float)(Math.sin(System.currentTimeMillis() / 300.0) * 0.4 + 0.6);
             int pulseColor = ((int)(0x60 + 0x60 * pulse) << 24) | (GuiTheme.ACCENT & 0x00FFFFFF);
-            graphics.fill(downX, downBtnY - BTN_PAD, downX + BTN_STEP, downBtnY - BTN_PAD + BTN_STEP, pulseColor);
-            IconRenderer.download(graphics, font, downX + BTN_PAD, downBtnY, BTN_SIZE, BTN_SIZE, GuiTheme.ACCENT);
+            graphics.fill(downX, btnY, downX + BTN_STEP, btnY + BTN_STEP, pulseColor);
+            IconRenderer.download(graphics, font, downX + BTN_PAD, btnY + BTN_PAD, BTN_SIZE, BTN_SIZE, GuiTheme.ACCENT);
             // Mini progress bar at bottom of button
-            int pBarY = downBtnY + BTN_SIZE - 2;
+            int pBarY = btnY + BTN_STEP - 4;
             int pBarW = (int)(BTN_SIZE * dlProgress);
             graphics.fill(downX + BTN_PAD, pBarY, downX + BTN_PAD + pBarW, pBarY + 2, GuiTheme.ACCENT);
         } else if (dlState == DownloadState.COMPLETED) {
             // Checkmark icon for downloaded state
-            GuiRender.accentGlow(graphics, downX, downBtnY - BTN_PAD, BTN_STEP, BTN_STEP);
-            IconRenderer.checkmark(graphics, font, downX + BTN_PAD, downBtnY, BTN_SIZE, BTN_SIZE, GuiTheme.ACCENT);
+            GuiRender.accentGlow(graphics, downX, btnY, BTN_STEP, BTN_STEP);
+            IconRenderer.checkmark(graphics, font, downX + BTN_PAD, btnY + BTN_PAD, BTN_SIZE, BTN_SIZE, GuiTheme.ACCENT);
         } else if (dlState == DownloadState.FAILED) {
-            IconRenderer.download(graphics, font, downX + BTN_PAD, downBtnY, BTN_SIZE, BTN_SIZE, GuiTheme.DANGER);
+            IconRenderer.download(graphics, font, downX + BTN_PAD, btnY + BTN_PAD, BTN_SIZE, BTN_SIZE, GuiTheme.DANGER);
         } else {
             // Default: download arrow
-            IconRenderer.download(graphics, font, downX + BTN_PAD, downBtnY, BTN_SIZE, BTN_SIZE, downHover ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
+            IconRenderer.download(graphics, font, downX + BTN_PAD, btnY + BTN_PAD, BTN_SIZE, BTN_SIZE, downHover ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
         }
 
         // Tooltips
@@ -161,14 +163,10 @@ public final class TrackRow {
         render(graphics, font, x, y, width, title, subtitle, meta, isPlaying, isSelected, false, -1, -1, 9999, 9999);
     }
 
-    /**
-     * Check if the heart button was clicked at the given mouse position.
-     * Returns true if the click is within the heart button bounds.
-     */
     public static boolean isHeartClicked(int rowX, int rowY, int rowWidth, double mouseX, double mouseY) {
         int heartX = rowX + rowWidth - BUTTONS_W - RIGHT_MARGIN;
-        int heartBtnY = rowY + (HEIGHT - BTN_SIZE) / 2;
-        return GuiRender.inside(mouseX, mouseY, heartX, heartBtnY - BTN_PAD, BTN_STEP, BTN_STEP);
+        int btnY = rowY + (HEIGHT - BTN_STEP) / 2;
+        return GuiRender.inside(mouseX, mouseY, heartX, btnY, BTN_STEP, BTN_STEP);
     }
 
     /**
@@ -176,7 +174,7 @@ public final class TrackRow {
      */
     public static boolean isDownloadClicked(int rowX, int rowY, int rowWidth, double mouseX, double mouseY) {
         int downX = rowX + rowWidth - BUTTONS_W - RIGHT_MARGIN + BTN_STEP + BTN_GAP;
-        int downBtnY = rowY + (HEIGHT - BTN_SIZE) / 2;
-        return GuiRender.inside(mouseX, mouseY, downX, downBtnY - BTN_PAD, BTN_STEP, BTN_STEP);
+        int btnY = rowY + (HEIGHT - BTN_STEP) / 2;
+        return GuiRender.inside(mouseX, mouseY, downX, btnY, BTN_STEP, BTN_STEP);
     }
 }

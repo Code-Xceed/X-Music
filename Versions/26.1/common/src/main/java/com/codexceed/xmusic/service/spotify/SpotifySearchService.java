@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Precision song search â€” returns only 1-5 official, exact tracks.
+ * Precision song search — returns only 1-5 official, exact tracks.
  * No covers, no remixes, no fan uploads. 100% official releases.
  *
  * Strategy: searches YouTube with multiple precision queries in parallel,
@@ -23,7 +23,7 @@ public final class SpotifySearchService {
 
     private static final int MAX_RESULTS = 5;
 
-    // Keywords that indicate NON-official content â€” hard reject
+    // Keywords that indicate NON-official content — hard reject
     private static final String[] REJECT_KEYWORDS = {
             "cover", "remix", "mashup", "karaoke", "instrumental",
             "acoustic cover", "reaction", "review", "tutorial",
@@ -40,7 +40,7 @@ public final class SpotifySearchService {
     }
 
     /**
-     * Search for official/exact tracks â€” max 5 results, 100% official.
+     * Search for official/exact tracks — max 5 results, 100% official.
      * Runs multiple search strategies in parallel for best coverage.
      */
     public CompletableFuture<List<TrackRef>> search(String query) {
@@ -89,7 +89,7 @@ public final class SpotifySearchService {
                         result = new ArrayList<>(allResults.subList(0, count));
                     }
 
-                    XMusic.LOGGER.info("[SP Precision] {} raw â†’ {} scored â†’ {} final",
+                    XMusic.LOGGER.info("[SP Precision] {} raw → {} scored → {} final",
                             allResults.size(), scored.size(), result.size());
                     return result;
                 });

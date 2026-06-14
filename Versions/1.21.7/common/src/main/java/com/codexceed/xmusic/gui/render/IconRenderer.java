@@ -301,11 +301,11 @@ public final class IconRenderer {
         float drawnH = 16.0f * scale;
         float offX = (areaW - drawnW) / 2.0f;
         float offY = (areaH - drawnH) / 2.0f;
-        g.pose().pushMatrix();
-        g.pose().translate(x + offX, y + offY);
-        g.pose().scale(scale, scale);
+        g.pose().pushPose();
+        g.pose().translate(x + offX, y + offY, 0.0f);
+        g.pose().scale(scale, scale, 1.0f);
         g.renderItem(stack, 0, 0);
-        g.pose().popMatrix();
+        g.pose().popPose();
     }
 
     // ── Core: Scaled Unicode Rendering ──────────────────────────────────
@@ -328,10 +328,10 @@ public final class IconRenderer {
     }
 
     private static void drawScaled(GuiGraphics g, Font f, String text, float scale, float x, float y, int color) {
-        g.pose().pushMatrix();
-        g.pose().translate(x, y);
-        g.pose().scale(scale, scale);
+        g.pose().pushPose();
+        g.pose().translate(x, y, 0.0f);
+        g.pose().scale(scale, scale, 1.0f);
         g.drawString(f, text, 0, 0, color, false);
-        g.pose().popMatrix();
+        g.pose().popPose();
     }
 }

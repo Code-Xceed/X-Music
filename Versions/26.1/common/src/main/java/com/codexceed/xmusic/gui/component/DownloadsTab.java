@@ -14,7 +14,7 @@ import com.codexceed.xmusic.service.ServiceManager;
 import com.codexceed.xmusic.service.youtube.YouTubeToolManager;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 
 import java.awt.Desktop;
 import java.util.ArrayList;
@@ -41,7 +41,7 @@ public final class DownloadsTab {
 
     private final TrackRow trackRow = new TrackRow();
 
-    // â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── State ────────────────────────────────────────────────────────────
     private boolean searchExpanded = false;
     private boolean searchFocused = false;
     private String searchQuery = "";
@@ -52,7 +52,7 @@ public final class DownloadsTab {
         ALL, DOWNLOADING, COMPLETED, FAILED
     }
 
-    public void render(GuiGraphicsExtractor graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
+    public void render(GuiGraphics graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
         int x = frame.contentX();
         int y = frame.contentY();
         int w = frame.contentWidth();
@@ -66,11 +66,11 @@ public final class DownloadsTab {
         int rowW = w - INNER_PAD * 2;
         int currentY = y + INNER_PAD;
 
-        // â”€â”€ Title â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Title ────────────────────────────────────────────────────────
         GuiRender.shadowText(graphics, font, "Downloads", rowX, currentY, GuiTheme.ACCENT);
         currentY += 14;
 
-        // â”€â”€ Setup prompt overlay (only if tools missing and not permanently skipped) â”€â”€
+        // ── Setup prompt overlay (only if tools missing and not permanently skipped) ──
         YouTubeToolManager tools = ServiceManager.getYouTubeToolManager();
         if (tools != null && !ConfigManager.get().setupPromptSkipped) {
             YouTubeToolManager.SetupState st = tools.getState();
@@ -89,21 +89,21 @@ public final class DownloadsTab {
         if (searchExpanded) estimatedHeaderH += SEARCH_BAR_H + 4;
         estimatedHeaderH += FILTER_BTN_H + 4 + ACTION_BAR_H + 4;
 
-        // â”€â”€ Toolbar: compact tool status + search + filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Toolbar: compact tool status + search + filter ──────────────
         currentY = renderToolbar(graphics, font, rowX, currentY, rowW, mouseX, mouseY, screenW, screenH);
         currentY += 4;
 
-        // â”€â”€ Search bar (if expanded) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Search bar (if expanded) ─────────────────────────────────────
         if (searchExpanded) {
             renderSearchBar(graphics, font, rowX, currentY, rowW, mouseX, mouseY);
             currentY += SEARCH_BAR_H + 4;
         }
 
-        // â”€â”€ Filter buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Filter buttons ───────────────────────────────────────────────
         currentY = renderFilterBar(graphics, font, rowX, currentY, rowW, mouseX, mouseY);
         currentY += 4;
 
-        // â”€â”€ Downloads List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Downloads List ───────────────────────────────────────────────
         List<DownloadEntry> entries = getFilteredEntries();
 
         // Separate active (downloading/failed) from completed entries
@@ -186,7 +186,7 @@ public final class DownloadsTab {
         PlayerFacade facade = PlayerFacade.getInstance();
         TrackRef currentPlaying = facade.snapshot().getCurrentTrack();
 
-        // â”€â”€ Active downloads (DOWNLOADING / FAILED) â”€â”€
+        // ── Active downloads (DOWNLOADING / FAILED) ──
         for (DownloadEntry entry : activeEntries) {
             TrackRef track = entry.track;
             DownloadState state = entry.state;
@@ -250,7 +250,7 @@ public final class DownloadsTab {
             drawY += ROW_H + 2;
         }
 
-        // â”€â”€ Completed downloads (TrackRow) â”€â”€
+        // ── Completed downloads (TrackRow) ──
         if (!completedTracks.isEmpty()) {
             // Section header
             if (drawY + 14 >= currentY && drawY < currentY + listH) {
@@ -287,9 +287,9 @@ public final class DownloadsTab {
         }
     }
 
-    // â”€â”€ Toolbar: compact tool status + search toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Toolbar: compact tool status + search toggle ────────────────────
 
-    private int renderToolbar(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my, int sw, int sh) {
+    private int renderToolbar(GuiGraphics g, Font f, int x, int y, int w, int mx, int my, int sw, int sh) {
         // Background bar
         g.fill(x, y, x + w, y + TOOLBAR_H, GuiTheme.PANEL_DARK);
         GuiRender.bevel(g, x, y, w, TOOLBAR_H, true);
@@ -330,7 +330,7 @@ public final class DownloadsTab {
                 curX += installW + 4;
             }
 
-            // Installing progress â€” show step label only (no %)
+            // Installing progress — show step label only (no %)
             if (installing) {
                 String stepLabel = step.label;
                 if (stepLabel.isEmpty()) stepLabel = "Installing...";
@@ -373,8 +373,8 @@ public final class DownloadsTab {
         return y + TOOLBAR_H;
     }
 
-    /** Render a compact tool chip: "name âœ“" or "name âœ—" with bigger, clearer icons */
-    private int renderToolChip(GuiGraphicsExtractor g, Font f, int x, int barY, String name, boolean ready, boolean activeDownloading) {
+    /** Render a compact tool chip: "name ✓" or "name ✗" with bigger, clearer icons */
+    private int renderToolChip(GuiGraphics g, Font f, int x, int barY, String name, boolean ready, boolean activeDownloading) {
         int nameW = f.width(name);
         int iconSz = 11;
         int chipH = TOOLBAR_H - 4;
@@ -397,11 +397,11 @@ public final class DownloadsTab {
         int textY = chipY + (chipH - 8) / 2;
         GuiRender.shadowText(g, f, name, x + 3, textY, ready ? GuiTheme.TEXT : GuiTheme.TEXT_MUTED);
 
-        // Status icon â€” bigger and clearer
+        // Status icon — bigger and clearer
         int iconX = x + nameW + 5;
         int iconY = chipY + (chipH - iconSz) / 2;
         if (ready) {
-            // Green checkmark â€” use a filled circle + check for visibility
+            // Green checkmark — use a filled circle + check for visibility
             IconRenderer.checkmark(g, f, iconX, iconY, iconSz, iconSz, 0xFF4CAF50);
         } else if (activeDownloading) {
             // Pulsing download indicator
@@ -409,16 +409,16 @@ public final class DownloadsTab {
             int pulseColor = ((int)(0xFF * pulse) << 24) | (GuiTheme.ACCENT & 0x00FFFFFF);
             IconRenderer.download(g, f, iconX, iconY, iconSz, iconSz, pulseColor);
         } else {
-            // Red cross â€” draw an X using two short lines for clarity
+            // Red cross — draw an X using two short lines for clarity
             IconRenderer.cross(g, f, iconX, iconY, iconSz, iconSz, GuiTheme.DANGER);
         }
 
         return x + chipW;
     }
 
-    // â”€â”€ Search Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Search Bar ──────────────────────────────────────────────────────
 
-    private void renderSearchBar(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
+    private void renderSearchBar(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
         GuiRender.mcWell(g, x, y, w, SEARCH_BAR_H);
         // Focus highlight border
         if (searchFocused) {
@@ -447,9 +447,9 @@ public final class DownloadsTab {
         }
     }
 
-    // â”€â”€ Filter Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Filter Bar ──────────────────────────────────────────────────────
 
-    private int renderFilterBar(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
+    private int renderFilterBar(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
         int curX = x;
         DownloadFilter[] filters = DownloadFilter.values();
         for (DownloadFilter filter : filters) {
@@ -513,7 +513,7 @@ public final class DownloadsTab {
         return filtered;
     }
 
-    // â”€â”€ Mouse Click â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Mouse Click ─────────────────────────────────────────────────────
 
     public boolean mouseClicked(GuiFrame frame, double mouseX, double mouseY, int button) {
         int x = frame.contentX();
@@ -521,7 +521,7 @@ public final class DownloadsTab {
         int w = frame.contentWidth();
         int h = frame.contentHeight();
 
-        // â”€â”€ Setup prompt clicks (highest priority) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Setup prompt clicks (highest priority) ──────────────────────
         YouTubeToolManager tools = ServiceManager.getYouTubeToolManager();
         if (tools != null && !ConfigManager.get().setupPromptSkipped) {
             YouTubeToolManager.SetupState st = tools.getState();
@@ -537,7 +537,7 @@ public final class DownloadsTab {
         int rowW = w - INNER_PAD * 2;
         int currentY = y + INNER_PAD + 14; // skip title
 
-        // â”€â”€ Toolbar clicks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Toolbar clicks ───────────────────────────────────────────────
 
         // Install button in toolbar
         if (tools != null && (!tools.hasYtDlp() || !tools.hasFfmpeg()) && !tools.isInstalling()) {
@@ -575,7 +575,7 @@ public final class DownloadsTab {
 
         currentY += TOOLBAR_H + 4;
 
-        // â”€â”€ Search bar clicks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Search bar clicks ───────────────────────────────────────────
         if (searchExpanded) {
             // Clear button
             if (!searchQuery.isEmpty()) {
@@ -595,7 +595,7 @@ public final class DownloadsTab {
             currentY += SEARCH_BAR_H + 4;
         }
 
-        // â”€â”€ Filter bar clicks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Filter bar clicks ───────────────────────────────────────────
         int filterY = currentY;
         int curX = rowX;
         DownloadFilter[] filters = DownloadFilter.values();
@@ -612,7 +612,7 @@ public final class DownloadsTab {
         }
         currentY += FILTER_BTN_H + 4;
 
-        // â”€â”€ Action bar clicks (Play All / Shuffle) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Action bar clicks (Play All / Shuffle) ──────────────────────
         List<DownloadEntry> entries = getFilteredEntries();
         List<DownloadEntry> activeEntries = entries.stream()
                 .filter(e -> e.state != DownloadState.COMPLETED)
@@ -643,7 +643,7 @@ public final class DownloadsTab {
         }
         currentY += ACTION_BAR_H + 4;
 
-        // â”€â”€ Download entry clicks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Download entry clicks ────────────────────────────────────────
         searchFocused = false;
         int listH = y + h - currentY - INNER_PAD;
         if (listH < 0) listH = 0;
@@ -690,11 +690,11 @@ public final class DownloadsTab {
                     com.codexceed.xmusic.library.LibraryManager.getInstance().toggleFavorite(track);
                     return true;
                 }
-                // Download button click (already downloaded â€” no-op)
+                // Download button click (already downloaded — no-op)
                 if (TrackRow.isDownloadClicked(rowX, drawY, rowW, mouseX, mouseY)) {
                     return true;
                 }
-                // Row click â€” play the track
+                // Row click — play the track
                 if (GuiRender.inside(mouseX, mouseY, rowX, drawY, rowW, TrackRow.HEIGHT)) {
                     PlayerFacade.getInstance().playQueue(java.util.Collections.singletonList(track), 0);
                     return true;
@@ -711,7 +711,7 @@ public final class DownloadsTab {
         return name.length() * 6 + 11 + 8;
     }
 
-    // â”€â”€ Scroll â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Scroll ──────────────────────────────────────────────────────────
 
     public boolean mouseScrolled(GuiFrame frame, double mouseX, double mouseY, double amount) {
         scrollOffset -= amount * 20;
@@ -720,7 +720,7 @@ public final class DownloadsTab {
         return true;
     }
 
-    // â”€â”€ Key Input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Key Input ───────────────────────────────────────────────────────
 
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (searchFocused) {
@@ -767,23 +767,23 @@ public final class DownloadsTab {
         return min + ":" + (sec < 10 ? "0" : "") + sec;
     }
 
-    // â”€â”€ Setup Prompt (Downloads tab only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Setup Prompt (Downloads tab only) ────────────────────────────────
 
-    private void renderSetupPrompt(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int mx, int my, YouTubeToolManager tools) {
+    private void renderSetupPrompt(GuiGraphics g, Font f, int x, int y, int w, int h, int mx, int my, YouTubeToolManager tools) {
         boolean ytReady = tools.hasYtDlp();
         boolean ffReady = tools.hasFfmpeg();
         boolean installing = tools.isInstalling();
         boolean error = tools.getState() == YouTubeToolManager.SetupState.ERROR;
 
-        // Dialog dimensions â€” centered in content area
+        // Dialog dimensions — centered in content area
         int dialogW = 220;
         int dialogH = 100;
         int cx = x + (w - dialogW) / 2;
         int cy = y + (h - dialogH) / 2;
 
         // Push z-offset so dialog renders above everything
-        g.pose().pushMatrix();
-        g.pose().translate(0.0f, 0.0f);
+        g.pose().pushPose();
+        g.pose().translate(0, 0, 300);
 
         // Dim backdrop behind dialog
         g.fill(x, y, x + w, y + h, 0x60000000);
@@ -840,7 +840,7 @@ public final class DownloadsTab {
             GuiRender.shadowText(g, f, "Install", btnX + dlIcon + 8, btnY + (btnH - 8) / 2, btnHover ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
         }
 
-        // Skip link (only when not installing) â€” permanently dismisses via config
+        // Skip link (only when not installing) — permanently dismisses via config
         if (!installing) {
             int skipW = 40;
             int skipH = 10;
@@ -850,10 +850,10 @@ public final class DownloadsTab {
             GuiRender.shadowText(g, f, "Skip", skipX, skipY, skipHover ? GuiTheme.TEXT : GuiTheme.TEXT_MUTED);
         }
 
-        g.pose().popMatrix();
+        g.pose().popPose();
     }
 
-    private void renderToolRow(GuiGraphicsExtractor g, Font f, int x, int y, int maxW, String name, boolean ready, boolean activeDownloading) {
+    private void renderToolRow(GuiGraphics g, Font f, int x, int y, int maxW, String name, boolean ready, boolean activeDownloading) {
         int iconSz = 13;
         if (ready) {
             IconRenderer.checkmark(g, f, x, y, iconSz, iconSz, 0xFF4CAF50);
@@ -878,7 +878,7 @@ public final class DownloadsTab {
         int mx = (int) mouseX;
         int my = (int) mouseY;
 
-        // Click inside dialog area â€” consume the click
+        // Click inside dialog area — consume the click
         if (!GuiRender.inside(mx, my, cx, cy, dialogW, dialogH)) {
             return false;
         }
@@ -899,7 +899,7 @@ public final class DownloadsTab {
             }
         }
 
-        // Skip link click â€” permanently dismiss via config
+        // Skip link click — permanently dismiss via config
         if (!installing) {
             int skipW = 40;
             int skipH = 10;

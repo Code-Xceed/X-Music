@@ -20,7 +20,7 @@ public final class NativeAudioBackend implements PlaybackBackend, AudioEventList
     private volatile boolean handlingTrackEnd = false;
 
     public NativeAudioBackend() {
-        // Suppress AudioPlayer's internal auto-advance â€” we route through the facade instead
+        // Suppress AudioPlayer's internal auto-advance — we route through the facade instead
         player.setSuppressAutoAdvance(true);
         player.addListener(this);
     }
@@ -38,7 +38,7 @@ public final class NativeAudioBackend implements PlaybackBackend, AudioEventList
     @Override
     public boolean play(TrackRef track) {
         if (!supports(track)) {
-            XMusic.LOGGER.warn("[Native] play() rejected track '{}' â€” playbackType={}, sourceId={}",
+            XMusic.LOGGER.warn("[Native] play() rejected track '{}' — playbackType={}, sourceId={}",
                     track != null ? track.getDisplayName() : "null",
                     track != null ? track.getPlaybackType() : "null",
                     track != null ? track.getSourceId() : "null");
@@ -47,7 +47,7 @@ public final class NativeAudioBackend implements PlaybackBackend, AudioEventList
 
         String uri = track.getNativeUri();
         if (uri == null || uri.isEmpty()) {
-            XMusic.LOGGER.error("[Native] play() rejected track '{}' â€” nativeUri is empty (file path missing)",
+            XMusic.LOGGER.error("[Native] play() rejected track '{}' — nativeUri is empty (file path missing)",
                     track.getDisplayName());
             return false;
         }
@@ -60,7 +60,7 @@ public final class NativeAudioBackend implements PlaybackBackend, AudioEventList
             return true;
         }
 
-        // Not in queue â€” play as single (creates queue of 1)
+        // Not in queue — play as single (creates queue of 1)
         var audioTrack = TrackRefMapper.toAudioTrack(track);
         XMusic.LOGGER.info("[Native] playSingle: '{}' uri='{}'", audioTrack.getDisplayName(), audioTrack.getUri());
         player.playSingle(audioTrack);
@@ -126,7 +126,7 @@ public final class NativeAudioBackend implements PlaybackBackend, AudioEventList
                 player.getQueueSize());
     }
 
-    // â”€â”€ AudioEventListener â€” route track-ended through facade â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── AudioEventListener — route track-ended through facade ────────────
 
     @Override
     public void onTrackEnded(AudioTrack track) {
@@ -146,13 +146,13 @@ public final class NativeAudioBackend implements PlaybackBackend, AudioEventList
                 track != null ? track.getDisplayName() : "unknown");
 
         try {
-            // Check loop first â€” if looping, replay current track
-            if (state.isLooping()) {
+            // Check loop first — if looping, replay current track
+            if (facade.shouldLoopCurrentTrack()) {
                 facade.replayCurrentTrackFromBackend();
-            } else if (facade.isAutoplay()) {
+            } else if (facade.isAutoplay() && !"home".equals(facade.getPlaybackContext())) {
                 facade.next();
             } else {
-                // Neither loop nor autoplay â€” just stop
+                // Neither loop nor autoplay — just stop
                 facade.stop();
             }
         } catch (Exception e) {
@@ -178,7 +178,9 @@ public final class NativeAudioBackend implements PlaybackBackend, AudioEventList
     public void onStopped() {}
 
     @Override
-    public void onError(String message, Exception exception) {}
+    public void onError(String message, Exception exception) {
+        PlayerFacade.getInstance().setLastError(message);
+    }
 
     @Override
     public void onVolumeChanged(float volume) {}
@@ -188,4 +190,12 @@ public final class NativeAudioBackend implements PlaybackBackend, AudioEventList
 
     @Override
     public void onBuffering(AudioTrack track) {}
+
+    public void getWaveform(float[] dest) {
+        player.getWaveform(dest);
+    }
+
+    public float getCurrentAmplitude() {
+        return player.getCurrentAmplitude();
+    }
 }
