@@ -4,7 +4,6 @@ import com.codexceed.xmusic.config.ConfigManager;
 import com.codexceed.xmusic.config.XMusicConfig;
 import com.codexceed.xmusic.gui.render.GuiRender;
 import com.codexceed.xmusic.gui.theme.GuiTheme;
-import com.codexceed.xmusic.gui.util.AnimationHelper;
 import com.codexceed.xmusic.hud.MiniPlayerOverlay;
 import com.codexceed.xmusic.player.PlayerFacade;
 import com.codexceed.xmusic.player.PlayerState;
@@ -27,9 +26,17 @@ public class HudEditorScreen extends Screen {
     private int dragOffsetX;
     private int dragOffsetY;
 
-    private static final int HUD_W = 200;
-    private static final int HUD_H = 36;
-    private static final int RADIUS = 7;
+    private int getHudW() {
+        return com.codexceed.xmusic.hud.HudRenderer.getInstance().getMiniPlayer().getHudWidth();
+    }
+
+    private int getHudH() {
+        return com.codexceed.xmusic.hud.HudRenderer.getInstance().getMiniPlayer().getHudHeight();
+    }
+
+    private int getRadius() {
+        return 0; // Corners are sharp with mcFrameBorder
+    }
 
     private long openTime;
 
@@ -37,24 +44,20 @@ public class HudEditorScreen extends Screen {
         super(Component.literal("HUD Editor"));
         openTime = System.currentTimeMillis();
         XMusicConfig cfg = ConfigManager.get();
+        int hudW = getHudW();
+        int hudH = getHudH();
+        int screenW = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+        int screenH = Minecraft.getInstance().getWindow().getGuiScaledHeight();
         if (cfg.hudX >= 0 && cfg.hudY >= 0) {
-            dragHudX = cfg.hudX;
-            dragHudY = cfg.hudY;
+            dragHudX = Math.max(0, Math.min(screenW - hudW, cfg.hudX));
+            dragHudY = Math.max(0, Math.min(screenH - hudH, cfg.hudY));
         } else {
-            int screenW = Minecraft.getInstance().getWindow().getGuiScaledWidth();
-            int screenH = Minecraft.getInstance().getWindow().getGuiScaledHeight();
             switch (cfg.hudPosition) {
-                case "TOP_LEFT":
-                    dragHudX = 6; dragHudY = 6; break;
-                case "TOP_RIGHT":
-                    dragHudX = screenW - HUD_W - 6; dragHudY = 6; break;
-                case "BOTTOM_LEFT":
-                    dragHudX = 6; dragHudY = screenH - HUD_H - 6; break;
-                case "BOTTOM_RIGHT":
-                    dragHudX = screenW - HUD_W - 6; dragHudY = screenH - HUD_H - 6; break;
-                case "TOP_CENTER":
-                default:
-                    dragHudX = (screenW - HUD_W) / 2; dragHudY = 6; break;
+                case "TOP_LEFT": dragHudX = 6; dragHudY = 6; break;
+                case "TOP_RIGHT": dragHudX = screenW - hudW - 6; dragHudY = 6; break;
+                case "BOTTOM_LEFT": dragHudX = 6; dragHudY = screenH - hudH - 6 - 12; break; // Clear copyright text
+                case "BOTTOM_RIGHT": dragHudX = screenW - hudW - 6; dragHudY = screenH - hudH - 6 - 12; break; // Clear copyright text
+                default: dragHudX = (screenW - hudW) / 2; dragHudY = 6; break;
             }
         }
     }
@@ -75,13 +78,13 @@ public class HudEditorScreen extends Screen {
         // Selection glow
         float glowStr = dragging ? 0.5f : 0.25f;
         int glowAlpha = (int) (0x35 * glowStr * intro);
-        fillRounded(g, dragHudX - 3, dragHudY - 3, HUD_W + 6, HUD_H + 6, RADIUS + 3,
+        fillRounded(g, dragHudX - 3, dragHudY - 3, getHudW() + 6, getHudH() + 6, getRadius() + 3,
                 (glowAlpha << 24) | (GuiTheme.ACCENT & 0x00FFFFFF));
 
         // Selection border
         int borderAlpha = (int) (0x70 * intro);
         int borderColor = dragging ? GuiTheme.ACCENT : GuiTheme.TEXT_SOFT;
-        drawRoundedBorder(g, dragHudX - 1, dragHudY - 1, HUD_W + 2, HUD_H + 2, RADIUS + 1,
+        drawRoundedBorder(g, dragHudX - 1, dragHudY - 1, getHudW() + 2, getHudH() + 2, getRadius() + 1,
                 (borderAlpha << 24) | (borderColor & 0x00FFFFFF));
 
         // HUD preview
@@ -113,30 +116,12 @@ public class HudEditorScreen extends Screen {
     private void renderHudPreview(GuiGraphics g, Font font, int x, int y) {
         PlayerState state = PlayerFacade.getInstance().snapshot();
         TrackRef track = state.getCurrentTrack();
-
-        fillRounded(g, x, y, HUD_W, HUD_H, RADIUS, 0xE51E1E1E);
-        drawRoundedBorder(g, x, y, HUD_W, HUD_H, RADIUS, 0x30505050);
-        // Top highlight
-        g.fill(x + RADIUS, y + 1, x + HUD_W - RADIUS, y + 2, 0x10FFFFFF);
-
-        if (track != null) {
-            GuiRender.truncated(g, font, track.getTitle(), x + 8, y + 5, HUD_W - 18, GuiTheme.TEXT);
-            GuiRender.truncated(g, font, track.getArtist(), x + 8, y + 16, HUD_W - 40, GuiTheme.TEXT_SOFT);
-            String icon = state.isPlaying() ? "\u25B6" : "\u275A\u275A";
-            g.drawString(font, icon, x + HUD_W - 18, y + 5, GuiTheme.ACCENT, true);
-        } else {
-            GuiRender.shadowText(g, font, "No track playing", x + 8, y + HUD_H / 2 - 4, GuiTheme.TEXT_MUTED);
-        }
-
-        // Progress
-        int barY = y + HUD_H - 5;
-        g.fill(x + 6, barY, x + HUD_W - 6, barY + 2, 0x30505050);
-        g.fill(x + 6, barY, x + 6 + (HUD_W - 12) / 3, barY + 2, 0x80000000 | (GuiTheme.ACCENT & 0x00FFFFFF));
+        com.codexceed.xmusic.hud.HudRenderer.getInstance().getMiniPlayer().renderCompactHud(g, font, x, y, state, track, 1.0f);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (GuiRender.inside(mouseX, mouseY, dragHudX, dragHudY, HUD_W, HUD_H)) {
+        if (GuiRender.inside(mouseX, mouseY, dragHudX, dragHudY, getHudW(), getHudH())) {
             dragging = true;
             dragOffsetX = (int) mouseX - dragHudX;
             dragOffsetY = (int) mouseY - dragHudY;
@@ -154,8 +139,8 @@ public class HudEditorScreen extends Screen {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         if (dragging) {
-            dragHudX = Math.max(0, Math.min(this.width - HUD_W, (int) mouseX - dragOffsetX));
-            dragHudY = Math.max(0, Math.min(this.height - HUD_H, (int) mouseY - dragOffsetY));
+            dragHudX = Math.max(0, Math.min(this.width - getHudW(), (int) mouseX - dragOffsetX));
+            dragHudY = Math.max(0, Math.min(this.height - getHudH(), (int) mouseY - dragOffsetY));
             return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
@@ -177,10 +162,10 @@ public class HudEditorScreen extends Screen {
             ConfigManager.save();
             switch (cfg.hudPosition) {
                 case "TOP_LEFT": dragHudX = 6; dragHudY = 6; break;
-                case "TOP_RIGHT": dragHudX = this.width - HUD_W - 6; dragHudY = 6; break;
-                case "BOTTOM_LEFT": dragHudX = 6; dragHudY = this.height - HUD_H - 6; break;
-                case "BOTTOM_RIGHT": dragHudX = this.width - HUD_W - 6; dragHudY = this.height - HUD_H - 6; break;
-                default: dragHudX = (this.width - HUD_W) / 2; dragHudY = 6; break;
+                case "TOP_RIGHT": dragHudX = this.width - getHudW() - 6; dragHudY = 6; break;
+                case "BOTTOM_LEFT": dragHudX = 6; dragHudY = this.height - getHudH() - 6 - 12; break;
+                case "BOTTOM_RIGHT": dragHudX = this.width - getHudW() - 6; dragHudY = this.height - getHudH() - 6 - 12; break;
+                default: dragHudX = (this.width - getHudW()) / 2; dragHudY = 6; break;
             }
             return true;
         }

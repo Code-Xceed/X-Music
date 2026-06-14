@@ -38,6 +38,21 @@ public final class GuiRender {
         g.fill(x + w - 1, y + 1, x + w, y + h - 1, br);
     }
 
+    public static void bevel(GuiGraphics g, int x, int y, int w, int h, boolean inset, float alpha) {
+        int tl = inset ? GuiTheme.BEVEL_HIGHLIGHT_INSET : GuiTheme.BEVEL_HIGHLIGHT;
+        int br = inset ? GuiTheme.BEVEL_SHADOW_INSET : GuiTheme.BEVEL_SHADOW;
+        tl = AnimationHelper.withAlpha(tl, alpha);
+        br = AnimationHelper.withAlpha(br, alpha);
+        // top
+        g.fill(x, y, x + w, y + 1, tl);
+        // left
+        g.fill(x, y + 1, x + 1, y + h - 1, tl);
+        // bottom
+        g.fill(x, y + h - 1, x + w, y + h, br);
+        // right
+        g.fill(x + w - 1, y + 1, x + w, y + h - 1, br);
+    }
+
     /** Bevel with hover-aware highlights. */
     public static void bevelHover(GuiGraphics g, int x, int y, int w, int h, boolean inset, boolean hovered) {
         int tl, br;
@@ -73,6 +88,13 @@ public final class GuiRender {
         bevel(g, x, y, w, h, true);
     }
 
+    /** MC inset well with alpha fading. */
+    public static void mcWell(GuiGraphics g, int x, int y, int w, int h, float alpha) {
+        int fill = AnimationHelper.withAlpha(GuiTheme.PANEL_DARK, alpha);
+        g.fill(x, y, x + w, y + h, fill);
+        bevel(g, x, y, w, h, true, alpha);
+    }
+
     /** MC inventory slot: slot bg + inset bevel. */
     public static void mcSlot(GuiGraphics g, int x, int y, int w, int h) {
         g.fill(x, y, x + w, y + h, GuiTheme.SLOT_BG);
@@ -97,6 +119,23 @@ public final class GuiRender {
         g.fill(x + 2, y + 3, x + 3, y + h - 3, GuiTheme.FRAME_EDGE);
         g.fill(x + 2, y + h - 3, x + w - 2, y + h - 2, GuiTheme.FRAME_EDGE);
         g.fill(x + w - 3, y + 3, x + w - 2, y + h - 3, GuiTheme.FRAME_EDGE);
+    }
+
+    /** Double-bevel frame border with alpha fading. */
+    public static void mcFrameBorder(GuiGraphics g, int x, int y, int w, int h, float alpha) {
+        int highlight = AnimationHelper.withAlpha(GuiTheme.BEVEL_HIGHLIGHT, alpha);
+        int shadow = AnimationHelper.withAlpha(GuiTheme.BEVEL_SHADOW, alpha);
+        int edge = AnimationHelper.withAlpha(GuiTheme.FRAME_EDGE, alpha);
+        // Outer raised bevel (2px)
+        g.fill(x, y, x + w, y + 2, highlight);
+        g.fill(x, y + 2, x + 2, y + h - 2, highlight);
+        g.fill(x, y + h - 2, x + w, y + h, shadow);
+        g.fill(x + w - 2, y + 2, x + w, y + h - 2, shadow);
+        // Inner dark edge (1px)
+        g.fill(x + 2, y + 2, x + w - 2, y + 3, edge);
+        g.fill(x + 2, y + 3, x + 3, y + h - 3, edge);
+        g.fill(x + 2, y + h - 3, x + w - 2, y + h - 2, edge);
+        g.fill(x + w - 3, y + 3, x + w - 2, y + h - 3, edge);
     }
 
     // ── Premium Depth & Gradient Effects ─────────────────────────────────
@@ -330,6 +369,30 @@ public final class GuiRender {
         }
     }
 
+    public static void fillRoundedGradient(GuiGraphics g, int x, int y, int w, int h, int r, int colorTop, int colorBottom) {
+        if (r <= 0) { gradientV(g, x, y, w, h, colorTop, colorBottom); return; }
+        r = Math.min(r, Math.min(w, h) / 2);
+        for (int i = 0; i < h; i++) {
+            float t = (float) i / (h - 1);
+            int color = AnimationHelper.lerpColor(colorTop, colorBottom, t);
+            int cy = y + i;
+            int startX = x;
+            int endX = x + w;
+            if (i < r) {
+                int dy = r - i;
+                int dx = (int) Math.sqrt(Math.max(0, r * r - dy * dy));
+                startX = x + r - dx;
+                endX = x + w - r + dx;
+            } else if (i >= h - r) {
+                int dy = i - (h - r - 1);
+                int dx = (int) Math.sqrt(Math.max(0, r * r - dy * dy));
+                startX = x + r - dx;
+                endX = x + w - r + dx;
+            }
+            g.fill(startX, cy, endX, cy + 1, color);
+        }
+    }
+
     public static void drawRoundedBorder(GuiGraphics g, int x, int y, int w, int h, int r, int color) {
         if (r <= 0) {
             g.fill(x, y, x + w, y + 1, color);
@@ -360,5 +423,38 @@ public final class GuiRender {
                 g.fill(x + px, y + h - i - 1, x + px + 1, y + h - i, color);
             }
         }
+    }
+
+    public static boolean soundPlayedThisFrame = false;
+
+    public static void playClickSound() {
+        playClickSound(1.0f);
+    }
+
+    public static void playClickSound(float pitch) {
+        soundPlayedThisFrame = true;
+        net.minecraft.client.Minecraft.getInstance().getSoundManager().play(
+            net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK.value(), pitch
+            )
+        );
+    }
+
+    public static void playTabSound() {
+        soundPlayedThisFrame = true;
+        net.minecraft.client.Minecraft.getInstance().getSoundManager().play(
+            net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                net.minecraft.sounds.SoundEvents.NOTE_BLOCK_CHIME.value(), 1.4f
+            )
+        );
+    }
+
+    public static void playActionSound() {
+        soundPlayedThisFrame = true;
+        net.minecraft.client.Minecraft.getInstance().getSoundManager().play(
+            net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                net.minecraft.sounds.SoundEvents.NOTE_BLOCK_PLING.value(), 1.2f
+            )
+        );
     }
 }

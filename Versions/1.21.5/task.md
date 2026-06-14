@@ -1,0 +1,16 @@
+- [x] Enable Blending in HUD Renderer
+    - [x] Update `MiniPlayerOverlay.java` `render` method (blend function resolved for 1.21.5)
+- [x] Redesign and Shrink Permanent HUD Card
+    - [x] Update `MiniPlayerOverlay.java` layout sizes (`70x72`, thumbnail `64x36`)
+    - [x] Update `HudEditorScreen.java` layout sizes
+- [x] Remove Scanning Shine & Stretch Bottom Progress Bar
+    - [x] Update `PauseScreenMixin.java` bottom border progress bar (full width, no shine)
+    - [x] Update `MiniPlayerOverlay.java` progress bars (full width, no shine)
+- [x] Add click sound effects to components
+    - [x] Implement unique note block chime/pling click sounds in `GuiRender.java`
+    - [x] Hook clicks in `XMusicScreen.java` and `PlayerBar.java` to play sounds
+- [x] Responsive layout scaling & coordinate clamping
+    - [x] Clamp HUD custom coords to screen bounds in `MiniPlayerOverlay.java` and `HudEditorScreen.java`
+- [x] Compile and Deploy
+    - [x] Run Fabric build
+    - [x] Copy built jar to mods folder

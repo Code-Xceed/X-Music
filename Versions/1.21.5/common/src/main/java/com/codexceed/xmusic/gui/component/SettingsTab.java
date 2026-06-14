@@ -190,13 +190,15 @@ public final class SettingsTab {
         y = renderToggleRow(g, f, x, y, w, mx, my, "Autoplay",
                 "autoplay", player.isAutoplay());
 
+        // Play in Main Menu toggle
+        y = renderToggleRow(g, f, x, y, w, mx, my, "Play in Main Menu",
+                "playInMainMenu", cfg.playInMainMenu);
+
         // Playback Mode cycle
         PlaybackMode mode = player.getPlaybackMode();
         String modeLabel = mode.getDisplayName();
         y = renderCycleRow(g, f, x, y, w, mx, my, "Playback Mode",
                 "playbackMode", modeLabel);
-
-
 
         // Volume Step
         y = renderSliderRow(g, f, x, y, w, mx, my, "Volume Step",
@@ -219,11 +221,6 @@ public final class SettingsTab {
         String posLabel = cfg.hudPosition.replace("_", " ");
         y = renderCycleRow(g, f, x, y, w, mx, my, "HUD Position",
                 "hudPosition", posLabel);
-
-        // Auto-Hide slider
-        y = renderSliderRow(g, f, x, y, w, mx, my, "Auto-Hide",
-                "hudAutoHideSeconds", cfg.hudAutoHideSeconds, 0, 30, 1,
-                cfg.hudAutoHideSeconds == 0 ? "Always" : cfg.hudAutoHideSeconds + "s");
 
         // Now Playing Toast toggle
         y = renderToggleRow(g, f, x, y, w, mx, my, "Now Playing Toast",
@@ -375,13 +372,12 @@ public final class SettingsTab {
         // Animation Speed slider (only shown when animations are enabled)
         if (cfg.animationsEnabled) {
             String speedLabel;
-            if (cfg.animationSpeed <= 0.5f) speedLabel = "Slow";
-            else if (cfg.animationSpeed <= 0.8f) speedLabel = "Relaxed";
-            else if (cfg.animationSpeed <= 1.2f) speedLabel = "Normal";
+            if (cfg.animationSpeed <= 1.0f) speedLabel = "Normal";
             else if (cfg.animationSpeed <= 2.0f) speedLabel = "Fast";
+            else if (cfg.animationSpeed <= 3.0f) speedLabel = "Very Fast";
             else speedLabel = "Instant";
             y = renderSliderRow(g, f, x, y, w, mx, my, "Animation Speed",
-                    "animationSpeed", cfg.animationSpeed, 0.5f, 3.0f, 0.25f,
+                    "animationSpeed", cfg.animationSpeed, 1.0f, 4.0f, 0.25f,
                     String.format("%.1fx (%s)", cfg.animationSpeed, speedLabel));
         }
 
@@ -670,6 +666,10 @@ public final class SettingsTab {
         int w = frame.contentWidth();
         int h = frame.contentHeight();
 
+        if (mouseX < x || mouseX > x + w || mouseY < y || mouseY > y + h) {
+            return false;
+        }
+
         int contentX = x + PAD;
         int contentW = w - PAD * 2;
         int drawY = y + PAD - (int) scrollOffset;
@@ -677,43 +677,71 @@ public final class SettingsTab {
         // Title (must match render offset of 18px)
         drawY += 18;
 
-        // Check section headers
-        drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
-                "playback", playbackExpanded);
+        // Check playback
+        int nextY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY, "playback", playbackExpanded);
+        if (nextY == -1) return true;
+        drawY = nextY;
         if (playbackExpanded) {
-            drawY = checkPlaybackClicks(contentX, drawY, contentW, mouseX, mouseY);
-            drawY += SECTION_GAP;
+            nextY = checkPlaybackClicks(contentX, drawY, contentW, mouseX, mouseY);
+            if (nextY == -1) return true;
+            drawY = nextY;
         }
-        drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
-                "hud", hudExpanded);
+        drawY += SECTION_GAP;
+
+        // Check hud
+        nextY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY, "hud", hudExpanded);
+        if (nextY == -1) return true;
+        drawY = nextY;
         if (hudExpanded) {
-            drawY = checkHudClicks(contentX, drawY, contentW, mouseX, mouseY);
-            drawY += SECTION_GAP;
+            nextY = checkHudClicks(contentX, drawY, contentW, mouseX, mouseY);
+            if (nextY == -1) return true;
+            drawY = nextY;
         }
-        drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
-                "youtube", youtubeExpanded);
+        drawY += SECTION_GAP;
+
+        // Check youtube
+        nextY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY, "youtube", youtubeExpanded);
+        if (nextY == -1) return true;
+        drawY = nextY;
         if (youtubeExpanded) {
-            drawY = checkYouTubeClicks(contentX, drawY, contentW, mouseX, mouseY);
-            drawY += SECTION_GAP;
+            nextY = checkYouTubeClicks(contentX, drawY, contentW, mouseX, mouseY);
+            if (nextY == -1) return true;
+            drawY = nextY;
         }
-        drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
-                "storage", storageExpanded);
+        drawY += SECTION_GAP;
+
+        // Check storage
+        nextY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY, "storage", storageExpanded);
+        if (nextY == -1) return true;
+        drawY = nextY;
         if (storageExpanded) {
-            drawY = checkStorageClicks(contentX, drawY, contentW, mouseX, mouseY);
-            drawY += SECTION_GAP;
+            nextY = checkStorageClicks(contentX, drawY, contentW, mouseX, mouseY);
+            if (nextY == -1) return true;
+            drawY = nextY;
         }
-        drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
-                "about", aboutExpanded);
+        drawY += SECTION_GAP;
+
+        // Check about
+        nextY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY, "about", aboutExpanded);
+        if (nextY == -1) return true;
+        drawY = nextY;
         if (aboutExpanded) {
-            drawY = checkAboutClicks(contentX, drawY, contentW, mouseX, mouseY);
-            drawY += SECTION_GAP;
+            nextY = checkAboutClicks(contentX, drawY, contentW, mouseX, mouseY);
+            if (nextY == -1) return true;
+            drawY = nextY;
         }
-        drawY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY,
-                "animations", animationsExpanded);
+        drawY += SECTION_GAP;
+
+        // Check animations
+        nextY = checkSectionClick(contentX, drawY, contentW, mouseX, mouseY, "animations", animationsExpanded);
+        if (nextY == -1) return true;
+        drawY = nextY;
         if (animationsExpanded) {
-            drawY = checkAnimationsClicks(contentX, drawY, contentW, mouseX, mouseY);
-            drawY += SECTION_GAP;
+            nextY = checkAnimationsClicks(contentX, drawY, contentW, mouseX, mouseY);
+            if (nextY == -1) return true;
+            drawY = nextY;
         }
+        drawY += SECTION_GAP;
 
         return false;
     }
@@ -722,11 +750,9 @@ public final class SettingsTab {
                                   String id, boolean expanded) {
         if (GuiRender.inside(mx, my, x, y, w, SECTION_HEADER_H)) {
             toggleSection(id);
-            return y + SECTION_HEADER_H + 2 + (expanded ? 0 : SECTION_GAP);
+            return -1;
         }
         y += SECTION_HEADER_H + 2;
-        // Skip rows if expanded (we don't know exact height here, but click handling
-        // will check each row individually)
         return y;
     }
 
@@ -753,7 +779,19 @@ public final class SettingsTab {
             int toggleY = y + (ROW_H - TOGGLE_H) / 2;
             if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
                 player.toggleAutoplay();
-                return y + ROW_H;
+                return -1;
+            }
+        }
+        y += ROW_H;
+
+        // Play in Main Menu toggle
+        if (GuiRender.inside(mx, my, x, y, w, ROW_H)) {
+            int toggleX = x + w - TOGGLE_W - 6;
+            int toggleY = y + (ROW_H - TOGGLE_H) / 2;
+            if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
+                cfg.playInMainMenu = !cfg.playInMainMenu;
+                ConfigManager.save();
+                return -1;
             }
         }
         y += ROW_H;
@@ -766,15 +804,14 @@ public final class SettingsTab {
             int btnY = y + (ROW_H - BTN_H) / 2;
             if (GuiRender.inside(mx, my, btnX, btnY, btnW, BTN_H)) {
                 player.cyclePlaybackMode();
-                return y + ROW_H;
+                return -1;
             }
         }
         y += ROW_H;
 
-
-
         // Volume Step slider
         y = checkSliderClick(x, y, w, mx, my, "volumeStep");
+        if (y == -1) return -1;
         y += ROW_H;
 
         return y;
@@ -792,7 +829,7 @@ public final class SettingsTab {
             if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
                 cfg.hudEnabled = !cfg.hudEnabled;
                 ConfigManager.save();
-                return y + ROW_H;
+                return -1;
             }
         }
         y += ROW_H;
@@ -811,17 +848,12 @@ public final class SettingsTab {
                     if (positions[i].equals(cfg.hudPosition)) { idx = i; break; }
                 }
                 cfg.hudPosition = positions[(idx + 1) % positions.length];
-                // Reset custom position when using presets
                 cfg.hudX = -1;
                 cfg.hudY = -1;
                 ConfigManager.save();
-                return y + ROW_H;
+                return -1;
             }
         }
-        y += ROW_H;
-
-        // Auto-Hide slider
-        y = checkSliderClick(x, y, w, mx, my, "hudAutoHideSeconds");
         y += ROW_H;
 
         // Now Playing Toast toggle
@@ -831,13 +863,14 @@ public final class SettingsTab {
             if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
                 cfg.showNowPlayingToast = !cfg.showNowPlayingToast;
                 ConfigManager.save();
-                return y + ROW_H;
+                return -1;
             }
         }
         y += ROW_H;
 
         // Edit HUD Position button
         y = checkActionClick(x, y, w, mx, my, "editHudPosition");
+        if (y == -1) return -1;
 
         return y;
     }
@@ -854,22 +887,29 @@ public final class SettingsTab {
         if (tools != null && (tools.getState() == YouTubeToolManager.SetupState.MISSING
                 || tools.getState() == YouTubeToolManager.SetupState.ERROR)) {
             y = checkActionClick(x, y, w, mx, my, "installTools");
+            if (y == -1) return -1;
         } else if (tools != null && tools.getState() == YouTubeToolManager.SetupState.READY) {
             y = checkActionClick(x, y, w, mx, my, "reinstallTools");
+            if (y == -1) return -1;
         }
 
         // yt-dlp Path — click to edit
         y = checkPathClick(x, y, w, mx, my, "youtubeYtDlpPath");
+        if (y == -1) return -1;
         // ffmpeg Path
         y = checkPathClick(x, y, w, mx, my, "youtubeFfmpegPath");
+        if (y == -1) return -1;
         // Download Timeout slider
         y = checkSliderClick(x, y, w, mx, my, "youtubeDownloadTimeoutSeconds");
+        if (y == -1) return -1;
         y += ROW_H;
         // Concurrent Fragments slider
         y = checkSliderClick(x, y, w, mx, my, "youtubeDownloadConcurrentFragments");
+        if (y == -1) return -1;
         y += ROW_H;
         // Cookies File
         y = checkPathClick(x, y, w, mx, my, "youtubeCookiesFile");
+        if (y == -1) return -1;
 
         return y;
     }
@@ -879,16 +919,21 @@ public final class SettingsTab {
     private int checkStorageClicks(int x, int y, int w, double mx, double my) {
         // Local Music Folder — Open button
         y = checkFolderClick(x, y, w, mx, my, "openLocalFolder");
+        if (y == -1) return -1;
         // Downloads Folder — Open button
         y = checkFolderClick(x, y, w, mx, my, "openDownloadsFolder");
+        if (y == -1) return -1;
         // Cache Limit slider
         y = checkSliderClick(x, y, w, mx, my, "youtubeCacheMaxSizeMb");
+        if (y == -1) return -1;
         y += ROW_H;
         // Max Cached Tracks slider
         y = checkSliderClick(x, y, w, mx, my, "youtubeCacheMaxTracks");
+        if (y == -1) return -1;
         y += ROW_H;
         // Clear Cache
         y = checkActionClick(x, y, w, mx, my, "clearCache");
+        if (y == -1) return -1;
 
         return y;
     }
@@ -902,9 +947,12 @@ public final class SettingsTab {
         // Reset / Confirm
         if (confirmReset) {
             y = checkActionClick(x, y, w, mx, my, "confirmReset");
+            if (y == -1) return -1;
             y = checkActionClick(x, y, w, mx, my, "cancelReset");
+            if (y == -1) return -1;
         } else {
             y = checkActionClick(x, y, w, mx, my, "resetAll");
+            if (y == -1) return -1;
         }
 
         return y;
@@ -922,7 +970,7 @@ public final class SettingsTab {
             if (GuiRender.inside(mx, my, toggleX, toggleY, TOGGLE_W, TOGGLE_H)) {
                 cfg.animationsEnabled = !cfg.animationsEnabled;
                 ConfigManager.save();
-                return y + ROW_H;
+                return -1;
             }
         }
         y += ROW_H;
@@ -930,6 +978,7 @@ public final class SettingsTab {
         // Animation Speed slider (only if animations enabled)
         if (cfg.animationsEnabled) {
             y = checkSliderClick(x, y, w, mx, my, "animationSpeed");
+            if (y == -1) return -1;
             y += ROW_H;
         }
 
@@ -1097,14 +1146,11 @@ public final class SettingsTab {
                 cfg.youtubeCacheMaxTracks = (int) (8 + pct * 56);
                 cfg.youtubeCacheMaxTracks = Math.round(cfg.youtubeCacheMaxTracks / 4f) * 4;
                 break;
-            case "hudAutoHideSeconds":
-                cfg.hudAutoHideSeconds = (int) (0 + pct * 30);
-                break;
             case "animationSpeed":
-                cfg.animationSpeed = 0.5f + pct * 2.5f;
+                cfg.animationSpeed = 1.0f + pct * 3.0f; // 1.0 to 4.0
                 cfg.animationSpeed = Math.round(cfg.animationSpeed * 4f) / 4f; // snap to 0.25
-                if (cfg.animationSpeed < 0.5f) cfg.animationSpeed = 0.5f;
-                if (cfg.animationSpeed > 3.0f) cfg.animationSpeed = 3.0f;
+                if (cfg.animationSpeed < 1.0f) cfg.animationSpeed = 1.0f;
+                if (cfg.animationSpeed > 4.0f) cfg.animationSpeed = 4.0f;
                 break;
         }
         ConfigManager.save();
@@ -1131,6 +1177,13 @@ public final class SettingsTab {
     // ── Scroll ─────────────────────────────────────────────────────────────
 
     public boolean mouseScrolled(GuiFrame frame, double mouseX, double mouseY, double amount) {
+        int x = frame.contentX();
+        int y = frame.contentY();
+        int w = frame.contentWidth();
+        int h = frame.contentHeight();
+        if (mouseX < x || mouseX > x + w || mouseY < y || mouseY > y + h) {
+            return false;
+        }
         targetScroll -= amount * 20;
         if (targetScroll < 0) targetScroll = 0;
         if (targetScroll > maxScroll) targetScroll = maxScroll;
