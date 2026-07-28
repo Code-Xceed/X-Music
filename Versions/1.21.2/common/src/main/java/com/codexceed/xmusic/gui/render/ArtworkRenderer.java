@@ -16,6 +16,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,9 +38,20 @@ public final class ArtworkRenderer {
         t.setDaemon(true);
         return t;
     });
-    private static final Map<String, ResourceLocation> TEXTURE_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, ResourceLocation> TEXTURE_CACHE = new java.util.LinkedHashMap<String, ResourceLocation>(16, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, ResourceLocation> eldest) {
+            if (size() > 64) {
+                Minecraft.getInstance().execute(() -> {
+                    Minecraft.getInstance().getTextureManager().release(eldest.getValue());
+                });
+                return true;
+            }
+            return false;
+        }
+    };
     private static final Map<String, Boolean> DOWNLOADING = new ConcurrentHashMap<>();
-    private static int textureCounter = 0;
+    private static final java.util.concurrent.atomic.AtomicInteger textureCounter = new java.util.concurrent.atomic.AtomicInteger(0);
 
     static {
         Path dir = null;
@@ -162,8 +174,18 @@ public final class ArtworkRenderer {
         GuiRender.outline(g, x, y, w, h, ((int)(0x35 * alpha) << 24) | (color & 0x00FFFFFF));
     }
 
+    private static boolean isValidArtworkUrl(String url) {
+        if (url == null || url.isBlank()) return false;
+        String lower = url.toLowerCase();
+        return lower.startsWith("https://") || lower.startsWith("http://");
+    }
+
     /** Download artwork to cache, then upload as MC texture on render thread. */
     private static void downloadAndLoad(String artworkUrl) {
+        if (!isValidArtworkUrl(artworkUrl)) {
+            DOWNLOADING.remove(artworkUrl);
+            return;
+        }
         try {
             String hash = Integer.toHexString(artworkUrl.hashCode());
             Path cachedFile = CACHE_DIR != null ? CACHE_DIR.resolve(hash + ".png") : null;
@@ -197,7 +219,7 @@ public final class ArtworkRenderer {
     }
 
     private static void downloadToFile(String urlStr, Path target) throws IOException {
-        HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
+        HttpURLConnection conn = (HttpURLConnection) URI.create(urlStr).toURL().openConnection();
         conn.setConnectTimeout(5000);
         conn.setReadTimeout(10000);
         conn.setRequestProperty("User-Agent", "CodeX-Music-Player/1.0");
@@ -229,8 +251,8 @@ public final class ArtworkRenderer {
     private static void loadTexture(String artworkUrl, Path file) throws IOException {
         try (InputStream is = Files.newInputStream(file)) {
             NativeImage image = NativeImage.read(is);
-            int texId = textureCounter++;
-            DynamicTexture texture = new DynamicTexture(() -> "xmusic_art_" + texId, image);
+            int texId = textureCounter.getAndIncrement();
+            DynamicTexture texture = new DynamicTexture(image);
             texture.setFilter(true, false);
             ResourceLocation loc = ResourceLocation.fromNamespaceAndPath("xmusic", "art_" + texId);
             Minecraft.getInstance().getTextureManager().register(loc, texture);
@@ -247,3 +269,4 @@ public final class ArtworkRenderer {
         TEXTURE_CACHE.clear();
     }
 }
+

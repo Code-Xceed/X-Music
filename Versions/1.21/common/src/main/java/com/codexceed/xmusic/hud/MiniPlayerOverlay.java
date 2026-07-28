@@ -65,8 +65,7 @@ public class MiniPlayerOverlay {
         } else {
             switch (cfg.hudPosition) {
                 case "BOTTOM_LEFT": case "BOTTOM_RIGHT":
-                    // Clear the main menu copyright/version text (approx 12px)
-                    y = screenH - hudH - MARGIN - 12;
+                    y = screenH - hudH - MARGIN;
                     break;
                 default:
                     y = MARGIN;

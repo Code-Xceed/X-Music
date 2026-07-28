@@ -1,5 +1,7 @@
 pluginManagement {
     repositories {
+        mavenLocal()
+        maven { url "${rootDir}/../../local-maven-repo" }
         gradlePluginPortal()
         mavenCentral()
         maven { url "https://maven.architectury.dev/" }
@@ -65,3 +67,22 @@ include('common')
 }
 
 rootProject.name = 'xmusic'
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
+    repositories {
+        mavenLocal()
+        maven { url "${rootDir}/../../local-maven-repo" }
+        mavenCentral()
+        maven { url "https://maven.fabricmc.net/" }
+    }
+}
+
+gradle.rootProject {
+    allprojects {
+        repositories {
+            mavenLocal()
+            maven { url "${rootDir}/../../local-maven-repo" }
+        }
+    }
+}

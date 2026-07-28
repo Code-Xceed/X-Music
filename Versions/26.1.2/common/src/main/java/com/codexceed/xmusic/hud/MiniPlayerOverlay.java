@@ -11,7 +11,7 @@ import com.codexceed.xmusic.player.PlayerState;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * Clean, minimal HUD overlay for in-game playback status.
@@ -65,8 +65,7 @@ public class MiniPlayerOverlay {
         } else {
             switch (cfg.hudPosition) {
                 case "BOTTOM_LEFT": case "BOTTOM_RIGHT":
-                    // Clear the main menu copyright/version text (approx 12px)
-                    y = screenH - hudH - MARGIN - 12;
+                    y = screenH - hudH - MARGIN;
                     break;
                 default:
                     y = MARGIN;
@@ -78,7 +77,7 @@ public class MiniPlayerOverlay {
 
     // ── Main Render ──────────────────────────────────────────────────────
 
-    public void render(GuiGraphics g, float partialTick) {
+    public void render(GuiGraphicsExtractor g, float partialTick) {
         XMusicConfig cfg = ConfigManager.get();
         if (!cfg.hudEnabled) return;
 
@@ -176,7 +175,7 @@ public class MiniPlayerOverlay {
         }
     }
 
-    public void renderCompactHud(GuiGraphics g, Font font, int x, int y, PlayerState state, TrackRef track, float alpha) {
+    public void renderCompactHud(GuiGraphicsExtractor g, Font font, int x, int y, PlayerState state, TrackRef track, float alpha) {
         int w = HUD_W;
         int h = HUD_H;
 
@@ -230,7 +229,7 @@ public class MiniPlayerOverlay {
         int titleY = y + 50;
         int titleColor = (int) (0xFF * alpha) << 24 | ((track != null && state.isPlaying() ? GuiTheme.ACCENT : GuiTheme.TEXT) & 0x00FFFFFF);
         
-        g.drawString(font, truncatedTitle, titleX, titleY, titleColor, true);
+        g.text(font, truncatedTitle, titleX, titleY, titleColor, false);
 
         // Small cozy waveform animation nestled at the bottom border
         int waveW = 50;

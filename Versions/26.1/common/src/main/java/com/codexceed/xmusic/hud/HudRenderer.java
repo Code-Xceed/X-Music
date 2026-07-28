@@ -1,7 +1,7 @@
 package com.codexceed.xmusic.hud;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * Master HUD renderer. Delegates to the mini-player overlay.
@@ -28,7 +28,7 @@ public class HudRenderer {
      * Render all HUD overlays. Called from the platform HUD render event.
      * Only renders when no screen is open (in-game HUD).
      */
-    public void render(GuiGraphics g, float partialTick) {
+    public void render(GuiGraphicsExtractor g, float partialTick) {
         // Only render in-game (no screen open)
         if (Minecraft.getInstance().screen != null) return;
 

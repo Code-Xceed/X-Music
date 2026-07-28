@@ -305,6 +305,22 @@ public final class SettingsTab {
         y = renderPathRow(g, f, x, y, w, mx, my, "Cookies File",
                 "youtubeCookiesFile", cfg.youtubeCookiesFile.isEmpty() ? "—" : cfg.youtubeCookiesFile);
 
+        // ARR Direct Streaming Mode Banner
+        y = renderStatusRow(g, f, x, y, w, mx, my, "Streaming Mode", "ARR Direct (No OAuth Required)", GuiTheme.ACCENT);
+
+        // PO Token status
+        String poStatus = (cfg.youtubePoToken != null && !cfg.youtubePoToken.isEmpty())
+                ? "✓ Loaded (" + cfg.youtubePoToken.substring(0, Math.min(6, cfg.youtubePoToken.length())) + "...)"
+                : "None (Add youtubePoToken in xmusic.json)";
+        int poColor = (cfg.youtubePoToken != null && !cfg.youtubePoToken.isEmpty()) ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED;
+        y = renderStatusRow(g, f, x, y, w, mx, my, "YouTube PO Token", poStatus, poColor);
+
+        // Visitor Data status
+        String visitorStatus = (cfg.youtubeVisitorData != null && !cfg.youtubeVisitorData.isEmpty())
+                ? "✓ Loaded"
+                : "Auto";
+        y = renderStatusRow(g, f, x, y, w, mx, my, "Visitor Data", visitorStatus, GuiTheme.TEXT_SOFT);
+
         return y;
     }
 

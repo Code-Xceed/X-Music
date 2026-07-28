@@ -1,7 +1,12 @@
 {
-  "key.categories.xmusic": "CodeX Music Player",
-  "key.xmusic.open_player": "Open Music Player",
+  "key.categories.xmusic": "XMusic",
+  "key.xmusic.open_player": "Open XMusic",
   "key.xmusic.play_pause": "Play / Pause",
   "key.xmusic.next_track": "Next Track",
-  "key.xmusic.prev_track": "Previous Track"
+  "key.xmusic.prev_track": "Previous Track",
+  "key.xmusic.volume_up": "Volume Up",
+  "key.xmusic.volume_down": "Volume Down",
+  "key.xmusic.toggle_shuffle": "Toggle Shuffle",
+  "key.xmusic.cycle_loop": "Cycle Loop Mode",
+  "key.xmusic.cycle_playback_mode": "Cycle Playback Mode"
 }

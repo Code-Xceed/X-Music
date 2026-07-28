@@ -10,7 +10,7 @@ import com.codexceed.xmusic.gui.theme.GuiTheme;
 import com.codexceed.xmusic.gui.util.AnimationHelper;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public final class TrackRow {
     public static final int HEIGHT = 52;
@@ -21,19 +21,19 @@ public final class TrackRow {
     private static final int BUTTONS_W = BTN_STEP * 2 + BTN_GAP; // 36
     private static final int RIGHT_MARGIN = 4; // margin from row edge to buttons
 
-    public void render(GuiGraphics graphics, Font font, int x, int y, int width,
+    public void render(GuiGraphicsExtractor graphics, Font font, int x, int y, int width,
                        String title, String subtitle, String meta, boolean isPlaying, boolean isSelected,
                        int mouseX, int mouseY, int screenW, int screenH) {
         render(graphics, font, x, y, width, title, subtitle, meta, isPlaying, isSelected, false, mouseX, mouseY, screenW, screenH);
     }
 
-    public void render(GuiGraphics graphics, Font font, int x, int y, int width,
+    public void render(GuiGraphicsExtractor graphics, Font font, int x, int y, int width,
                        String title, String subtitle, String meta, boolean isPlaying, boolean isSelected, boolean isFavorite,
                        int mouseX, int mouseY, int screenW, int screenH) {
         render(graphics, font, x, y, width, title, subtitle, meta, isPlaying, isSelected, isFavorite, null, mouseX, mouseY, screenW, screenH);
     }
 
-    public void render(GuiGraphics graphics, Font font, int x, int y, int width,
+    public void render(GuiGraphicsExtractor graphics, Font font, int x, int y, int width,
                        String title, String subtitle, String meta, boolean isPlaying, boolean isSelected, boolean isFavorite, TrackRef trackRef,
                        int mouseX, int mouseY, int screenW, int screenH) {
         // Smooth row hover animation
@@ -158,7 +158,7 @@ public final class TrackRow {
     }
 
     /** Legacy render without hover/tooltip (for backward compat). */
-    public void render(GuiGraphics graphics, Font font, int x, int y, int width,
+    public void render(GuiGraphicsExtractor graphics, Font font, int x, int y, int width,
                        String title, String subtitle, String meta, boolean isPlaying, boolean isSelected) {
         render(graphics, font, x, y, width, title, subtitle, meta, isPlaying, isSelected, false, -1, -1, 9999, 9999);
     }

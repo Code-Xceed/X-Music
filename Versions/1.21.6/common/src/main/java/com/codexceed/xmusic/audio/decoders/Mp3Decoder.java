@@ -100,22 +100,12 @@ public class Mp3Decoder implements AudioDecoder {
             // For a rough total, use: total_frames * ms_per_frame
             // But we don't know total frames upfront.
             // Better: use bitrate from header + file length
-            // Header.bitrate() returns the bitrate in bps for this frame
             try {
                 int bitrate = firstHeader.bitrate();
                 if (bitrate > 0) {
                     // Try to get file size from the underlying stream
                     // The source is typically a BufferedInputStream wrapping a FileInputStream
                     // We can't easily get file size from InputStream, so use per-frame estimate
-                    // JLayer's Header calculates: ms_per_frame = total_ms(1) for one frame
-                    // For CBR: duration = number_of_frames * ms_per_frame
-                    // We can estimate frames from available data
-                    float msPerFrame = firstHeader.total_ms(1);
-                    if (msPerFrame > 0) {
-                        // Use the frame count if we can estimate it
-                        // For now, return -1 and let AudioEngine use file-size method
-                        // with the actual bitrate instead of a 10x guess
-                    }
                 }
             } catch (Exception ignored) {}
             return -1;

@@ -29,8 +29,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Screen.class)
 public abstract class ScreenMixin {
 
+#if MC_RENDER_MATRIX_2D
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void onRender(GuiGraphics g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+#else
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(GuiGraphics g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+#endif
         Screen thisScreen = (Object) this instanceof Screen ? (Screen) (Object) this : null;
         if (thisScreen == null) {
             return;

@@ -2,6 +2,7 @@ package com.codexceed.xmusic.input;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -9,7 +10,7 @@ import org.lwjgl.glfw.GLFW;
  * Registered by the loader-specific platform helpers.
  */
 public final class KeyBindings {
-    public static final String CATEGORY = "key.categories.xmusic";
+    public static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("xmusic", "xmusic"));
 
     /** Open the music player GUI. */
     public static final KeyMapping OPEN_PLAYER = new KeyMapping(
@@ -102,3 +103,5 @@ public final class KeyBindings {
         };
     }
 }
+
+

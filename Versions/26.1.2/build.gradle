@@ -1,3 +1,15 @@
+buildscript {
+    dependencies {
+        constraints {
+            classpath('org.ow2.asm:asm:9.8')
+            classpath('org.ow2.asm:asm-commons:9.8')
+            classpath('org.ow2.asm:asm-tree:9.8')
+            classpath('org.ow2.asm:asm-analysis:9.8')
+            classpath('org.ow2.asm:asm-util:9.8')
+        }
+    }
+}
+
 plugins {
     id 'root'
     id 'xyz.wagyourtail.unimined' version '1.4.1-SNAPSHOT' apply false

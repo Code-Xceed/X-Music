@@ -39,3 +39,19 @@
 **/run/
 **/logs/
 **/crash-reports/
+
+# Additional entries for public release
+*.class
+local-maven-repo/
+Versions_Backup/
+scratch/
+**/task.md
+**/docs/prompt.md
+**/docs/superpowers/
+
+# Build logs and temp dumps
+*.log
+*.txt
+*.jar
+!**/gradle/wrapper/gradle-wrapper.jar
+!**/Release_Jars/*.jar

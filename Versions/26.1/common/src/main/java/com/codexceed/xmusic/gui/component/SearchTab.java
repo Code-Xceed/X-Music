@@ -12,7 +12,7 @@ import com.codexceed.xmusic.player.PlayerFacade;
 import com.codexceed.xmusic.service.ServiceManager;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.lwjgl.glfw.GLFW;
 
 import net.minecraft.client.Minecraft;
@@ -94,7 +94,7 @@ public final class SearchTab {
 
     // ── Render ────────────────────────────────────────────────────────────
 
-    public void render(GuiGraphics graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
+    public void render(GuiGraphicsExtractor graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
         int x = frame.contentX();
         int y = frame.contentY();
         int w = frame.contentWidth();
@@ -252,7 +252,7 @@ public final class SearchTab {
 
     // ── Sub-Renderers ────────────────────────────────────────────────────
 
-    private void renderUrlInput(GuiGraphics graphics, Font font, int x, int y, int w, int mouseX, int mouseY, GuiFrame frame) {
+    private void renderUrlInput(GuiGraphicsExtractor graphics, Font font, int x, int y, int w, int mouseX, int mouseY, GuiFrame frame) {
         int urlTextW = w - PASTE_BTN_WIDTH - 4;
         GuiRender.mcWell(graphics, x, y, urlTextW, URL_INPUT_HEIGHT);
         graphics.fill(x, y, x + 1, y + URL_INPUT_HEIGHT, GuiTheme.ACCENT); // accent left border
@@ -284,7 +284,7 @@ public final class SearchTab {
         }
     }
 
-    private void renderActionBar(GuiGraphics graphics, Font font, int x, int y, int w, int mouseX, int mouseY, GuiFrame frame) {
+    private void renderActionBar(GuiGraphicsExtractor graphics, Font font, int x, int y, int w, int mouseX, int mouseY, GuiFrame frame) {
         int btnX = x;
         int btnH = ACTION_BAR_HEIGHT - 4;
 
@@ -320,7 +320,7 @@ public final class SearchTab {
         }
     }
 
-    private void renderSearchHistory(GuiGraphics graphics, Font font, int x, int y, int w, int mouseX, int mouseY) {
+    private void renderSearchHistory(GuiGraphicsExtractor graphics, Font font, int x, int y, int w, int mouseX, int mouseY) {
         List<String> history = new ArrayList<>(searchHistory);
         if (history.isEmpty()) {
             GuiRender.centeredText(graphics, font, "No search history yet", x + w / 2, y + 20, GuiTheme.TEXT_MUTED);
@@ -335,7 +335,7 @@ public final class SearchTab {
         }
     }
 
-    private void renderRecentlyPlayed(GuiGraphics graphics, Font font, int clipX, int x, int y, int w, int h, int mouseX, int mouseY, GuiFrame frame) {
+    private void renderRecentlyPlayed(GuiGraphicsExtractor graphics, Font font, int clipX, int x, int y, int w, int h, int mouseX, int mouseY, GuiFrame frame) {
         List<TrackRef> recent = PlayerFacade.getInstance().getPlayHistory();
         // Show most recent first
         List<TrackRef> reversed = new ArrayList<>();
@@ -364,7 +364,7 @@ public final class SearchTab {
         graphics.disableScissor();
     }
 
-    private void renderSourceToggle(GuiGraphics graphics, Font font, int x, int y, int width, boolean compact) {
+    private void renderSourceToggle(GuiGraphicsExtractor graphics, Font font, int x, int y, int width, boolean compact) {
         int youtubeW = width / 2;
 
         // MC-style toggle: active side = inset bevel, inactive = raised
@@ -900,7 +900,7 @@ public final class SearchTab {
 
     private String getClipboard() {
         try {
-            long window = Minecraft.getInstance().getWindow().getWindow();
+            long window = Minecraft.getInstance().getWindow().handle();
             String clip = GLFW.glfwGetClipboardString(window);
             return clip != null ? clip : "";
         } catch (Exception e) { return ""; }
@@ -908,7 +908,7 @@ public final class SearchTab {
 
     private void setClipboard(String text) {
         try {
-            long window = Minecraft.getInstance().getWindow().getWindow();
+            long window = Minecraft.getInstance().getWindow().handle();
             GLFW.glfwSetClipboardString(window, text);
         } catch (Exception ignored) {}
     }
@@ -923,7 +923,7 @@ public final class SearchTab {
 
     // ── Context Popup (Add to Playlist / Queue) ──────────────────────────
 
-    private void renderContextPopup(GuiGraphics graphics, Font font, GuiFrame frame) {
+    private void renderContextPopup(GuiGraphicsExtractor graphics, Font font, GuiFrame frame) {
         if (contextTrack == null) return;
         int sw = frame.x() + frame.width();
         int sh = frame.y() + frame.height();

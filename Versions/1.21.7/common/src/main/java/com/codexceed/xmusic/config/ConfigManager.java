@@ -59,6 +59,7 @@ public final class ConfigManager {
                 if (config == null) {
                     config = new XMusicConfig();
                 }
+                config.validate();
                 XMusic.LOGGER.info("Configuration loaded successfully.");
             } catch (Exception e) {
                 XMusic.LOGGER.error("Failed to load config, using defaults.", e);
@@ -72,7 +73,7 @@ public final class ConfigManager {
     }
 
     /**
-     * Save the current config to disk.
+     * Save the current config to disk atomically.
      */
     public static void save() {
         if (configPath == null) {
@@ -84,11 +85,13 @@ public final class ConfigManager {
             // Ensure parent directories exist
             Files.createDirectories(configPath.getParent());
 
+            Path tempPath = configPath.resolveSibling(CONFIG_FILE_NAME + ".tmp");
             try (Writer writer = new OutputStreamWriter(
-                    new FileOutputStream(configPath.toFile()), StandardCharsets.UTF_8)) {
+                    new FileOutputStream(tempPath.toFile()), StandardCharsets.UTF_8)) {
                 GSON.toJson(config, writer);
-                XMusic.LOGGER.debug("Configuration saved.");
             }
+            Files.move(tempPath, configPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            XMusic.LOGGER.debug("Configuration saved.");
         } catch (Exception e) {
             XMusic.LOGGER.error("Failed to save config!", e);
         }

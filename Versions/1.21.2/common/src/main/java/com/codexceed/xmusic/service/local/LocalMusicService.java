@@ -224,7 +224,10 @@ public class LocalMusicService {
                 || name.endsWith(".aif")
                 || name.endsWith(".aiff")
                 || name.endsWith(".au")
-                || name.endsWith(".snd");
+                || name.endsWith(".snd")
+                || name.endsWith(".flac")
+                || name.endsWith(".m4a")
+                || name.endsWith(".opus");
     }
 
     private long estimateDurationMs(File file) {

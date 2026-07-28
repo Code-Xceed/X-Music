@@ -34,7 +34,6 @@ public final class SearchTab {
     private final TrackRow trackRow = new TrackRow();
     private static String query = "";
     private static boolean queryFocused = false;
-    private static boolean isYoutube = true;
     private static List<TrackRef> searchResults = new ArrayList<>();
     private static boolean isSearching = false;
     private static String searchError = null;
@@ -77,7 +76,6 @@ public final class SearchTab {
 
     // UI Layout Constants
     private static final int SEARCH_BAR_HEIGHT = 26;
-    private static final int TOGGLE_WIDTH = 140;
     private static final int URL_BTN_WIDTH = 26;
     private static final int URL_INPUT_HEIGHT = 24;
     private static final int PASTE_BTN_WIDTH = 28;
@@ -113,9 +111,8 @@ public final class SearchTab {
         int searchBarW = w - INNER_PAD * 2;
         int searchBarX = x + INNER_PAD;
 
-        int toggleWidth = compact ? 44 : 140;
-        int urlBtnSpace = isYoutube ? URL_BTN_WIDTH + 4 : 0;
-        int inputW = searchBarW - toggleWidth - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
+        int urlBtnSpace = URL_BTN_WIDTH + 4;
+        int inputW = searchBarW - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
         GuiRender.mcWell(graphics, searchBarX, searchBarY, inputW, SEARCH_BAR_HEIGHT);
         // Focus highlight border
         if (queryFocused) {
@@ -123,7 +120,7 @@ public final class SearchTab {
         }
 
         // Query text or placeholder
-        String placeholder = isYoutube ? "Type to search..." : "Search official songs...";
+        String placeholder = "Type to search...";
         String displayText = query.isEmpty() ? placeholder : query;
         int textColor = query.isEmpty() ? GuiTheme.TEXT_MUTED : GuiTheme.TEXT;
         GuiRender.shadowText(graphics, font, displayText, searchBarX + 8, searchBarY + 9, textColor);
@@ -147,25 +144,19 @@ public final class SearchTab {
             }
         }
 
-        // URL button (YT mode only)
-        if (isYoutube) {
-            int urlBtnX = clearBtnX + CLEAR_BTN_WIDTH + 4;
-            boolean hover = GuiRender.inside(mouseX, mouseY, urlBtnX, searchBarY, URL_BTN_WIDTH, SEARCH_BAR_HEIGHT);
-            GuiRender.mcButton(graphics, urlBtnX, searchBarY, URL_BTN_WIDTH, SEARCH_BAR_HEIGHT, hover, urlInputOpen);
-            IconRenderer.url(graphics, font, urlBtnX, searchBarY, URL_BTN_WIDTH, SEARCH_BAR_HEIGHT,
-                    urlInputOpen ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
-            if (hover) {
-                pendingTooltip = "Paste URL";
-            }
+        // URL button
+        int urlBtnX = clearBtnX + CLEAR_BTN_WIDTH + 4;
+        boolean hover = GuiRender.inside(mouseX, mouseY, urlBtnX, searchBarY, URL_BTN_WIDTH, SEARCH_BAR_HEIGHT);
+        GuiRender.mcButton(graphics, urlBtnX, searchBarY, URL_BTN_WIDTH, SEARCH_BAR_HEIGHT, hover, urlInputOpen);
+        IconRenderer.url(graphics, font, urlBtnX, searchBarY, URL_BTN_WIDTH, SEARCH_BAR_HEIGHT,
+                urlInputOpen ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED);
+        if (hover) {
+            pendingTooltip = "Paste URL";
         }
-
-        // Source Toggle
-        int toggleX = searchBarX + searchBarW - toggleWidth;
-        renderSourceToggle(graphics, font, toggleX, searchBarY + 4, toggleWidth, compact);
 
         // URL input row
         int listY = searchBarY + SEARCH_BAR_HEIGHT + SECTION_GAP;
-        if (urlInputOpen && isYoutube) {
+        if (urlInputOpen) {
             renderUrlInput(graphics, font, searchBarX, listY, searchBarW, mouseX, mouseY, frame);
             listY += URL_INPUT_HEIGHT + SECTION_GAP;
         }
@@ -364,38 +355,6 @@ public final class SearchTab {
         graphics.disableScissor();
     }
 
-    private void renderSourceToggle(GuiGraphics graphics, Font font, int x, int y, int width, boolean compact) {
-        int youtubeW = width / 2;
-
-        // MC-style toggle: active side = inset bevel, inactive = raised
-        GuiRender.mcButton(graphics, x, y, youtubeW, 18, false, isYoutube);
-        GuiRender.mcButton(graphics, x + youtubeW, y, width - youtubeW, 18, false, !isYoutube);
-
-        // Active indicator bar
-        if (isYoutube) {
-            graphics.fill(x + 3, y + 15, x + youtubeW - 3, y + 17, 0xFFFF0000); // YouTube red
-        } else {
-            graphics.fill(x + youtubeW + 3, y + 15, x + width - 3, y + 17, GuiTheme.SPOTIFY_GREEN);
-        }
-
-        // YouTube side: compass icon + "YouTube" text in red when active
-        int ytIconX = compact ? x + (youtubeW - 14) / 2 : x + 4;
-        int ytIconY = y + 1;
-        int ytColor = isYoutube ? 0xFFFF0000 : GuiTheme.DISABLED;
-        IconRenderer.search(graphics, font, ytIconX, ytIconY, 14, 14, ytColor);
-        if (!compact) {
-            GuiRender.shadowText(graphics, font, "YouTube", ytIconX + 16, y + 5, ytColor);
-        }
-        // Spotify side: disc icon + "Spotify" text in green when active
-        int spIconX = compact ? x + youtubeW + (width - youtubeW - 14) / 2 : x + youtubeW + 4;
-        int spIconY = y + 1;
-        int spColor = !isYoutube ? GuiTheme.SPOTIFY_GREEN : GuiTheme.DISABLED;
-        IconRenderer.album(graphics, font, spIconX, spIconY, 14, 14, spColor);
-        if (!compact) {
-            GuiRender.shadowText(graphics, font, "Spotify", spIconX + 16, y + 5, spColor);
-        }
-    }
-
     // ── Mouse ─────────────────────────────────────────────────────────────
 
     public boolean mouseClicked(GuiFrame frame, double mouseX, double mouseY, int button) {
@@ -414,7 +373,6 @@ public final class SearchTab {
         }
 
         boolean compact = frame.compact();
-        int toggleWidth = compact ? 44 : 140;
         int scrollY = compact ? (int) scrollOffset : 0;
 
         int searchBarY = y + INNER_PAD - scrollY;
@@ -423,8 +381,8 @@ public final class SearchTab {
 
         // Clear button
         if (!query.isEmpty() && !urlInputOpen) {
-            int urlBtnSpace = isYoutube ? URL_BTN_WIDTH + 4 : 0;
-            int inputW = searchBarW - toggleWidth - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
+            int urlBtnSpace = URL_BTN_WIDTH + 4;
+            int inputW = searchBarW - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
             int clearBtnX = searchBarX + inputW + 2;
             if (GuiRender.inside(mouseX, mouseY, clearBtnX, searchBarY + 3, CLEAR_BTN_WIDTH, SEARCH_BAR_HEIGHT - 6)) {
                 query = "";
@@ -437,8 +395,8 @@ public final class SearchTab {
 
         // Click on search bar input area to focus
         {
-            int urlBtnSpace = isYoutube ? URL_BTN_WIDTH + 4 : 0;
-            int inputW = searchBarW - toggleWidth - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
+            int urlBtnSpace = URL_BTN_WIDTH + 4;
+            int inputW = searchBarW - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
             if (GuiRender.inside(mouseX, mouseY, searchBarX, searchBarY, inputW, SEARCH_BAR_HEIGHT)) {
                 queryFocused = true;
                 selectedIndex = -1;
@@ -447,9 +405,9 @@ public final class SearchTab {
         }
 
         // URL button
-        if (isYoutube) {
+        {
             int urlBtnSpace = URL_BTN_WIDTH + 4;
-            int inputW = searchBarW - toggleWidth - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
+            int inputW = searchBarW - 8 - urlBtnSpace - CLEAR_BTN_WIDTH - 4;
             int clearBtnX = searchBarX + inputW + 2;
             int urlBtnX = clearBtnX + CLEAR_BTN_WIDTH + 4;
             if (GuiRender.inside(mouseX, mouseY, urlBtnX, searchBarY, URL_BTN_WIDTH, SEARCH_BAR_HEIGHT)) {
@@ -460,7 +418,7 @@ public final class SearchTab {
         }
 
         // Paste button in URL input
-        if (urlInputOpen && isYoutube) {
+        if (urlInputOpen) {
             int urlInputY = searchBarY + SEARCH_BAR_HEIGHT + SECTION_GAP;
             int pasteBtnX = searchBarX + searchBarW - PASTE_BTN_WIDTH;
             if (GuiRender.inside(mouseX, mouseY, pasteBtnX, urlInputY, PASTE_BTN_WIDTH, URL_INPUT_HEIGHT)) {
@@ -470,22 +428,10 @@ public final class SearchTab {
             }
         }
 
-        // Toggle
-        int toggleX = searchBarX + searchBarW - toggleWidth;
-        if (GuiRender.inside(mouseX, mouseY, toggleX, searchBarY + 4, toggleWidth, 18)) {
-            isYoutube = !isYoutube;
-            query = "";
-            searchResults.clear(); scrollOffset = 0; selectedIndex = -1;
-            urlInputOpen = false; urlInput = ""; urlError = null;
-            searchHistoryOpen = false; recentlyPlayedOpen = false;
-            queryFocused = false;
-            return true;
-        }
-
         // Action bar buttons
         queryFocused = false;
         int actionY = searchBarY + SEARCH_BAR_HEIGHT + SECTION_GAP;
-        if (urlInputOpen && isYoutube) actionY += URL_INPUT_HEIGHT + SECTION_GAP;
+        if (urlInputOpen) actionY += URL_INPUT_HEIGHT + SECTION_GAP;
         int btnX = searchBarX;
         int btnH = ACTION_BAR_HEIGHT - 4;
         Font font = Minecraft.getInstance().font;
@@ -633,7 +579,7 @@ public final class SearchTab {
         boolean compact = frame.compact();
         int searchBarY = y + INNER_PAD;
         int listY = searchBarY + SEARCH_BAR_HEIGHT + SECTION_GAP; // search bar only
-        if (urlInputOpen && isYoutube) {
+        if (urlInputOpen) {
             listY += URL_INPUT_HEIGHT + SECTION_GAP;
         }
         listY += ACTION_BAR_HEIGHT + SECTION_GAP; // action bar only
@@ -651,7 +597,7 @@ public final class SearchTab {
             double maxScroll;
             if (compact) {
                 int totalContentH = INNER_PAD + SEARCH_BAR_HEIGHT + SECTION_GAP;
-                if (urlInputOpen && isYoutube) {
+                if (urlInputOpen) {
                     totalContentH += URL_INPUT_HEIGHT + SECTION_GAP;
                 }
                 totalContentH += ACTION_BAR_HEIGHT + SECTION_GAP;
@@ -684,7 +630,7 @@ public final class SearchTab {
         if (ctrl && keyCode == GLFW.GLFW_KEY_V) {
             String clip = getClipboard();
             if (clip != null && !clip.isEmpty()) {
-                if (urlInputOpen && isYoutube) { urlInput += clip; urlError = null; }
+                if (urlInputOpen) { urlInput += clip; urlError = null; }
                 else { query += clip; selectedIndex = -1; }
             }
             return true;
@@ -698,13 +644,13 @@ public final class SearchTab {
 
         // Ctrl+A: clear field
         if (ctrl && keyCode == GLFW.GLFW_KEY_A) {
-            if (urlInputOpen && isYoutube) urlInput = "";
+            if (urlInputOpen) urlInput = "";
             else { query = ""; selectedIndex = -1; }
             return true;
         }
 
         // URL input mode
-        if (urlInputOpen && isYoutube) {
+        if (urlInputOpen) {
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) { urlInputOpen = false; urlInput = ""; urlError = null; return true; }
             if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !urlInput.isEmpty()) { urlInput = urlInput.substring(0, urlInput.length() - 1); return true; }
             if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) { loadUrl(); return true; }
@@ -776,7 +722,7 @@ public final class SearchTab {
     }
 
     public boolean charTyped(char codePoint, int modifiers) {
-        if (urlInputOpen && isYoutube) {
+        if (urlInputOpen) {
             if (codePoint >= ' ') { urlInput += codePoint; urlError = null; return true; }
             return false;
         }
@@ -804,7 +750,11 @@ public final class SearchTab {
                         searchResults = new ArrayList<>(results);
                         PlayerFacade.getInstance().playQueue(searchResults, 0);
                     } else { urlError = "Could not load that URL"; }
-                }).exceptionally(error -> { urlLoading = false; urlError = "Failed to load URL"; return null; });
+                }).exceptionally(error -> { 
+                    urlLoading = false; 
+                    urlError = formatUserFriendlyError(error); 
+                    return null; 
+                });
     }
 
     private void performSearch() {
@@ -817,21 +767,44 @@ public final class SearchTab {
         String searchQuery = query.trim();
         addToSearchHistory(searchQuery);
 
-        if (isYoutube) {
-            ServiceManager.getLavaSearch().searchYouTube(searchQuery)
-                .thenAccept(results -> {
-                    searchResults = new ArrayList<>(results);
-                    isSearching = false;
-                    if (results.isEmpty()) searchError = "No results found";
-                }).exceptionally(error -> { isSearching = false; searchError = error.getMessage() != null ? error.getMessage() : "Search failed"; return null; });
-        } else {
-            ServiceManager.getSpotifySearch().search(searchQuery)
-                .thenAccept(results -> {
-                    searchResults = new ArrayList<>(results);
-                    isSearching = false;
-                    if (results.isEmpty()) searchError = "No results from Spotify";
-                }).exceptionally(error -> { isSearching = false; searchError = error.getMessage() != null ? error.getMessage() : "Spotify search failed"; return null; });
+        ServiceManager.getLavaSearch().searchYouTube(searchQuery)
+            .thenAccept(results -> {
+                searchResults = new ArrayList<>(results);
+                isSearching = false;
+                if (results.isEmpty()) searchError = "No results found";
+            }).exceptionally(error -> { 
+                isSearching = false; 
+                searchError = formatUserFriendlyError(error); 
+                return null; 
+            });
+    }
+
+    private String formatUserFriendlyError(Throwable error) {
+        if (error == null) return "An unknown error occurred.";
+        
+        // Unwrap CompletionException if necessary
+        Throwable cause = error.getCause() != null ? error.getCause() : error;
+        String msg = cause.getMessage() != null ? cause.getMessage().toLowerCase() : "";
+        
+        if (msg.contains("429") || msg.contains("rate limit") || msg.contains("too many requests")) {
+            return "YouTube Rate Limited (Wait a few hours or add po_token in Config)";
+        } else if (msg.contains("sign in to confirm your age") || msg.contains("age restricted")) {
+            return "This video is age restricted and requires a YouTube account.";
+        } else if (msg.contains("video requires login") || msg.contains("please sign in")) {
+            return "YouTube blocked this request. (Try adding po_token in Config)";
+        } else if (msg.contains("unknownhost") || msg.contains("network is unreachable") || msg.contains("connection reset") || msg.contains("timed out")) {
+            return "No Internet Connection (Check your network)";
+        } else if (msg.contains("this video is unavailable") || msg.contains("private video") || msg.contains("not available in your country")) {
+            return "This video is unavailable or private.";
+        } else if (msg.contains("copyright")) {
+            return "This video is blocked due to copyright.";
         }
+        
+        // Fallback for random Lavaplayer errors
+        if (cause.getMessage() != null && !cause.getMessage().isEmpty()) {
+            return "Error: " + cause.getMessage();
+        }
+        return "Failed to load track (Unknown error)";
     }
 
     private void copyCurrentTrackUrl() {
@@ -900,7 +873,7 @@ public final class SearchTab {
 
     private String getClipboard() {
         try {
-            long window = Minecraft.getInstance().getWindow().getWindow();
+            long window = Minecraft.getInstance().getWindow().handle();
             String clip = GLFW.glfwGetClipboardString(window);
             return clip != null ? clip : "";
         } catch (Exception e) { return ""; }
@@ -908,7 +881,7 @@ public final class SearchTab {
 
     private void setClipboard(String text) {
         try {
-            long window = Minecraft.getInstance().getWindow().getWindow();
+            long window = Minecraft.getInstance().getWindow().handle();
             GLFW.glfwSetClipboardString(window, text);
         } catch (Exception ignored) {}
     }
@@ -1001,3 +974,4 @@ public final class SearchTab {
         return true;
     }
 }
+

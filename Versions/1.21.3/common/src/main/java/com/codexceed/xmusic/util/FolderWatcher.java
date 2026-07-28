@@ -73,7 +73,8 @@ public final class FolderWatcher {
 
                     // Only care about music files
                     if (name.endsWith(".mp3") || name.endsWith(".ogg") || name.endsWith(".wav")
-                            || name.endsWith(".wave") || name.endsWith(".aif") || name.endsWith(".aiff")) {
+                            || name.endsWith(".wave") || name.endsWith(".aif") || name.endsWith(".aiff")
+                            || name.endsWith(".flac") || name.endsWith(".m4a") || name.endsWith(".opus")) {
                         hasRelevantChange = true;
                     }
                 }

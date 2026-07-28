@@ -12,7 +12,7 @@ import com.codexceed.xmusic.player.PlayerFacade;
 import com.codexceed.xmusic.player.PlayerState;
 import com.codexceed.xmusic.service.ServiceManager;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public final class TopBar {
     private static final int CLOSE_SIZE = 14;
@@ -90,7 +90,7 @@ public final class TopBar {
         return null;
     }
 
-    public void render(GuiGraphics graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
+    public void render(GuiGraphicsExtractor graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
         int x = frame.topBarX();
         int y = frame.topBarY();
         int w = frame.topBarWidth();

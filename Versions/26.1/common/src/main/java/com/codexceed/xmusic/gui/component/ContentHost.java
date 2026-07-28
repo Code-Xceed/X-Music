@@ -5,7 +5,7 @@ import com.codexceed.xmusic.gui.layout.GuiFrame;
 import com.codexceed.xmusic.gui.render.GuiRender;
 import com.codexceed.xmusic.gui.theme.GuiTheme;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public final class ContentHost {
     private final HomeTab homeTab = new HomeTab();
@@ -25,7 +25,7 @@ public final class ContentHost {
         });
     }
 
-    public void render(GuiGraphics graphics, Font font, GuiFrame frame, GuiRoute route, int mouseX, int mouseY) {
+    public void render(GuiGraphicsExtractor graphics, Font font, GuiFrame frame, GuiRoute route, int mouseX, int mouseY) {
         int x = frame.contentX();
         int y = frame.contentY();
         int w = frame.contentWidth();

@@ -9,7 +9,7 @@ import com.codexceed.xmusic.library.LibraryManager;
 import com.codexceed.xmusic.player.PlayerFacade;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.*;
 
@@ -73,7 +73,7 @@ public final class HomeTab {
 
     // ── Render ──────────────────────────────────────────────────────────
 
-    public void render(GuiGraphics g, Font f, GuiFrame frame, int mx, int my) {
+    public void render(GuiGraphicsExtractor g, Font f, GuiFrame frame, int mx, int my) {
         // Update smooth scroll positions
         long now = System.currentTimeMillis();
         float dt = Math.min(50f, (now - lastFrameTime) / 16.667f); // normalize to ~60fps
@@ -172,7 +172,7 @@ public final class HomeTab {
 
     // ── Greeting + Equalizer ────────────────────────────────────────────
 
-    private int renderGreeting(GuiGraphics g, Font f, int x, int y, int w) {
+    private int renderGreeting(GuiGraphicsExtractor g, Font f, int x, int y, int w) {
         String greeting = getGreeting();
         GuiRender.shadowText(g, f, greeting, x, y, GuiTheme.ACCENT);
 
@@ -184,7 +184,7 @@ public final class HomeTab {
         return y + 14;
     }
 
-    private void renderEqualizer(GuiGraphics g, int x, int y, int w, int h) {
+    private void renderEqualizer(GuiGraphicsExtractor g, int x, int y, int w, int h) {
         int bars = 4;
         int barW = 2;
         int gap = 1;
@@ -215,7 +215,7 @@ public final class HomeTab {
 
     // ── Quick-Play Grid ────────────────────────────────────────────────
 
-    private int renderQuickPlayGrid(GuiGraphics g, Font f, int x, int y, int w,
+    private int renderQuickPlayGrid(GuiGraphicsExtractor g, Font f, int x, int y, int w,
                                      List<TrackRef> tracks, int mx, int my, int sw, int sh) {
         int tileW = 120;
         int cols = Math.max(1, (w + QUICK_TILE_GAP) / (tileW + QUICK_TILE_GAP));
@@ -290,7 +290,7 @@ public final class HomeTab {
 
     // ── Section (horizontal card row) ──────────────────────────────────
 
-    private int renderSection(GuiGraphics g, Font f, int x, int y, int w,
+    private int renderSection(GuiGraphicsExtractor g, Font f, int x, int y, int w,
                               String title, SectionIcon icon, Map<String, List<TrackRef>> groups,
                               String sectionId, boolean isTrackCards, int mx, int my, int sw, int sh) {
         // Section header
@@ -354,7 +354,7 @@ public final class HomeTab {
 
     // ── Card ────────────────────────────────────────────────────────────
 
-    private void renderCard(GuiGraphics g, Font f, int x, int y, String label,
+    private void renderCard(GuiGraphicsExtractor g, Font f, int x, int y, String label,
                             List<TrackRef> tracks, boolean isTrackCards,
                             SectionIcon sectionIcon,
                             int mx, int my, int sw, int sh) {
@@ -765,6 +765,6 @@ public final class HomeTab {
 
     @FunctionalInterface
     private interface SectionIcon {
-        void render(GuiGraphics g, Font f, int x, int y, int w, int h, int c);
+        void render(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c);
     }
 }

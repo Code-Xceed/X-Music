@@ -10,7 +10,7 @@ import com.codexceed.xmusic.player.PlayerState;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * Modern "Now Playing" toast notification.
@@ -34,7 +34,7 @@ public class NowPlayingToast {
     private boolean active = false;
     private String lastPlayingTrackId = "";
 
-    public void render(GuiGraphics g, float partialTick) {
+    public void render(GuiGraphicsExtractor g, float partialTick) {
         XMusicConfig cfg = ConfigManager.get();
         if (!cfg.showNowPlayingToast) return;
 
@@ -130,7 +130,7 @@ public class NowPlayingToast {
         // "NOW PLAYING" label (small caps style)
         int accentTextAlpha = (int) (0xFF * alpha);
         int accentTextColor = (accentTextAlpha << 24) | (GuiTheme.ACCENT & 0x00FFFFFF);
-        g.drawString(font, "\u266A NOW PLAYING", x + PAD, y + 5, accentTextColor, true);
+        g.text(font, "\u266A NOW PLAYING", x + PAD, y + 5, accentTextColor, false);
 
         // Track info line
         String info = toastTitle + " \u2014 " + toastArtist;

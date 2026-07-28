@@ -403,15 +403,15 @@ public final class PlayerBar {
 
         // 6. "Added to playlist" confirmation message
         if (!playlistAddedMsg.isEmpty() && System.currentTimeMillis() - playlistAddedMsgTime < 2000) {
-            graphics.pose().pushPose();
-            graphics.pose().translate(0, 0, 200);
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(0, 0);
             float fade = 1f - (System.currentTimeMillis() - playlistAddedMsgTime) / 2000f;
             int alpha = (int)(0xFF * fade);
             int msgColor = (alpha << 24) | (GuiTheme.ACCENT & 0x00FFFFFF);
             int msgW = font.width(playlistAddedMsg);
             int msgX = x + 13 + 36 + 10 + (maxTitleW - msgW) / 2;
             GuiRender.shadowText(graphics, font, playlistAddedMsg, msgX, y + 54, msgColor);
-            graphics.pose().popPose();
+            graphics.pose().popMatrix();
         }
 
         // 7. Waveform / DJ bars at bottom of footer
@@ -420,10 +420,10 @@ public final class PlayerBar {
         // 8. Playlist popup overlay (drawn last so it's on top)
         if (showPlaylistPopup && track != null) {
             // Push z-offset so popup renders above all other content
-            graphics.pose().pushPose();
-            graphics.pose().translate(0, 0, 300);
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(0, 0);
             renderPlaylistPopup(graphics, font, x, y, w, h, track, mouseX, mouseY);
-            graphics.pose().popPose();
+            graphics.pose().popMatrix();
         }
     }
 
@@ -1064,3 +1064,4 @@ public final class PlayerBar {
         return String.format("%d:%02d", totalSeconds / 60, totalSeconds % 60);
     }
 }
+

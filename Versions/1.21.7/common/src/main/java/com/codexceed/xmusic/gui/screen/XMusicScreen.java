@@ -76,8 +76,7 @@ public final class XMusicScreen extends Screen {
         // No dark overlay — game world stays fully visible
     }
 
-    @Override
-    protected void renderBlurredBackground() {
+        protected void renderBlurredBackground() {
         // Intentionally empty
     }
 
@@ -110,7 +109,6 @@ public final class XMusicScreen extends Screen {
             } catch (Throwable t) {
                 XMusic.LOGGER.error("Failed to render parent screen", t);
             }
-            com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
         }
 
         // Update hover tracker delta
@@ -163,14 +161,14 @@ public final class XMusicScreen extends Screen {
         float centerX = fx + fw / 2f;
         float centerY = fy + fh / 2f;
 
-        graphics.pose().pushPose();
+        graphics.pose().pushMatrix();
         if (scaleActive) {
-            graphics.pose().scale(2.0f, 2.0f, 1.0f);
+            graphics.pose().scale(2.0f, 2.0f);
         }
-        graphics.pose().translate(0, 0, 300f);
-        graphics.pose().translate(centerX, centerY, 0);
-        graphics.pose().scale(scale, scale, 1f);
-        graphics.pose().translate(-centerX, -centerY, 0);
+        graphics.pose().translate(0, 0);
+        graphics.pose().translate(centerX, centerY);
+        graphics.pose().scale(scale, scale);
+        graphics.pose().translate(-centerX, -centerY);
 
         // ── 4. Frame background & Border ─────────────────────────────────
         int frameTopColor = AnimationHelper.withAlpha(GuiTheme.FRAME_TOP, alpha);
@@ -191,7 +189,7 @@ public final class XMusicScreen extends Screen {
         content.render(graphics, font, frame, activeRoute, drawMouseX, drawMouseY);
         playerBar.render(graphics, font, frame, drawMouseX, drawMouseY);
 
-        graphics.pose().popPose();
+        graphics.pose().popMatrix();
 
         super.render(graphics, mouseX, mouseY, partialTick);
     }
@@ -345,3 +343,4 @@ public final class XMusicScreen extends Screen {
         }
     }
 }
+

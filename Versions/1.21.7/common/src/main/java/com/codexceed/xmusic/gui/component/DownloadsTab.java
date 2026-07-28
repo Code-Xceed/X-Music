@@ -782,8 +782,8 @@ public final class DownloadsTab {
         int cy = y + (h - dialogH) / 2;
 
         // Push z-offset so dialog renders above everything
-        g.pose().pushPose();
-        g.pose().translate(0, 0, 300);
+        g.pose().pushMatrix();
+        g.pose().translate(0, 0);
 
         // Dim backdrop behind dialog
         g.fill(x, y, x + w, y + h, 0x60000000);
@@ -850,7 +850,7 @@ public final class DownloadsTab {
             GuiRender.shadowText(g, f, "Skip", skipX, skipY, skipHover ? GuiTheme.TEXT : GuiTheme.TEXT_MUTED);
         }
 
-        g.pose().popPose();
+        g.pose().popMatrix();
     }
 
     private void renderToolRow(GuiGraphics g, Font f, int x, int y, int maxW, String name, boolean ready, boolean activeDownloading) {
@@ -916,3 +916,4 @@ public final class DownloadsTab {
         return true;
     }
 }
+

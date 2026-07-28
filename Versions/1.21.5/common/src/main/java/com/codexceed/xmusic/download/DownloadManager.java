@@ -447,8 +447,11 @@ public final class DownloadManager {
 
     private String sanitizeFileName(String name) {
         if (name == null) return "unknown";
-        // Remove characters illegal in filenames
-        return name.replaceAll("[\\/:*?\"<>|]", "_").trim();
+        // Remove characters illegal in filenames and path traversal sequences
+        String safe = name.replaceAll("[\\\\/:*?\"<>|]", "_").replace("..", "_").trim();
+        if (safe.length() > 200) safe = safe.substring(0, 200);
+        if (safe.isEmpty()) safe = "unknown";
+        return safe;
     }
 
     // ── Persistence ────────────────────────────────────────────────────────
@@ -456,26 +459,24 @@ public final class DownloadManager {
     /** Save completed downloads manifest to disk. */
     private void saveManifest() {
         if (manifestFile == null) return;
-        try (BufferedWriter writer = Files.newBufferedWriter(manifestFile)) {
-            writer.write("[");
-            boolean first = true;
+        try {
+            com.google.gson.JsonArray array = new com.google.gson.JsonArray();
             for (DownloadEntry entry : entries.values()) {
                 if (entry.state != DownloadState.COMPLETED) continue;
                 TrackRef t = entry.track;
-                if (!first) writer.write(",");
-                first = false;
-                writer.write("{\"id\":\""); writer.write(escape(t.getId())); writer.write("\"");
-                writer.write(",\"sourceId\":\""); writer.write(escape(t.getSourceId())); writer.write("\"");
-                writer.write(",\"title\":\""); writer.write(escape(t.getTitle())); writer.write("\"");
-                writer.write(",\"artist\":\""); writer.write(escape(t.getArtist())); writer.write("\"");
-                writer.write(",\"album\":\""); writer.write(escape(t.getAlbum())); writer.write("\"");
-                writer.write(",\"durationMs\":"); writer.write(String.valueOf(t.getDurationMs()));
-                writer.write(",\"nativeUri\":\""); writer.write(escape(t.getNativeUri())); writer.write("\"");
-                writer.write(",\"remoteUri\":\""); writer.write(escape(t.getRemoteUri())); writer.write("\"");
-                writer.write(",\"externalUrl\":\""); writer.write(escape(t.getExternalUrl())); writer.write("\"");
-                writer.write("}");
+                com.google.gson.JsonObject obj = new com.google.gson.JsonObject();
+                obj.addProperty("id", t.getId());
+                obj.addProperty("sourceId", t.getSourceId());
+                obj.addProperty("title", t.getTitle());
+                obj.addProperty("artist", t.getArtist());
+                obj.addProperty("album", t.getAlbum());
+                obj.addProperty("durationMs", t.getDurationMs());
+                obj.addProperty("nativeUri", t.getNativeUri());
+                obj.addProperty("remoteUri", t.getRemoteUri());
+                obj.addProperty("externalUrl", t.getExternalUrl());
+                array.add(obj);
             }
-            writer.write("]");
+            Files.writeString(manifestFile, array.toString());
         } catch (Exception e) {
             XMusic.LOGGER.error("Failed to save downloads manifest", e);
         }
@@ -484,30 +485,23 @@ public final class DownloadManager {
     /** Load completed downloads from manifest on startup. */
     private void loadManifest() {
         if (manifestFile == null || !Files.exists(manifestFile)) return;
-        try (BufferedReader reader = Files.newBufferedReader(manifestFile)) {
-            String content = new String(Files.readAllBytes(manifestFile));
-            // Simple JSON array parser
-            content = content.trim();
-            if (!content.startsWith("[") || !content.endsWith("]")) return;
-            content = content.substring(1, content.length() - 1).trim();
-            if (content.isEmpty()) return;
-
-            // Split by },{
-            String[] objects = content.split("\\},\\s*\\{");
-            for (String obj : objects) {
-                obj = obj.replaceFirst("^\\{", "").replaceFirst("\\}$", "").trim();
-                Map<String, String> fields = parseJsonFields(obj);
+        try {
+            String content = Files.readString(manifestFile);
+            if (content.isBlank()) return;
+            com.google.gson.JsonArray array = com.google.gson.JsonParser.parseString(content).getAsJsonArray();
+            for (com.google.gson.JsonElement element : array) {
+                com.google.gson.JsonObject obj = element.getAsJsonObject();
                 TrackRef track = new TrackRef.Builder()
-                        .id(fields.getOrDefault("id", ""))
+                        .id(obj.has("id") ? obj.get("id").getAsString() : "")
                         .sourceId("local")
-                        .title(fields.getOrDefault("title", "Unknown"))
-                        .artist(fields.getOrDefault("artist", "Unknown"))
-                        .album(fields.getOrDefault("album", ""))
-                        .durationMs(parseLong(fields.getOrDefault("durationMs", "0")))
+                        .title(obj.has("title") ? obj.get("title").getAsString() : "Unknown")
+                        .artist(obj.has("artist") ? obj.get("artist").getAsString() : "Unknown")
+                        .album(obj.has("album") ? obj.get("album").getAsString() : "")
+                        .durationMs(obj.has("durationMs") ? obj.get("durationMs").getAsLong() : 0L)
                         .playbackType(com.codexceed.xmusic.source.PlaybackType.NATIVE)
-                        .nativeUri(fields.getOrDefault("nativeUri", ""))
-                        .remoteUri(fields.getOrDefault("remoteUri", ""))
-                        .externalUrl(fields.getOrDefault("externalUrl", ""))
+                        .nativeUri(obj.has("nativeUri") ? obj.get("nativeUri").getAsString() : "")
+                        .remoteUri(obj.has("remoteUri") ? obj.get("remoteUri").getAsString() : "")
+                        .externalUrl(obj.has("externalUrl") ? obj.get("externalUrl").getAsString() : "")
                         .build();
                 // Only add if file still exists on disk
                 if (Files.exists(outputPath(track))) {
@@ -521,57 +515,5 @@ public final class DownloadManager {
         } catch (Exception e) {
             XMusic.LOGGER.error("Failed to load downloads manifest", e);
         }
-    }
-
-    private Map<String, String> parseJsonFields(String obj) {
-        Map<String, String> map = new LinkedHashMap<>();
-        // Simple key-value parser for flat JSON objects
-        int i = 0;
-        while (i < obj.length()) {
-            // Find key
-            int keyStart = obj.indexOf('"', i);
-            if (keyStart < 0) break;
-            int keyEnd = obj.indexOf('"', keyStart + 1);
-            if (keyEnd < 0) break;
-            String key = unescape(obj.substring(keyStart + 1, keyEnd));
-            // Find colon
-            int colon = obj.indexOf(':', keyEnd);
-            if (colon < 0) break;
-            // Find value
-            int valStart = colon + 1;
-            while (valStart < obj.length() && obj.charAt(valStart) == ' ') valStart++;
-            if (valStart >= obj.length()) break;
-            String value;
-            if (obj.charAt(valStart) == '"') {
-                int valEnd = obj.indexOf('"', valStart + 1);
-                if (valEnd < 0) break;
-                value = unescape(obj.substring(valStart + 1, valEnd));
-                i = valEnd + 1;
-            } else {
-                // Number value
-                int valEnd = valStart;
-                while (valEnd < obj.length() && obj.charAt(valEnd) != ',' && obj.charAt(valEnd) != '}') valEnd++;
-                value = obj.substring(valStart, valEnd).trim();
-                i = valEnd;
-            }
-            map.put(key, value);
-            // Skip comma
-            while (i < obj.length() && (obj.charAt(i) == ',' || obj.charAt(i) == ' ')) i++;
-        }
-        return map;
-    }
-
-    private String escape(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
-    }
-
-    private String unescape(String s) {
-        if (s == null) return "";
-        return s.replace("\\\"", "\"").replace("\\\\", "\\").replace("\\n", "\n").replace("\\r", "\r");
-    }
-
-    private long parseLong(String s) {
-        try { return Long.parseLong(s); } catch (Exception e) { return 0; }
     }
 }

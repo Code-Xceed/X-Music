@@ -10,7 +10,7 @@ import com.codexceed.xmusic.player.PlayerState;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -53,23 +53,23 @@ public class HudEditorScreen extends Screen {
             dragHudY = Math.max(0, Math.min(screenH - hudH, cfg.hudY));
         } else {
             switch (cfg.hudPosition) {
-                case "TOP_LEFT": dragHudX = 6; dragHudY = 6; break;
-                case "TOP_RIGHT": dragHudX = screenW - hudW - 6; dragHudY = 6; break;
-                case "BOTTOM_LEFT": dragHudX = 6; dragHudY = screenH - hudH - 6 - 12; break; // Clear copyright text
-                case "BOTTOM_RIGHT": dragHudX = screenW - hudW - 6; dragHudY = screenH - hudH - 6 - 12; break; // Clear copyright text
-                default: dragHudX = (screenW - hudW) / 2; dragHudY = 6; break;
+                case "TOP_LEFT": dragHudX = 8; dragHudY = 8; break;
+                case "TOP_RIGHT": dragHudX = screenW - hudW - 8; dragHudY = 8; break;
+                case "BOTTOM_LEFT": dragHudX = 8; dragHudY = screenH - hudH - 8; break;
+                case "BOTTOM_RIGHT": dragHudX = screenW - hudW - 8; dragHudY = screenH - hudH - 8; break;
+                default: dragHudX = (screenW - hudW) / 2; dragHudY = 8; break;
             }
         }
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         graphics.fill(0, 0, this.width, this.height, 0x50000000);
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        renderBackground(g, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        extractBackground(g, mouseX, mouseY, partialTick);
         Font font = Minecraft.getInstance().font;
 
         long elapsed = System.currentTimeMillis() - openTime;
@@ -97,7 +97,7 @@ public class HudEditorScreen extends Screen {
         int instrX = (this.width - instrW) / 2;
         fillRounded(g, instrX, 3, instrW, 14, 3,
                 (int)(0xC0 * intro) << 24 | (GuiTheme.PANEL_DARK & 0x00FFFFFF));
-        g.drawString(font, instr, instrX + 7, 6,
+        g.text(font, instr, instrX + 7, 6,
                 (instrAlpha << 24) | (GuiTheme.TEXT_SOFT & 0x00FFFFFF), true);
 
         // Position
@@ -107,47 +107,51 @@ public class HudEditorScreen extends Screen {
         int posY = this.height - 16;
         fillRounded(g, posX, posY, posW, 12, 3,
                 (int)(0xC0 * intro) << 24 | (GuiTheme.PANEL_DARK & 0x00FFFFFF));
-        g.drawString(font, pos, posX + 5, posY + 2,
+        g.text(font, pos, posX + 5, posY + 2,
                 (instrAlpha << 24) | (GuiTheme.TEXT_MUTED & 0x00FFFFFF), true);
 
-        super.render(g, mouseX, mouseY, partialTick);
+        super.extractRenderState(g, mouseX, mouseY, partialTick);
     }
 
-    private void renderHudPreview(GuiGraphics g, Font font, int x, int y) {
+    private void renderHudPreview(GuiGraphicsExtractor g, Font font, int x, int y) {
         PlayerState state = PlayerFacade.getInstance().snapshot();
         TrackRef track = state.getCurrentTrack();
         com.codexceed.xmusic.hud.HudRenderer.getInstance().getMiniPlayer().renderCompactHud(g, font, x, y, state, track, 1.0f);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean isHandled) {
+        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
         if (GuiRender.inside(mouseX, mouseY, dragHudX, dragHudY, getHudW(), getHudH())) {
             dragging = true;
             dragOffsetX = (int) mouseX - dragHudX;
             dragOffsetY = (int) mouseY - dragHudY;
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, isHandled);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
         if (dragging) { dragging = false; return true; }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dragX, double dragY) {
+        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
         if (dragging) {
             dragHudX = Math.max(0, Math.min(this.width - getHudW(), (int) mouseX - dragOffsetX));
             dragHudY = Math.max(0, Math.min(this.height - getHudH(), (int) mouseY - dragOffsetY));
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        int keyCode = event.key(); int scanCode = event.scancode(); int modifiers = event.modifiers();
         if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
             XMusicConfig cfg = ConfigManager.get();
             cfg.hudX = dragHudX;
@@ -161,15 +165,15 @@ public class HudEditorScreen extends Screen {
             cfg.hudX = -1; cfg.hudY = -1;
             ConfigManager.save();
             switch (cfg.hudPosition) {
-                case "TOP_LEFT": dragHudX = 6; dragHudY = 6; break;
-                case "TOP_RIGHT": dragHudX = this.width - getHudW() - 6; dragHudY = 6; break;
-                case "BOTTOM_LEFT": dragHudX = 6; dragHudY = this.height - getHudH() - 6 - 12; break;
-                case "BOTTOM_RIGHT": dragHudX = this.width - getHudW() - 6; dragHudY = this.height - getHudH() - 6 - 12; break;
-                default: dragHudX = (this.width - getHudW()) / 2; dragHudY = 6; break;
+                case "TOP_LEFT": dragHudX = 8; dragHudY = 8; break;
+                case "TOP_RIGHT": dragHudX = this.width - getHudW() - 8; dragHudY = 8; break;
+                case "BOTTOM_LEFT": dragHudX = 8; dragHudY = this.height - getHudH() - 8; break;
+                case "BOTTOM_RIGHT": dragHudX = this.width - getHudW() - 8; dragHudY = this.height - getHudH() - 8; break;
+                default: dragHudX = (this.width - getHudW()) / 2; dragHudY = 8; break;
             }
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
@@ -177,7 +181,7 @@ public class HudEditorScreen extends Screen {
 
     // ── Rounded rect primitives ──────────────────────────────────────────
 
-    private static void fillRounded(GuiGraphics g, int x, int y, int w, int h, int r, int color) {
+    private static void fillRounded(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
         if (r <= 0) { g.fill(x, y, x + w, y + h, color); return; }
         r = Math.min(r, Math.min(w, h) / 2);
         g.fill(x + r, y, x + w - r, y + h, color);
@@ -193,7 +197,7 @@ public class HudEditorScreen extends Screen {
         }
     }
 
-    private static void drawRoundedBorder(GuiGraphics g, int x, int y, int w, int h, int r, int color) {
+    private static void drawRoundedBorder(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
         if (r <= 0) {
             g.fill(x, y, x + w, y + 1, color);
             g.fill(x, y + h - 1, x + w, y + h, color);

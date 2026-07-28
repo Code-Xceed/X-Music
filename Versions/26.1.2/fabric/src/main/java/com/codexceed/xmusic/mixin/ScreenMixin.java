@@ -9,7 +9,7 @@ import com.codexceed.xmusic.hud.HudRenderer;
 import com.codexceed.xmusic.input.KeyBindings;
 import com.codexceed.xmusic.player.PlayerFacade;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -29,8 +29,23 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Screen.class)
 public abstract class ScreenMixin {
 
+#if MC_RENDER_MATRIX_2D
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void onRender(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+#else
     @Inject(method = "render", at = @At("TAIL"))
-    private void onRender(GuiGraphics g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+    private void onRender(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+#endif
+        if (Minecraft.getInstance().getOverlay() != null) {
+            return;
+        }
+
+        XMusicConfig cfg = ConfigManager.get();
+        boolean inGame = (Minecraft.getInstance().level != null);
+        if (!inGame && !cfg.playInMainMenu) {
+            return;
+        }
+
         Screen thisScreen = (Object) this instanceof Screen ? (Screen) (Object) this : null;
         if (thisScreen == null) {
             return;
@@ -48,15 +63,15 @@ public abstract class ScreenMixin {
             return;
         }
 
-        XMusicConfig cfg = ConfigManager.get();
         if (cfg.hudEnabled) {
             HudRenderer.getInstance().getMiniPlayer().render(g, partialTick);
         }
     }
 
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
-    private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
+    private void onKeyPressed(net.minecraft.client.input.KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
         Screen thisScreen = (Screen) (Object) this;
+        int keyCode = event.key(); int scanCode = event.scancode(); int modifiers = event.modifiers();
 
         // Skip if typing in a text field
         if (thisScreen.getFocused() instanceof EditBox) {
@@ -76,7 +91,7 @@ public abstract class ScreenMixin {
             return;
         }
 
-        if (KeyBindings.OPEN_PLAYER.matches(keyCode, scanCode)) {
+        if (KeyBindings.OPEN_PLAYER.matches(event)) {
             Minecraft client = Minecraft.getInstance();
             if (client.screen instanceof XMusicScreen) {
                 ((XMusicScreen) client.screen).closeAnimated();
@@ -87,37 +102,37 @@ public abstract class ScreenMixin {
             return;
         }
 
-        if (KeyBindings.PLAY_PAUSE.matches(keyCode, scanCode)) {
+        if (KeyBindings.PLAY_PAUSE.matches(event)) {
             PlayerFacade.getInstance().togglePlayPause();
             cir.setReturnValue(true);
             return;
         }
 
-        if (KeyBindings.NEXT_TRACK.matches(keyCode, scanCode)) {
+        if (KeyBindings.NEXT_TRACK.matches(event)) {
             PlayerFacade.getInstance().next();
             cir.setReturnValue(true);
             return;
         }
 
-        if (KeyBindings.PREV_TRACK.matches(keyCode, scanCode)) {
+        if (KeyBindings.PREV_TRACK.matches(event)) {
             PlayerFacade.getInstance().previous();
             cir.setReturnValue(true);
             return;
         }
 
-        if (KeyBindings.VOLUME_UP.matches(keyCode, scanCode)) {
+        if (KeyBindings.VOLUME_UP.matches(event)) {
             PlayerFacade.getInstance().adjustVolume(ConfigManager.get().volumeStep);
             cir.setReturnValue(true);
             return;
         }
 
-        if (KeyBindings.VOLUME_DOWN.matches(keyCode, scanCode)) {
+        if (KeyBindings.VOLUME_DOWN.matches(event)) {
             PlayerFacade.getInstance().adjustVolume(-ConfigManager.get().volumeStep);
             cir.setReturnValue(true);
             return;
         }
 
-        if (KeyBindings.TOGGLE_SHUFFLE.matches(keyCode, scanCode)) {
+        if (KeyBindings.TOGGLE_SHUFFLE.matches(event)) {
             PlayerFacade facade = PlayerFacade.getInstance();
             if (facade.getPlaybackMode() == PlaybackMode.SHUFFLE) {
                 facade.setPlaybackMode(PlaybackMode.SEQUENTIAL);
@@ -128,16 +143,18 @@ public abstract class ScreenMixin {
             return;
         }
 
-        if (KeyBindings.CYCLE_LOOP.matches(keyCode, scanCode)) {
+        if (KeyBindings.CYCLE_LOOP.matches(event)) {
             PlayerFacade.getInstance().cycleLoopMode();
             cir.setReturnValue(true);
             return;
         }
 
-        if (KeyBindings.CYCLE_PLAYBACK_MODE.matches(keyCode, scanCode)) {
+        if (KeyBindings.CYCLE_PLAYBACK_MODE.matches(event)) {
             PlayerFacade.getInstance().cyclePlaybackMode();
             cir.setReturnValue(true);
             return;
         }
     }
 }
+
+

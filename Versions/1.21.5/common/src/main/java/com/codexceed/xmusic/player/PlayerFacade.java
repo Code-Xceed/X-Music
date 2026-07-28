@@ -43,8 +43,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * </ul>
  */
 public final class PlayerFacade {
-    private static PlayerFacade instance;
-
+    private static class Holder {
+        static final PlayerFacade INSTANCE = new PlayerFacade();
+    }
     private final List<PlaybackBackend> backends = new CopyOnWriteArrayList<>();
     private final List<TrackRef> queue = new ArrayList<>();
     private final PlaybackBackend nativeBackend = new NativeAudioBackend();
@@ -65,8 +66,35 @@ public final class PlayerFacade {
     }
 
     public String getLastError() { return lastError; }
-    public void setLastError(String error) { this.lastError = error; }
+    public void setLastError(String error) { 
+        this.lastError = formatUserFriendlyError(error); 
+    }
     public void clearLastError() { this.lastError = null; }
+
+    public static String formatUserFriendlyError(String raw) {
+        if (raw == null || raw.isBlank()) return "Unknown error occurred";
+        String lower = raw.toLowerCase();
+        if (lower.contains("429") || lower.contains("rate limit") || lower.contains("too many requests")) {
+            return "YouTube Rate Limited (Add po_token in xmusic.json)";
+        } else if (lower.contains("sign in to confirm your age") || lower.contains("age restricted")) {
+            return "Age Restricted Video (Requires account)";
+        } else if (lower.contains("video requires login") || lower.contains("please sign in") || lower.contains("bot")) {
+            return "YouTube Blocked Request (Add po_token in xmusic.json)";
+        } else if (lower.contains("unknownhost") || lower.contains("network is unreachable") || lower.contains("connection reset") || lower.contains("timed out")) {
+            return "No Internet Connection";
+        } else if (lower.contains("unavailable") || lower.contains("private video") || lower.contains("not available")) {
+            return "Video Unavailable or Private";
+        } else if (lower.contains("copyright")) {
+            return "Blocked due to Copyright";
+        } else if (lower.contains("no matching track")) {
+            return "No matching track found";
+        }
+        int colonIdx = raw.lastIndexOf(':');
+        if (colonIdx >= 0 && colonIdx < raw.length() - 1 && raw.substring(0, colonIdx).contains("Exception")) {
+            return raw.substring(colonIdx + 1).trim();
+        }
+        return raw;
+    }
 
     // ── History (for < > controls) ─────────────────────────────────────────
     /** Chronological list of all played tracks (most recent last). */
@@ -96,10 +124,7 @@ public final class PlayerFacade {
     }
 
     public static PlayerFacade getInstance() {
-        if (instance == null) {
-            instance = new PlayerFacade();
-        }
-        return instance;
+        return Holder.INSTANCE;
     }
 
     public void registerBackend(PlaybackBackend backend) {

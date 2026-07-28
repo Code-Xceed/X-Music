@@ -10,6 +10,12 @@ public class XMusicConfig {
     /** Optional developer fallback API key for YouTube metadata. Normal users should not need this. */
     public String youtubeApiKey = "";
 
+    /** Optional YouTube po_token to bypass bot protections. Normal users won't need this on residential IPs. */
+    public String youtubePoToken = "";
+
+    /** Optional YouTube visitorData, paired with po_token to bypass bot protections. */
+    public String youtubeVisitorData = "";
+
     /** Optional comma-separated Piped API instances for native YouTube audio resolution testing. */
     public String pipedApiInstances = "";
 
@@ -63,11 +69,6 @@ public class XMusicConfig {
 
     /** Directory to scan for local music files. Empty = .minecraft/xmusic/local. */
     public String localMusicDirectory = "";
-
-    // ── Spotify (PKCE OAuth — tokens auto-managed) ──────────────────────
-    public String spotifyAccessToken = "";
-    public String spotifyRefreshToken = "";
-    public long spotifyTokenExpiresAt = 0L;
 
     /** If true, the setup prompt popup will never show again (user clicked Skip). */
     public boolean setupPromptSkipped = false;
@@ -143,4 +144,15 @@ public class XMusicConfig {
     /** Saved search history, limit to 10. */
     public java.util.List<String> searchHistory = new java.util.ArrayList<>();
 
+    public void validate() {
+        volume = Math.max(0f, Math.min(1f, volume));
+        lastNonZeroVolume = Math.max(0.01f, Math.min(1f, lastNonZeroVolume));
+        volumeStep = Math.max(0.01f, Math.min(0.5f, volumeStep));
+        animationSpeed = Math.max(0.1f, Math.min(5f, animationSpeed));
+        youtubeCacheMaxSizeMb = Math.max(50, Math.min(4096, youtubeCacheMaxSizeMb));
+        youtubeCacheMaxTracks = Math.max(1, Math.min(500, youtubeCacheMaxTracks));
+        youtubeDownloadTimeoutSeconds = Math.max(30, Math.min(600, youtubeDownloadTimeoutSeconds));
+        if (searchHistory == null) searchHistory = new java.util.ArrayList<>();
+        if (searchHistory.size() > 50) searchHistory = new java.util.ArrayList<>(searchHistory.subList(0, 50));
+    }
 }

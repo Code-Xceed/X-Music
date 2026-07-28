@@ -9,7 +9,7 @@ import com.codexceed.xmusic.source.PlaybackType;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.PauseScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -31,7 +31,7 @@ public abstract class PauseScreenMixin {
     private static final int ART_H = 30;
 
     @Inject(method = "render", at = @At("TAIL"))
-    private void onRender(GuiGraphics g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+    private void onRender(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         PlayerState state = PlayerFacade.getInstance().snapshot();
         TrackRef track = state.getCurrentTrack();
         boolean widgetActive = (track != null || state.isPlaying() || state.isPaused());
@@ -51,7 +51,7 @@ public abstract class PauseScreenMixin {
             for (net.minecraft.client.gui.components.events.GuiEventListener child : screen.children()) {
                 if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget) {
                     int centerX = widget.getX() + widget.getWidth() / 2;
-                    if (Math.abs(centerX - screenW / 2) < 60) {
+                    if (Math.abs(centerX - screenW / 2) < 60 && widget.getY() > screenH / 2) {
                         if (widget.getY() > lowestY) {
                             lowestY = widget.getY();
                             lowestH = widget.getHeight();
@@ -60,14 +60,9 @@ public abstract class PauseScreenMixin {
                 }
             }
 
-            int widgetY;
+            int widgetY = screenH - WIDGET_H - 12;
             if (lowestY != -1) {
-                widgetY = lowestY + lowestH + 12;
-                if (widgetY + WIDGET_H > screenH - 8) {
-                    widgetY = screenH - WIDGET_H - 8;
-                }
-            } else {
-                widgetY = screenH - WIDGET_H - 12; // Fallback
+                widgetY = Math.min(screenH - WIDGET_H - 8, lowestY + lowestH + 8);
             }
 
             // Glow effect (Subtle square pulsing glow when music is playing)
@@ -133,7 +128,7 @@ public abstract class PauseScreenMixin {
                     int sourceX = infoX + infoW - sourceW;
                     int artistOnlyW = Math.max(infoW - sourceW - 4, infoW / 2);
                     GuiRender.truncated(g, font, artist, infoX, widgetY + 16, artistOnlyW, artistColor);
-                    g.drawString(font, sourceText, sourceX, widgetY + 16, sourceColor, true);
+                    g.text(font, sourceText, sourceX, widgetY + 16, sourceColor, true);
                 } else {
                     GuiRender.truncated(g, font, artist, infoX, widgetY + 16, infoW, artistColor);
                 }
@@ -143,8 +138,8 @@ public abstract class PauseScreenMixin {
                 long posMs = state.getPositionMs();
                 long durMs = state.getDurationMs();
                 String posText = formatTime(posMs) + " / " + formatTime(durMs);
-                g.drawString(font, stateText, infoX, widgetY + 26, GuiTheme.TEXT_MUTED, true);
-                g.drawString(font, posText, infoX + infoW - font.width(posText), widgetY + 26, GuiTheme.TEXT_MUTED, true);
+                g.text(font, stateText, infoX, widgetY + 26, GuiTheme.TEXT_MUTED, true);
+                g.text(font, posText, infoX + infoW - font.width(posText), widgetY + 26, GuiTheme.TEXT_MUTED, true);
 
                 // Progress bar directly at bottom border
                 if (track.getPlaybackType() != PlaybackType.NATIVE && durMs > 0) {

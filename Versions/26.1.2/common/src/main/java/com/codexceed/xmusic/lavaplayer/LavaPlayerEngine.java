@@ -2,6 +2,7 @@ package com.codexceed.xmusic.lavaplayer;
 
 import com.codexceed.xmusic.XMusic;
 import com.codexceed.xmusic.config.ConfigManager;
+import com.codexceed.xmusic.config.XMusicConfig;
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormatTools;
 import com.sedmelluq.discord.lavaplayer.format.AudioPlayerInputStream;
@@ -179,20 +180,18 @@ public final class LavaPlayerEngine {
                     new dev.lavalink.youtube.clients.AndroidVr(),
                     new dev.lavalink.youtube.clients.Web(),
                     new dev.lavalink.youtube.clients.WebEmbedded(),
-                    new dev.lavalink.youtube.clients.TvHtml5Embedded()
+                    new dev.lavalink.youtube.clients.Tv()
             );
+            
+            XMusicConfig config = ConfigManager.get();
+            if (config.youtubePoToken != null && !config.youtubePoToken.isEmpty() 
+                    && config.youtubeVisitorData != null && !config.youtubeVisitorData.isEmpty()) {
+                dev.lavalink.youtube.clients.Web.setPoTokenAndVisitorData(config.youtubePoToken, config.youtubeVisitorData);
+                XMusic.LOGGER.info("Applied YouTube po_token and visitorData from config.");
+            }
+
             yt.setPlaylistPageCount(50);
             return yt;
-        });
-
-        safeRegister(() -> {
-            String id  = "";
-            String sec = "";
-            if (id == null || id.isBlank() || sec == null || sec.isBlank()) {
-                XMusic.LOGGER.debug("[LavaPlayer] Optional source registration skipped.");
-                return null;
-            }
-            return null;
         });
 
         safeRegister(SoundCloudAudioSourceManager::createDefault);

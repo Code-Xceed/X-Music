@@ -10,8 +10,8 @@ import com.codexceed.xmusic.player.PlayerFacade;
 import com.codexceed.xmusic.platform.FabricPlatformHelper;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
 
@@ -38,7 +38,7 @@ public class XMusicFabric implements ClientModInitializer {
 
         // Register key bindings
         for (KeyMapping key : KeyBindings.getAll()) {
-            KeyBindingHelper.registerKeyBinding(key);
+            KeyMappingHelper.registerKeyMapping(key);
         }
         XMusic.LOGGER.info("Key bindings registered.");
 
@@ -47,9 +47,10 @@ public class XMusicFabric implements ClientModInitializer {
         XMusic.LOGGER.info("Fabric client services initialized.");
 
         // Register HUD render callback
-        HudRenderCallback.EVENT.register((drawContext, renderTickCounter) -> {
-            HudRenderer.getInstance().render(drawContext, renderTickCounter.getRealtimeDeltaTicks());
-        });
+        HudElementRegistry.addLast(
+            net.minecraft.resources.Identifier.fromNamespaceAndPath("xmusic", "hud"),
+            (graphics, deltaTracker) -> HudRenderer.getInstance().render(graphics, deltaTracker.getRealtimeDeltaTicks())
+        );
         XMusic.LOGGER.info("HUD render callback registered.");
 
         // Register client tick callback

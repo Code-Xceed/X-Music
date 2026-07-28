@@ -18,7 +18,7 @@ import com.codexceed.xmusic.service.youtube.YouTubeToolManager;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -66,7 +66,7 @@ public final class SettingsTab {
 
     // ── Render ─────────────────────────────────────────────────────────────
 
-    public void render(GuiGraphics graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
+    public void render(GuiGraphicsExtractor graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
         int x = frame.contentX();
         int y = frame.contentY();
         int w = frame.contentWidth();
@@ -128,10 +128,10 @@ public final class SettingsTab {
 
     @FunctionalInterface
     private interface SectionRenderer {
-        int render(GuiGraphics g, Font f, int x, int y, int w, int mx, int my);
+        int render(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my);
     }
 
-    private int renderSection(GuiGraphics g, Font f, int x, int y, int w,
+    private int renderSection(GuiGraphicsExtractor g, Font f, int x, int y, int w,
                               int mx, int my, String title, String id,
                               boolean expanded, SectionRenderer renderer) {
         // Section header with premium styling
@@ -182,7 +182,7 @@ public final class SettingsTab {
 
     // ── Playback rows ──────────────────────────────────────────────────────
 
-    private int renderPlaybackRows(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
+    private int renderPlaybackRows(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
         XMusicConfig cfg = ConfigManager.get();
         PlayerFacade player = PlayerFacade.getInstance();
 
@@ -210,7 +210,7 @@ public final class SettingsTab {
 
     // ── HUD rows ────────────────────────────────────────────────────────────
 
-    private int renderHudRows(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
+    private int renderHudRows(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
         XMusicConfig cfg = ConfigManager.get();
 
         // HUD Enabled toggle
@@ -234,7 +234,7 @@ public final class SettingsTab {
 
     // ── YouTube rows ───────────────────────────────────────────────────────
 
-    private int renderYouTubeRows(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
+    private int renderYouTubeRows(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
         XMusicConfig cfg = ConfigManager.get();
         YouTubeToolManager tools = ServiceManager.getYouTubeToolManager();
 
@@ -305,12 +305,28 @@ public final class SettingsTab {
         y = renderPathRow(g, f, x, y, w, mx, my, "Cookies File",
                 "youtubeCookiesFile", cfg.youtubeCookiesFile.isEmpty() ? "—" : cfg.youtubeCookiesFile);
 
+        // ARR Direct Streaming Mode Banner
+        y = renderStatusRow(g, f, x, y, w, mx, my, "Streaming Mode", "ARR Direct (No OAuth Required)", GuiTheme.ACCENT);
+
+        // PO Token status
+        String poStatus = (cfg.youtubePoToken != null && !cfg.youtubePoToken.isEmpty())
+                ? "✓ Loaded (" + cfg.youtubePoToken.substring(0, Math.min(6, cfg.youtubePoToken.length())) + "...)"
+                : "None (Add youtubePoToken in xmusic.json)";
+        int poColor = (cfg.youtubePoToken != null && !cfg.youtubePoToken.isEmpty()) ? GuiTheme.ACCENT : GuiTheme.TEXT_MUTED;
+        y = renderStatusRow(g, f, x, y, w, mx, my, "YouTube PO Token", poStatus, poColor);
+
+        // Visitor Data status
+        String visitorStatus = (cfg.youtubeVisitorData != null && !cfg.youtubeVisitorData.isEmpty())
+                ? "✓ Loaded"
+                : "Auto";
+        y = renderStatusRow(g, f, x, y, w, mx, my, "Visitor Data", visitorStatus, GuiTheme.TEXT_SOFT);
+
         return y;
     }
 
     // ── Storage rows ───────────────────────────────────────────────────────
 
-    private int renderStorageRows(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
+    private int renderStorageRows(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
         XMusicConfig cfg = ConfigManager.get();
 
         // Local Music Folder
@@ -345,7 +361,7 @@ public final class SettingsTab {
 
     // ── About rows ─────────────────────────────────────────────────────────
 
-    private int renderAboutRows(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
+    private int renderAboutRows(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
         // Version
         y = renderLabelRow(g, f, x, y, w, "Version", "CodeX Music Player v" + XMusic.getVersion());
 
@@ -362,7 +378,7 @@ public final class SettingsTab {
 
     // ── Animations rows ─────────────────────────────────────────────────────
 
-    private int renderAnimationsRows(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
+    private int renderAnimationsRows(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
         XMusicConfig cfg = ConfigManager.get();
 
         // Animations Enabled toggle
@@ -386,7 +402,7 @@ public final class SettingsTab {
 
     // ── Row type renderers ─────────────────────────────────────────────────
 
-    private int renderToggleRow(GuiGraphics g, Font f, int x, int y, int w,
+    private int renderToggleRow(GuiGraphicsExtractor g, Font f, int x, int y, int w,
                                 int mx, int my, String label, String id, boolean value) {
         // Row background with smooth hover
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
@@ -428,7 +444,7 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    private int renderCycleRow(GuiGraphics g, Font f, int x, int y, int w,
+    private int renderCycleRow(GuiGraphicsExtractor g, Font f, int x, int y, int w,
                                int mx, int my, String label, String id, String value) {
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
         float hover = HoverTracker.tick("scyc_" + id, rowHover);
@@ -464,7 +480,7 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    private int renderSliderRow(GuiGraphics g, Font f, int x, int y, int w, int mx, int my,
+    private int renderSliderRow(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my,
                                 String label, String field, double value, double min, double max,
                                 double step, String displayValue) {
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
@@ -522,7 +538,7 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    private int renderStatusRow(GuiGraphics g, Font f, int x, int y, int w, int mx, int my,
+    private int renderStatusRow(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my,
                                 String label, String status, int statusColor) {
         GuiRender.shadowText(g, f, label, x + 6, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
 
@@ -533,7 +549,7 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    private int renderPathRow(GuiGraphics g, Font f, int x, int y, int w, int mx, int my,
+    private int renderPathRow(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my,
                               String label, String field, String value) {
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
         float hover = HoverTracker.tick("spath_" + field, rowHover);
@@ -575,7 +591,7 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    private int renderFolderRow(GuiGraphics g, Font f, int x, int y, int w, int mx, int my,
+    private int renderFolderRow(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my,
                                 String label, String actionId, String path) {
         boolean rowHover = GuiRender.inside(mx, my, x, y, w, ROW_H);
         float hover = HoverTracker.tick("sfld_" + actionId, rowHover);
@@ -615,7 +631,7 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    private int renderActionRow(GuiGraphics g, Font f, int x, int y, int w, int mx, int my,
+    private int renderActionRow(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my,
                                 String label, String actionId, String btnLabel) {
         if (!label.isEmpty()) {
             GuiRender.shadowText(g, f, label, x + 6, y + (ROW_H - 8) / 2, GuiTheme.TEXT_SOFT);
@@ -649,7 +665,7 @@ public final class SettingsTab {
         return y + ROW_H;
     }
 
-    private int renderLabelRow(GuiGraphics g, Font f, int x, int y, int w,
+    private int renderLabelRow(GuiGraphicsExtractor g, Font f, int x, int y, int w,
                                String label, String value) {
         GuiRender.shadowText(g, f, label, x + 6, y + (ROW_H - 8) / 2, GuiTheme.TEXT);
         int valW = f.width(value);

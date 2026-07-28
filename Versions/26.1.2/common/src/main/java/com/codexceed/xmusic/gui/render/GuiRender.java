@@ -3,19 +3,19 @@ package com.codexceed.xmusic.gui.render;
 import com.codexceed.xmusic.gui.theme.GuiTheme;
 import com.codexceed.xmusic.gui.util.AnimationHelper;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public final class GuiRender {
     private GuiRender() {}
 
     // ── Legacy flat panel (kept for compat) ──────────────────────────────
 
-    public static void panel(GuiGraphics g, int x, int y, int w, int h, int fill, int border) {
+    public static void panel(GuiGraphicsExtractor g, int x, int y, int w, int h, int fill, int border) {
         g.fill(x, y, x + w, y + h, fill);
         outline(g, x, y, w, h, border);
     }
 
-    public static void outline(GuiGraphics g, int x, int y, int w, int h, int color) {
+    public static void outline(GuiGraphicsExtractor g, int x, int y, int w, int h, int color) {
         g.fill(x, y, x + w, y + 1, color);
         g.fill(x, y + h - 1, x + w, y + h, color);
         g.fill(x, y, x + 1, y + h, color);
@@ -25,7 +25,7 @@ public final class GuiRender {
     // ── MC Dark-Mode Bevel Primitives ────────────────────────────────────
 
     /** 1px bevel edges: raised (light top-left, dark bottom-right) or inset (reversed). */
-    public static void bevel(GuiGraphics g, int x, int y, int w, int h, boolean inset) {
+    public static void bevel(GuiGraphicsExtractor g, int x, int y, int w, int h, boolean inset) {
         int tl = inset ? GuiTheme.BEVEL_HIGHLIGHT_INSET : GuiTheme.BEVEL_HIGHLIGHT;
         int br = inset ? GuiTheme.BEVEL_SHADOW_INSET : GuiTheme.BEVEL_SHADOW;
         // top
@@ -38,7 +38,7 @@ public final class GuiRender {
         g.fill(x + w - 1, y + 1, x + w, y + h - 1, br);
     }
 
-    public static void bevel(GuiGraphics g, int x, int y, int w, int h, boolean inset, float alpha) {
+    public static void bevel(GuiGraphicsExtractor g, int x, int y, int w, int h, boolean inset, float alpha) {
         int tl = inset ? GuiTheme.BEVEL_HIGHLIGHT_INSET : GuiTheme.BEVEL_HIGHLIGHT;
         int br = inset ? GuiTheme.BEVEL_SHADOW_INSET : GuiTheme.BEVEL_SHADOW;
         tl = AnimationHelper.withAlpha(tl, alpha);
@@ -54,7 +54,7 @@ public final class GuiRender {
     }
 
     /** Bevel with hover-aware highlights. */
-    public static void bevelHover(GuiGraphics g, int x, int y, int w, int h, boolean inset, boolean hovered) {
+    public static void bevelHover(GuiGraphicsExtractor g, int x, int y, int w, int h, boolean inset, boolean hovered) {
         int tl, br;
         if (inset) {
             tl = GuiTheme.BEVEL_HIGHLIGHT_INSET;
@@ -70,45 +70,45 @@ public final class GuiRender {
     }
 
     /** MC raised panel: fill + raised bevel. */
-    public static void mcPanel(GuiGraphics g, int x, int y, int w, int h) {
+    public static void mcPanel(GuiGraphicsExtractor g, int x, int y, int w, int h) {
         g.fill(x, y, x + w, y + h, GuiTheme.PANEL);
         bevel(g, x, y, w, h, false);
     }
 
     /** MC button: raised bevel (normal/hover) or inset bevel (active/pressed). */
-    public static void mcButton(GuiGraphics g, int x, int y, int w, int h, boolean hovered, boolean active) {
+    public static void mcButton(GuiGraphicsExtractor g, int x, int y, int w, int h, boolean hovered, boolean active) {
         int fill = active ? GuiTheme.PANEL_DARK : (hovered ? GuiTheme.PANEL_HOVER : GuiTheme.PANEL);
         g.fill(x, y, x + w, y + h, fill);
         bevelHover(g, x, y, w, h, active, hovered);
     }
 
     /** MC inset well: dark fill + inset bevel. For search bars, inputs. */
-    public static void mcWell(GuiGraphics g, int x, int y, int w, int h) {
+    public static void mcWell(GuiGraphicsExtractor g, int x, int y, int w, int h) {
         g.fill(x, y, x + w, y + h, GuiTheme.PANEL_DARK);
         bevel(g, x, y, w, h, true);
     }
 
     /** MC inset well with alpha fading. */
-    public static void mcWell(GuiGraphics g, int x, int y, int w, int h, float alpha) {
+    public static void mcWell(GuiGraphicsExtractor g, int x, int y, int w, int h, float alpha) {
         int fill = AnimationHelper.withAlpha(GuiTheme.PANEL_DARK, alpha);
         g.fill(x, y, x + w, y + h, fill);
         bevel(g, x, y, w, h, true, alpha);
     }
 
     /** MC inventory slot: slot bg + inset bevel. */
-    public static void mcSlot(GuiGraphics g, int x, int y, int w, int h) {
+    public static void mcSlot(GuiGraphicsExtractor g, int x, int y, int w, int h) {
         g.fill(x, y, x + w, y + h, GuiTheme.SLOT_BG);
         bevel(g, x, y, w, h, true);
     }
 
     /** Horizontal beveled separator line. */
-    public static void mcSeparator(GuiGraphics g, int x, int y, int w) {
+    public static void mcSeparator(GuiGraphicsExtractor g, int x, int y, int w) {
         g.fill(x, y, x + w, y + 1, GuiTheme.BEVEL_HIGHLIGHT);
         g.fill(x, y + 1, x + w, y + 2, GuiTheme.BEVEL_SHADOW);
     }
 
     /** Double-bevel frame border: outer raised + inner dark line. */
-    public static void mcFrameBorder(GuiGraphics g, int x, int y, int w, int h) {
+    public static void mcFrameBorder(GuiGraphicsExtractor g, int x, int y, int w, int h) {
         // Outer raised bevel (2px)
         g.fill(x, y, x + w, y + 2, GuiTheme.BEVEL_HIGHLIGHT);
         g.fill(x, y + 2, x + 2, y + h - 2, GuiTheme.BEVEL_HIGHLIGHT);
@@ -122,7 +122,7 @@ public final class GuiRender {
     }
 
     /** Double-bevel frame border with alpha fading. */
-    public static void mcFrameBorder(GuiGraphics g, int x, int y, int w, int h, float alpha) {
+    public static void mcFrameBorder(GuiGraphicsExtractor g, int x, int y, int w, int h, float alpha) {
         int highlight = AnimationHelper.withAlpha(GuiTheme.BEVEL_HIGHLIGHT, alpha);
         int shadow = AnimationHelper.withAlpha(GuiTheme.BEVEL_SHADOW, alpha);
         int edge = AnimationHelper.withAlpha(GuiTheme.FRAME_EDGE, alpha);
@@ -144,7 +144,7 @@ public final class GuiRender {
      * Vertical gradient fill using multiple horizontal strips.
      * Creates a smooth gradient between two colors across the height.
      */
-    public static void gradientV(GuiGraphics g, int x, int y, int w, int h, int colorTop, int colorBottom) {
+    public static void gradientV(GuiGraphicsExtractor g, int x, int y, int w, int h, int colorTop, int colorBottom) {
         int steps = Math.min(h, 16); // 16-step gradient for efficiency
         if (steps <= 0) return;
         int stripH = h / steps;
@@ -162,7 +162,7 @@ public final class GuiRender {
     /**
      * MC panel with vertical gradient fill for premium depth feel.
      */
-    public static void mcPanelGradient(GuiGraphics g, int x, int y, int w, int h) {
+    public static void mcPanelGradient(GuiGraphicsExtractor g, int x, int y, int w, int h) {
         gradientV(g, x, y, w, h, GuiTheme.PANEL_GRAD_TOP, GuiTheme.PANEL_GRAD_BOTTOM);
         bevel(g, x, y, w, h, false);
     }
@@ -170,7 +170,7 @@ public final class GuiRender {
     /**
      * Inter-panel depth shadow: 2px dark strip on top edge to separate stacked panels.
      */
-    public static void depthShadow(GuiGraphics g, int x, int y, int w) {
+    public static void depthShadow(GuiGraphicsExtractor g, int x, int y, int w) {
         g.fill(x, y, x + w, y + 1, GuiTheme.DEPTH_SHADOW);
         g.fill(x, y + 1, x + w, y + 2, AnimationHelper.withAlpha(GuiTheme.DEPTH_SHADOW, 0.5f));
     }
@@ -178,7 +178,7 @@ public final class GuiRender {
     /**
      * Vignette effect: darkens edges of a rectangular area for visual depth.
      */
-    public static void vignette(GuiGraphics g, int x, int y, int w, int h, int thickness) {
+    public static void vignette(GuiGraphicsExtractor g, int x, int y, int w, int h, int thickness) {
         for (int i = 0; i < thickness; i++) {
             float alpha = (1f - (float) i / thickness) * 0.12f;
             int color = AnimationHelper.withAlpha(0xFF000000, alpha);
@@ -196,7 +196,7 @@ public final class GuiRender {
     /**
      * Inner shadow gradient at the top of a panel (gives inset depth feel).
      */
-    public static void innerShadowTop(GuiGraphics g, int x, int y, int w, int height) {
+    public static void innerShadowTop(GuiGraphicsExtractor g, int x, int y, int w, int height) {
         for (int i = 0; i < height; i++) {
             float alpha = (1f - (float) i / height) * 0.2f;
             g.fill(x, y + i, x + w, y + i + 1, AnimationHelper.withAlpha(0xFF000000, alpha));
@@ -206,7 +206,7 @@ public final class GuiRender {
     // ── Premium Glow Effects ─────────────────────────────────────────────
 
     /** Accent glow: 2px semi-transparent accent halo around a rect. */
-    public static void glowRect(GuiGraphics g, int x, int y, int w, int h) {
+    public static void glowRect(GuiGraphicsExtractor g, int x, int y, int w, int h) {
         g.fill(x - 2, y - 2, x + w + 2, y, GuiTheme.GLOW_ACCENT);       // top
         g.fill(x - 2, y + h, x + w + 2, y + h + 2, GuiTheme.GLOW_ACCENT); // bottom
         g.fill(x - 2, y, x, y + h, GuiTheme.GLOW_ACCENT);                 // left
@@ -214,7 +214,7 @@ public final class GuiRender {
     }
 
     /** 1px accent outer border (for active/playing indicators). */
-    public static void accentGlow(GuiGraphics g, int x, int y, int w, int h) {
+    public static void accentGlow(GuiGraphicsExtractor g, int x, int y, int w, int h) {
         // Premium multi-layer glow: outer soft → mid → inner bright
         // Layer 4: deepest halo (4px)
         g.fill(x - 4, y - 4, x + w + 4, y - 2, GuiTheme.GLOW_ACCENT_DEEP);
@@ -242,7 +242,7 @@ public final class GuiRender {
      * Smooth hover glow: interpolated glow intensity based on hover factor (0→1).
      * Much smoother than the on/off glowRect — fades in and out with the hover.
      */
-    public static void smoothHoverGlow(GuiGraphics g, int x, int y, int w, int h, float hoverFactor) {
+    public static void smoothHoverGlow(GuiGraphicsExtractor g, int x, int y, int w, int h, float hoverFactor) {
         if (hoverFactor <= 0.01f) return;
         // Smooth background tint
         int bgTint = AnimationHelper.withAlpha(GuiTheme.HOVER_GLOW, hoverFactor);
@@ -259,7 +259,7 @@ public final class GuiRender {
      * Smooth button rendering with hover interpolation.
      * Provides silky-smooth transitions between normal/hover/active states.
      */
-    public static void mcButtonSmooth(GuiGraphics g, int x, int y, int w, int h, float hoverFactor, boolean active) {
+    public static void mcButtonSmooth(GuiGraphicsExtractor g, int x, int y, int w, int h, float hoverFactor, boolean active) {
         int normalFill = active ? GuiTheme.PANEL_DARK : GuiTheme.PANEL;
         int hoverFill = active ? GuiTheme.PANEL_DARK : GuiTheme.PANEL_HOVER;
         int fill = AnimationHelper.lerpColor(normalFill, hoverFill, hoverFactor);
@@ -285,7 +285,7 @@ public final class GuiRender {
     // ── MC-style tooltip ─────────────────────────────────────────────────
 
     /** MC-style tooltip: dark bg + bevel border + shadow text, positioned near cursor. */
-    public static void tooltip(GuiGraphics g, Font font, String text, int mouseX, int mouseY, int screenWidth, int screenHeight) {
+    public static void tooltip(GuiGraphicsExtractor g, Font font, String text, int mouseX, int mouseY, int screenWidth, int screenHeight) {
         int tw = font.width(text) + 8;
         int th = 12;
         int tx = mouseX + 8;
@@ -312,7 +312,7 @@ public final class GuiRender {
      *
      * @param hoverFactor 0→1 for fade-in of the indicator
      */
-    public static void slideIndicator(GuiGraphics g, int x, int y, int width, int height, float hoverFactor) {
+    public static void slideIndicator(GuiGraphicsExtractor g, int x, int y, int width, int height, float hoverFactor) {
         if (hoverFactor <= 0.01f) return;
         int indicatorH = (int) (height * 0.6f * hoverFactor);
         int indicatorY = y + (height - indicatorH) / 2;
@@ -322,19 +322,19 @@ public final class GuiRender {
 
     // ── Text ──────────────────────────────────────────────────────────────
 
-    public static void text(GuiGraphics g, Font font, String text, int x, int y, int color) {
-        g.drawString(font, text, x, y, color, false);
+    public static void text(GuiGraphicsExtractor g, Font font, String text, int x, int y, int color) {
+        g.text(font, text, x, y, color, false);
     }
 
-    public static void shadowText(GuiGraphics g, Font font, String text, int x, int y, int color) {
-        g.drawString(font, text, x, y, color, true);
+    public static void shadowText(GuiGraphicsExtractor g, Font font, String text, int x, int y, int color) {
+        g.text(font, text, x, y, color, false);
     }
 
-    public static void centeredText(GuiGraphics g, Font font, String text, int centerX, int y, int color) {
-        g.drawString(font, text, centerX - font.width(text) / 2, y, color, false);
+    public static void centeredText(GuiGraphicsExtractor g, Font font, String text, int centerX, int y, int color) {
+        g.text(font, text, centerX - font.width(text) / 2, y, color, false);
     }
 
-    public static void truncated(GuiGraphics g, Font font, String text, int x, int y, int maxWidth, int color) {
+    public static void truncated(GuiGraphicsExtractor g, Font font, String text, int x, int y, int maxWidth, int color) {
         if (text == null) {
             text = "";
         }
@@ -342,7 +342,7 @@ public final class GuiRender {
         if (font.width(value) > maxWidth) {
             value = font.plainSubstrByWidth(value, Math.max(0, maxWidth - font.width("..."))) + "...";
         }
-        g.drawString(font, value, x, y, color, false);
+        g.text(font, value, x, y, color, false);
     }
 
     // ── Hit-test ──────────────────────────────────────────────────────────
@@ -353,7 +353,7 @@ public final class GuiRender {
 
     // ── Rounded rect primitives ──────────────────────────────────────────
 
-    public static void fillRounded(GuiGraphics g, int x, int y, int w, int h, int r, int color) {
+    public static void fillRounded(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
         if (r <= 0) { g.fill(x, y, x + w, y + h, color); return; }
         r = Math.min(r, Math.min(w, h) / 2);
         g.fill(x + r, y, x + w - r, y + h, color);
@@ -369,7 +369,7 @@ public final class GuiRender {
         }
     }
 
-    public static void fillRoundedGradient(GuiGraphics g, int x, int y, int w, int h, int r, int colorTop, int colorBottom) {
+    public static void fillRoundedGradient(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int colorTop, int colorBottom) {
         if (r <= 0) { gradientV(g, x, y, w, h, colorTop, colorBottom); return; }
         r = Math.min(r, Math.min(w, h) / 2);
         for (int i = 0; i < h; i++) {
@@ -393,7 +393,7 @@ public final class GuiRender {
         }
     }
 
-    public static void drawRoundedBorder(GuiGraphics g, int x, int y, int w, int h, int r, int color) {
+    public static void drawRoundedBorder(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
         if (r <= 0) {
             g.fill(x, y, x + w, y + 1, color);
             g.fill(x, y + h - 1, x + w, y + h, color);

@@ -53,11 +53,11 @@ public class HudEditorScreen extends Screen {
             dragHudY = Math.max(0, Math.min(screenH - hudH, cfg.hudY));
         } else {
             switch (cfg.hudPosition) {
-                case "TOP_LEFT": dragHudX = 6; dragHudY = 6; break;
-                case "TOP_RIGHT": dragHudX = screenW - hudW - 6; dragHudY = 6; break;
-                case "BOTTOM_LEFT": dragHudX = 6; dragHudY = screenH - hudH - 6 - 12; break; // Clear copyright text
-                case "BOTTOM_RIGHT": dragHudX = screenW - hudW - 6; dragHudY = screenH - hudH - 6 - 12; break; // Clear copyright text
-                default: dragHudX = (screenW - hudW) / 2; dragHudY = 6; break;
+                case "TOP_LEFT": dragHudX = 8; dragHudY = 8; break;
+                case "TOP_RIGHT": dragHudX = screenW - hudW - 8; dragHudY = 8; break;
+                case "BOTTOM_LEFT": dragHudX = 8; dragHudY = screenH - hudH - 8; break;
+                case "BOTTOM_RIGHT": dragHudX = screenW - hudW - 8; dragHudY = screenH - hudH - 8; break;
+                default: dragHudX = (screenW - hudW) / 2; dragHudY = 8; break;
             }
         }
     }
@@ -161,11 +161,11 @@ public class HudEditorScreen extends Screen {
             cfg.hudX = -1; cfg.hudY = -1;
             ConfigManager.save();
             switch (cfg.hudPosition) {
-                case "TOP_LEFT": dragHudX = 6; dragHudY = 6; break;
-                case "TOP_RIGHT": dragHudX = this.width - getHudW() - 6; dragHudY = 6; break;
-                case "BOTTOM_LEFT": dragHudX = 6; dragHudY = this.height - getHudH() - 6 - 12; break;
-                case "BOTTOM_RIGHT": dragHudX = this.width - getHudW() - 6; dragHudY = this.height - getHudH() - 6 - 12; break;
-                default: dragHudX = (this.width - getHudW()) / 2; dragHudY = 6; break;
+                case "TOP_LEFT": dragHudX = 8; dragHudY = 8; break;
+                case "TOP_RIGHT": dragHudX = this.width - getHudW() - 8; dragHudY = 8; break;
+                case "BOTTOM_LEFT": dragHudX = 8; dragHudY = this.height - getHudH() - 8; break;
+                case "BOTTOM_RIGHT": dragHudX = this.width - getHudW() - 8; dragHudY = this.height - getHudH() - 8; break;
+                default: dragHudX = (this.width - getHudW()) / 2; dragHudY = 8; break;
             }
             return true;
         }

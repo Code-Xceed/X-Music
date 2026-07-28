@@ -53,8 +53,13 @@ public final class HoverTracker {
             current += diff * (1f - (float) Math.exp(-speed * frameDelta));
         }
 
-        VALUES.put(key, current);
-        return current;
+        if (current <= 0.001f) {
+            VALUES.remove(key);
+            return 0f;
+        } else {
+            VALUES.put(key, current);
+            return current;
+        }
     }
 
     /** Get current lerp without advancing. */

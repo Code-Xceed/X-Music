@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public final class PlayerBar {
     private static final int BTN_W = 22;
@@ -44,7 +44,7 @@ public final class PlayerBar {
     private String playlistAddedMsg = "";
     private long playlistAddedMsgTime = 0;
 
-    public void render(GuiGraphics graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
+    public void render(GuiGraphicsExtractor graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
         int x = frame.playerX();
         int y = frame.playerY();
         int w = frame.playerWidth();
@@ -403,15 +403,15 @@ public final class PlayerBar {
 
         // 6. "Added to playlist" confirmation message
         if (!playlistAddedMsg.isEmpty() && System.currentTimeMillis() - playlistAddedMsgTime < 2000) {
-            graphics.pose().pushPose();
-            graphics.pose().translate(0, 0, 200);
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(0, 0);
             float fade = 1f - (System.currentTimeMillis() - playlistAddedMsgTime) / 2000f;
             int alpha = (int)(0xFF * fade);
             int msgColor = (alpha << 24) | (GuiTheme.ACCENT & 0x00FFFFFF);
             int msgW = font.width(playlistAddedMsg);
             int msgX = x + 13 + 36 + 10 + (maxTitleW - msgW) / 2;
             GuiRender.shadowText(graphics, font, playlistAddedMsg, msgX, y + 54, msgColor);
-            graphics.pose().popPose();
+            graphics.pose().popMatrix();
         }
 
         // 7. Waveform / DJ bars at bottom of footer
@@ -420,15 +420,15 @@ public final class PlayerBar {
         // 8. Playlist popup overlay (drawn last so it's on top)
         if (showPlaylistPopup && track != null) {
             // Push z-offset so popup renders above all other content
-            graphics.pose().pushPose();
-            graphics.pose().translate(0, 0, 300);
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(0, 0);
             renderPlaylistPopup(graphics, font, x, y, w, h, track, mouseX, mouseY);
-            graphics.pose().popPose();
+            graphics.pose().popMatrix();
         }
     }
 
     /** Renders smooth, procedurally animated DJ-bar visualizer at the bottom of the footer. */
-    private void renderWaveformBars(GuiGraphics graphics, int x, int y, int w, int h, boolean isPlaying) {
+    private void renderWaveformBars(GuiGraphicsExtractor graphics, int x, int y, int w, int h, boolean isPlaying) {
         int barW = Math.max(2, (w - BAR_COUNT - 1) / BAR_COUNT);
         int totalBarsW = BAR_COUNT * (barW + 1) - 1;
         int barsX = x + (w - totalBarsW) / 2;
@@ -760,7 +760,7 @@ public final class PlayerBar {
     }
 
     /** Renders the "Add to Playlist" popup overlay above the footer. */
-    private void renderPlaylistPopup(GuiGraphics g, Font f, int barX, int barY, int barW, int barH,
+    private void renderPlaylistPopup(GuiGraphicsExtractor g, Font f, int barX, int barY, int barW, int barH,
                                       TrackRef track, int mx, int my) {
         LibraryManager lib = LibraryManager.getInstance();
         Set<String> playlistNames = lib.getPlaylistNames();
@@ -1004,10 +1004,10 @@ public final class PlayerBar {
 
     @FunctionalInterface
     private interface IconDraw {
-        void draw(GuiGraphics g, Font f, int x, int y, int w, int h, int c);
+        void draw(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c);
     }
 
-    private void renderIconButton(GuiGraphics graphics, Font font, int x, int y, int width, int height, boolean active, boolean hovered, IconDraw icon) {
+    private void renderIconButton(GuiGraphicsExtractor graphics, Font font, int x, int y, int width, int height, boolean active, boolean hovered, IconDraw icon) {
         int iconColor;
         if (active) {
             GuiRender.mcButton(graphics, x, y, width, height, false, true);
@@ -1020,7 +1020,7 @@ public final class PlayerBar {
     }
 
     /** Smooth version of renderIconButton with interpolated hover factor. */
-    private void renderIconButtonSmooth(GuiGraphics graphics, Font font, int x, int y, int width, int height, boolean active, float hoverLerp, IconDraw icon) {
+    private void renderIconButtonSmooth(GuiGraphicsExtractor graphics, Font font, int x, int y, int width, int height, boolean active, float hoverLerp, IconDraw icon) {
         int iconColor;
         if (active) {
             GuiRender.mcButtonSmooth(graphics, x, y, width, height, hoverLerp, true);
@@ -1033,7 +1033,7 @@ public final class PlayerBar {
         icon.draw(graphics, font, x, y, width, height, iconColor);
     }
 
-    private void renderIconBadge(GuiGraphics graphics, Font font, String label, int x, int y, int width, int height, boolean active, boolean hovered, IconDraw icon) {
+    private void renderIconBadge(GuiGraphicsExtractor graphics, Font font, String label, int x, int y, int width, int height, boolean active, boolean hovered, IconDraw icon) {
         float badgeLerp = HoverTracker.tick("pb_badge_" + label, hovered);
         GuiRender.mcButtonSmooth(graphics, x, y, width, height, badgeLerp, active);
 
@@ -1064,3 +1064,4 @@ public final class PlayerBar {
         return String.format("%d:%02d", totalSeconds / 60, totalSeconds % 60);
     }
 }
+

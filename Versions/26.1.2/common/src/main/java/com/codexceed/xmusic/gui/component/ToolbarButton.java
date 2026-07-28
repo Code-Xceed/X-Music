@@ -4,7 +4,7 @@ import com.codexceed.xmusic.gui.render.GuiRender;
 import com.codexceed.xmusic.gui.render.IconRenderer;
 import com.codexceed.xmusic.gui.theme.GuiTheme;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * Reusable toolbar button with auto-sized width based on text + icon.
@@ -22,7 +22,7 @@ public final class ToolbarButton {
      *
      * @return the width of the rendered button (for advancing cursor)
      */
-    public static int render(GuiGraphics g, Font f, int x, int y, int h,
+    public static int render(GuiGraphicsExtractor g, Font f, int x, int y, int h,
                              String text, IconRenderer.IconFunc icon,
                              boolean hovered, boolean active) {
         int textW = f.width(text);
@@ -56,7 +56,7 @@ public final class ToolbarButton {
      *
      * @return the width of the rendered button
      */
-    public static int renderIconOnly(GuiGraphics g, Font f, int x, int y, int h,
+    public static int renderIconOnly(GuiGraphicsExtractor g, Font f, int x, int y, int h,
                                      IconRenderer.IconFunc icon,
                                      boolean hovered, boolean active) {
         int totalW = PAD_H + ICON_SIZE + PAD_H;

@@ -14,7 +14,7 @@ import com.codexceed.xmusic.service.ServiceManager;
 import com.codexceed.xmusic.service.youtube.YouTubeToolManager;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.awt.Desktop;
 import java.util.ArrayList;
@@ -52,7 +52,7 @@ public final class DownloadsTab {
         ALL, DOWNLOADING, COMPLETED, FAILED
     }
 
-    public void render(GuiGraphics graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
+    public void render(GuiGraphicsExtractor graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
         int x = frame.contentX();
         int y = frame.contentY();
         int w = frame.contentWidth();
@@ -289,7 +289,7 @@ public final class DownloadsTab {
 
     // ── Toolbar: compact tool status + search toggle ────────────────────
 
-    private int renderToolbar(GuiGraphics g, Font f, int x, int y, int w, int mx, int my, int sw, int sh) {
+    private int renderToolbar(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my, int sw, int sh) {
         // Background bar
         g.fill(x, y, x + w, y + TOOLBAR_H, GuiTheme.PANEL_DARK);
         GuiRender.bevel(g, x, y, w, TOOLBAR_H, true);
@@ -374,7 +374,7 @@ public final class DownloadsTab {
     }
 
     /** Render a compact tool chip: "name ✓" or "name ✗" with bigger, clearer icons */
-    private int renderToolChip(GuiGraphics g, Font f, int x, int barY, String name, boolean ready, boolean activeDownloading) {
+    private int renderToolChip(GuiGraphicsExtractor g, Font f, int x, int barY, String name, boolean ready, boolean activeDownloading) {
         int nameW = f.width(name);
         int iconSz = 11;
         int chipH = TOOLBAR_H - 4;
@@ -418,7 +418,7 @@ public final class DownloadsTab {
 
     // ── Search Bar ──────────────────────────────────────────────────────
 
-    private void renderSearchBar(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
+    private void renderSearchBar(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
         GuiRender.mcWell(g, x, y, w, SEARCH_BAR_H);
         // Focus highlight border
         if (searchFocused) {
@@ -449,7 +449,7 @@ public final class DownloadsTab {
 
     // ── Filter Bar ──────────────────────────────────────────────────────
 
-    private int renderFilterBar(GuiGraphics g, Font f, int x, int y, int w, int mx, int my) {
+    private int renderFilterBar(GuiGraphicsExtractor g, Font f, int x, int y, int w, int mx, int my) {
         int curX = x;
         DownloadFilter[] filters = DownloadFilter.values();
         for (DownloadFilter filter : filters) {
@@ -769,7 +769,7 @@ public final class DownloadsTab {
 
     // ── Setup Prompt (Downloads tab only) ────────────────────────────────
 
-    private void renderSetupPrompt(GuiGraphics g, Font f, int x, int y, int w, int h, int mx, int my, YouTubeToolManager tools) {
+    private void renderSetupPrompt(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int mx, int my, YouTubeToolManager tools) {
         boolean ytReady = tools.hasYtDlp();
         boolean ffReady = tools.hasFfmpeg();
         boolean installing = tools.isInstalling();
@@ -782,8 +782,8 @@ public final class DownloadsTab {
         int cy = y + (h - dialogH) / 2;
 
         // Push z-offset so dialog renders above everything
-        g.pose().pushPose();
-        g.pose().translate(0, 0, 300);
+        g.pose().pushMatrix();
+        g.pose().translate(0, 0);
 
         // Dim backdrop behind dialog
         g.fill(x, y, x + w, y + h, 0x60000000);
@@ -850,10 +850,10 @@ public final class DownloadsTab {
             GuiRender.shadowText(g, f, "Skip", skipX, skipY, skipHover ? GuiTheme.TEXT : GuiTheme.TEXT_MUTED);
         }
 
-        g.pose().popPose();
+        g.pose().popMatrix();
     }
 
-    private void renderToolRow(GuiGraphics g, Font f, int x, int y, int maxW, String name, boolean ready, boolean activeDownloading) {
+    private void renderToolRow(GuiGraphicsExtractor g, Font f, int x, int y, int maxW, String name, boolean ready, boolean activeDownloading) {
         int iconSz = 13;
         if (ready) {
             IconRenderer.checkmark(g, f, x, y, iconSz, iconSz, 0xFF4CAF50);
@@ -916,3 +916,4 @@ public final class DownloadsTab {
         return true;
     }
 }
+

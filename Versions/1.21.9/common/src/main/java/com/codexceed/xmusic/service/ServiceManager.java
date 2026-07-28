@@ -7,9 +7,6 @@ import com.codexceed.xmusic.lavaplayer.LavaSearchService;
 import com.codexceed.xmusic.player.backend.YouTubeNativeBackend;
 import com.codexceed.xmusic.config.ConfigManager;
 import com.codexceed.xmusic.service.local.LocalMusicService;
-import com.codexceed.xmusic.service.spotify.SpotifyAuthService;
-import com.codexceed.xmusic.service.spotify.SpotifyMusicSourceAdapter;
-import com.codexceed.xmusic.service.spotify.SpotifySearchService;
 import com.codexceed.xmusic.service.youtube.YouTubeAudioResolver;
 import com.codexceed.xmusic.service.youtube.YouTubeDownloadManager;
 import com.codexceed.xmusic.service.youtube.YouTubeService;
@@ -37,9 +34,6 @@ public final class ServiceManager {
     private static YouTubeNativeBackend youtubeNativeBackend;
     private static LocalMusicService localMusicService;
     private static SourceRegistry sourceRegistry;
-    private static SpotifyAuthService spotifyAuth;
-    private static SpotifySearchService spotifySearch;
-    private static SpotifyMusicSourceAdapter spotifySource;
 
     private ServiceManager() {}
 
@@ -62,12 +56,6 @@ public final class ServiceManager {
 
         sourceRegistry.register(new YouTubeMusicSourceAdapter(youtubeService));
         sourceRegistry.register(new LocalMusicSourceAdapter(localMusicService));
-
-        // Spotify (Client Credentials — free, no user login, no Premium)
-        spotifyAuth = new SpotifyAuthService();
-        spotifySearch = new SpotifySearchService(spotifyAuth);
-        spotifySource = new SpotifyMusicSourceAdapter(spotifyAuth, spotifySearch);
-        sourceRegistry.register(spotifySource);
 
         localMusicService.scanAsync();
         youtubeToolManager.refreshStatusAsync();
@@ -114,19 +102,4 @@ public final class ServiceManager {
     public static SourceRegistry getSourceRegistry() {
         return sourceRegistry;
     }
-
-    public static SpotifyAuthService getSpotifyAuth() {
-        return spotifyAuth;
-    }
-
-    public static SpotifySearchService getSpotifySearch() {
-        return spotifySearch;
-    }
-
-    public static SpotifyMusicSourceAdapter getSpotifySource() {
-        return spotifySource;
-    }
-
-    /** No-op — Client Credentials tokens are auto-managed, no persistence needed. */
-    public static void saveSpotifyTokens() {}
 }

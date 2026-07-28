@@ -6,8 +6,14 @@ plugins {
 unimined.minecraft(sourceSets.main, true) {
     version gradle.ext.minecraft_version
 
-    mappings {
-        mojmap()
+    if (gradle.ext.minecraft_version.startsWith("26.")) {
+        mappings {
+            devNamespace("official")
+        }
+    } else {
+        mappings {
+            mojmap()
+        }
     }
 }
 

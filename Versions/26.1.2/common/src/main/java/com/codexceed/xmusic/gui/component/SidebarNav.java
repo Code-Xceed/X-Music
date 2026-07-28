@@ -8,7 +8,7 @@ import com.codexceed.xmusic.gui.render.IconRenderer;
 import com.codexceed.xmusic.gui.theme.GuiTheme;
 import com.codexceed.xmusic.gui.util.AnimationHelper;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public final class SidebarNav {
     private static final int ROW_H = 24;
@@ -22,7 +22,7 @@ public final class SidebarNav {
     private float activeIndicatorY = -1f;
     private double scrollAmount = 0.0;
 
-    public void render(GuiGraphics graphics, Font font, GuiFrame frame, GuiRoute activeRoute, int mouseX, int mouseY) {
+    public void render(GuiGraphicsExtractor graphics, Font font, GuiFrame frame, GuiRoute activeRoute, int mouseX, int mouseY) {
         int x = frame.sidebarX();
         int y = frame.sidebarY();
         int w = frame.sidebarWidth();
@@ -102,7 +102,7 @@ public final class SidebarNav {
         return null;
     }
 
-    private void renderRoute(GuiGraphics graphics, Font font, GuiFrame frame, GuiRoute route, boolean active,
+    private void renderRoute(GuiGraphicsExtractor graphics, Font font, GuiFrame frame, GuiRoute route, boolean active,
                              int x, int y, int width, boolean hovered, int mouseX, int mouseY) {
         float hoverLerp = HoverTracker.tick("sidebar_" + route.name(), hovered);
 

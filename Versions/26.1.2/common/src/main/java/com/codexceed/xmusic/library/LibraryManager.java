@@ -24,6 +24,13 @@ public final class LibraryManager {
     private static LibraryManager instance;
     private LibraryData data;
     private Path libraryPath;
+    
+    private volatile boolean dirty = false;
+    private final java.util.concurrent.ScheduledExecutorService saveExecutor = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "xmusic-library-save");
+        t.setDaemon(true);
+        return t;
+    });
 
     private LibraryManager() {}
 
@@ -37,6 +44,11 @@ public final class LibraryManager {
     public void init(Path configDir) {
         this.libraryPath = configDir.resolve(LIBRARY_FILE_NAME);
         load();
+        saveExecutor.scheduleWithFixedDelay(() -> {
+            if (dirty) {
+                flushSave();
+            }
+        }, 5, 5, java.util.concurrent.TimeUnit.SECONDS);
     }
 
     private void load() {
@@ -57,12 +69,19 @@ public final class LibraryManager {
     }
 
     public void save() {
-        if (libraryPath == null) return;
+        dirty = true;
+    }
+
+    private synchronized void flushSave() {
+        if (libraryPath == null || !dirty) return;
         try {
             Files.createDirectories(libraryPath.getParent());
-            try (Writer writer = new OutputStreamWriter(new FileOutputStream(libraryPath.toFile()), StandardCharsets.UTF_8)) {
+            Path tmpPath = libraryPath.resolveSibling(LIBRARY_FILE_NAME + ".tmp");
+            try (Writer writer = new OutputStreamWriter(new FileOutputStream(tmpPath.toFile()), StandardCharsets.UTF_8)) {
                 GSON.toJson(data, writer);
             }
+            Files.move(tmpPath, libraryPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            dirty = false;
         } catch (Exception e) {
             XMusic.LOGGER.error("Failed to save library!", e);
         }

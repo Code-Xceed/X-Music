@@ -5,6 +5,8 @@ plugins {
 unimined.minecraft {
     fabric {
         loader gradle.ext.fabric_loader
+        customIntermediaries = true
+        prodNamespace "official"
     }
 }
 runClient.javaLauncher = null

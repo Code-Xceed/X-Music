@@ -15,7 +15,7 @@ import com.codexceed.xmusic.service.ServiceManager;
 import com.codexceed.xmusic.service.local.LocalMusicService;
 import com.codexceed.xmusic.source.TrackRef;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.awt.Desktop;
 import java.io.File;
@@ -84,7 +84,7 @@ public final class LibraryTab {
 
     // ── Render ──────────────────────────────────────────────────────────
 
-    public void render(GuiGraphics graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
+    public void render(GuiGraphicsExtractor graphics, Font font, GuiFrame frame, int mouseX, int mouseY) {
         int x = frame.contentX();
         int y = frame.contentY();
         int w = frame.contentWidth();
@@ -109,7 +109,7 @@ public final class LibraryTab {
 
     // ── Category View ───────────────────────────────────────────────────
 
-    private void renderCategories(GuiGraphics g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
+    private void renderCategories(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
         LibraryManager lib = LibraryManager.getInstance();
         int rowX = x + INNER_PAD;
         int rowW = w - INNER_PAD * 2;
@@ -179,7 +179,7 @@ public final class LibraryTab {
 
     // ── Playlist List View ───────────────────────────────────────────────
 
-    private void renderPlaylistList(GuiGraphics g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
+    private void renderPlaylistList(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
         LibraryManager lib = LibraryManager.getInstance();
         int rowX = x + INNER_PAD;
         int rowW = w - INNER_PAD * 2;
@@ -279,7 +279,7 @@ public final class LibraryTab {
 
     // ── Playlist Detail View ─────────────────────────────────────────────
 
-    private void renderPlaylistDetail(GuiGraphics g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
+    private void renderPlaylistDetail(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
         LibraryManager lib = LibraryManager.getInstance();
         List<TrackRef> tracks = selectedPlaylist != null ? lib.getPlaylist(selectedPlaylist) : Collections.emptyList();
         String title = selectedPlaylist != null ? selectedPlaylist : "Playlist";
@@ -288,7 +288,7 @@ public final class LibraryTab {
 
     // ── Group List View (artist/album/source) ────────────────────────────
 
-    private void renderGroupList(GuiGraphics g, Font f, int x, int y, int w, int h, String title, Map<String, List<TrackRef>> groups, int mx, int my, int sw, int sh) {
+    private void renderGroupList(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, String title, Map<String, List<TrackRef>> groups, int mx, int my, int sw, int sh) {
         int rowX = x + INNER_PAD;
         int rowW = w - INNER_PAD * 2;
         int currentY = y + INNER_PAD;
@@ -361,7 +361,7 @@ public final class LibraryTab {
 
     // ── Group Detail View ────────────────────────────────────────────────
 
-    private void renderGroupDetail(GuiGraphics g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
+    private void renderGroupDetail(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
         Map<String, List<TrackRef>> groups = resolveGroupMap();
         List<TrackRef> tracks = selectedGroup != null ? groups.getOrDefault(selectedGroup, Collections.emptyList()) : Collections.emptyList();
         String title = selectedGroup != null ? selectedGroup : "Group";
@@ -370,7 +370,7 @@ public final class LibraryTab {
 
     // ── Shared: Track List View ──────────────────────────────────────────
 
-    private void renderTrackList(GuiGraphics g, Font f, int x, int y, int w, int h, String title, Collection<TrackRef> trackCollection, int mx, int my, int sw, int sh) {
+    private void renderTrackList(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, String title, Collection<TrackRef> trackCollection, int mx, int my, int sw, int sh) {
         List<TrackRef> tracks = trackCollection instanceof List ? (List<TrackRef>) trackCollection : new ArrayList<>(trackCollection);
         int rowX = x + INNER_PAD;
         int rowW = w - INNER_PAD * 2;
@@ -449,7 +449,7 @@ public final class LibraryTab {
 
     // ── Local Files View ────────────────────────────────────────────────
 
-    private void renderLocalView(GuiGraphics g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
+    private void renderLocalView(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int mx, int my, int sw, int sh) {
         LocalMusicService localService = ServiceManager.getLocalMusic();
         int rowX = x + INNER_PAD;
         int rowW = w - INNER_PAD * 2;
@@ -654,7 +654,7 @@ public final class LibraryTab {
 
     // ── Shared: Back Header ──────────────────────────────────────────────
 
-    private int renderBackHeader(GuiGraphics g, Font f, int x, int y, int w, String title, int mx, int my, int sw, int sh) {
+    private int renderBackHeader(GuiGraphicsExtractor g, Font f, int x, int y, int w, String title, int mx, int my, int sw, int sh) {
         // Back button
         int backSize = 16;
         boolean backHover = GuiRender.inside(mx, my, x, y, backSize + 4, backSize);
@@ -1142,7 +1142,7 @@ public final class LibraryTab {
 
     @FunctionalInterface
     private interface IconFactory {
-        void render(GuiGraphics g, Font f, int x, int y, int w, int h, int color);
+        void render(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int color);
     }
 
     private record CategoryDef(String label, int count, IconFactory icon, View target) {}

@@ -53,11 +53,11 @@ public class HudEditorScreen extends Screen {
             dragHudY = Math.max(0, Math.min(screenH - hudH, cfg.hudY));
         } else {
             switch (cfg.hudPosition) {
-                case "TOP_LEFT": dragHudX = 6; dragHudY = 6; break;
-                case "TOP_RIGHT": dragHudX = screenW - hudW - 6; dragHudY = 6; break;
-                case "BOTTOM_LEFT": dragHudX = 6; dragHudY = screenH - hudH - 6 - 12; break; // Clear copyright text
-                case "BOTTOM_RIGHT": dragHudX = screenW - hudW - 6; dragHudY = screenH - hudH - 6 - 12; break; // Clear copyright text
-                default: dragHudX = (screenW - hudW) / 2; dragHudY = 6; break;
+                case "TOP_LEFT": dragHudX = 8; dragHudY = 8; break;
+                case "TOP_RIGHT": dragHudX = screenW - hudW - 8; dragHudY = 8; break;
+                case "BOTTOM_LEFT": dragHudX = 8; dragHudY = screenH - hudH - 8; break;
+                case "BOTTOM_RIGHT": dragHudX = screenW - hudW - 8; dragHudY = screenH - hudH - 8; break;
+                default: dragHudX = (screenW - hudW) / 2; dragHudY = 8; break;
             }
         }
     }
@@ -120,34 +120,38 @@ public class HudEditorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean isHandled) {
+        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
         if (GuiRender.inside(mouseX, mouseY, dragHudX, dragHudY, getHudW(), getHudH())) {
             dragging = true;
             dragOffsetX = (int) mouseX - dragHudX;
             dragOffsetY = (int) mouseY - dragHudY;
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, isHandled);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
         if (dragging) { dragging = false; return true; }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dragX, double dragY) {
+        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
         if (dragging) {
             dragHudX = Math.max(0, Math.min(this.width - getHudW(), (int) mouseX - dragOffsetX));
             dragHudY = Math.max(0, Math.min(this.height - getHudH(), (int) mouseY - dragOffsetY));
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        int keyCode = event.key(); int scanCode = event.scancode(); int modifiers = event.modifiers();
         if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
             XMusicConfig cfg = ConfigManager.get();
             cfg.hudX = dragHudX;
@@ -161,15 +165,15 @@ public class HudEditorScreen extends Screen {
             cfg.hudX = -1; cfg.hudY = -1;
             ConfigManager.save();
             switch (cfg.hudPosition) {
-                case "TOP_LEFT": dragHudX = 6; dragHudY = 6; break;
-                case "TOP_RIGHT": dragHudX = this.width - getHudW() - 6; dragHudY = 6; break;
-                case "BOTTOM_LEFT": dragHudX = 6; dragHudY = this.height - getHudH() - 6 - 12; break;
-                case "BOTTOM_RIGHT": dragHudX = this.width - getHudW() - 6; dragHudY = this.height - getHudH() - 6 - 12; break;
-                default: dragHudX = (this.width - getHudW()) / 2; dragHudY = 6; break;
+                case "TOP_LEFT": dragHudX = 8; dragHudY = 8; break;
+                case "TOP_RIGHT": dragHudX = this.width - getHudW() - 8; dragHudY = 8; break;
+                case "BOTTOM_LEFT": dragHudX = 8; dragHudY = this.height - getHudH() - 8; break;
+                case "BOTTOM_RIGHT": dragHudX = this.width - getHudW() - 8; dragHudY = this.height - getHudH() - 8; break;
+                default: dragHudX = (this.width - getHudW()) / 2; dragHudY = 8; break;
             }
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
@@ -217,3 +221,4 @@ public class HudEditorScreen extends Screen {
         }
     }
 }
+

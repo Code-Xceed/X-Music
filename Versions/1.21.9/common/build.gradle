@@ -36,7 +36,7 @@ dependencies {
     // Core LavaPlayer â€” official Arbjerg fork on Maven Central (no yt-dlp needed)
     implementation 'dev.arbjerg:lavaplayer:2.2.3'
     // YouTube source v2 â€” pure Java YouTube resolver (replaces yt-dlp subprocess)
-    implementation 'dev.lavalink.youtube:v2:1.16.0'
+    implementation 'dev.lavalink.youtube:v2:1.18.1'
     // SLF4J JCL bridge so LavaPlayer's Apache HTTP logs route to Minecraft's log4j
     implementation 'org.slf4j:jcl-over-slf4j:2.0.17'
 }
