@@ -94,8 +94,13 @@ public final class ArtworkRenderer {
 
         Identifier loc = TEXTURE_CACHE.get(artworkUrl);
         if (loc != null) {
+            RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
             var texture = Minecraft.getInstance().getTextureManager().getTexture(loc);
-            g.blit(loc, x, y, 0, 0, w, h, w, h); // Reset color shader immediately!
+            if (texture != null) {
+                texture.setFilter(true, false);
+            }
+            g.blit(loc, x, y, 0f, 0f, w, h, w, h);
+            RenderSystem.setShaderColor(1f, 1f, 1f, 1f); // Reset color shader immediately!
             
             // Draw a subtle border overlay to frame the artwork
             GuiRender.outline(g, x, y, w, h, (int)(0x30 * alpha) << 24 | 0xFFFFFF);
@@ -220,15 +225,21 @@ public final class ArtworkRenderer {
         try (InputStream in = conn.getInputStream()) {
             BufferedImage image = ImageIO.read(in);
             if (image != null) {
-                // Downscale to 320x180 (16:9 ratio) using high-quality rendering hints
-                int targetW = 320;
-                int targetH = 180;
-                BufferedImage resized = new BufferedImage(targetW, targetH, BufferedImage.TYPE_INT_ARGB);
+                // High-quality center-crop to 1:1 square ratio and downscale to 256x256
+                int targetSize = 256;
+                BufferedImage resized = new BufferedImage(targetSize, targetSize, BufferedImage.TYPE_INT_ARGB);
                 java.awt.Graphics2D g2d = resized.createGraphics();
                 g2d.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
                 g2d.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
                 g2d.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.drawImage(image, 0, 0, targetW, targetH, null);
+
+                int srcW = image.getWidth();
+                int srcH = image.getHeight();
+                int cropSize = Math.min(srcW, srcH);
+                int cropX = (srcW - cropSize) / 2;
+                int cropY = (srcH - cropSize) / 2;
+
+                g2d.drawImage(image, 0, 0, targetSize, targetSize, cropX, cropY, cropX + cropSize, cropY + cropSize, null);
                 g2d.dispose();
 
                 try (OutputStream out = Files.newOutputStream(target)) {
@@ -247,6 +258,8 @@ public final class ArtworkRenderer {
             NativeImage image = NativeImage.read(is);
             int texId = textureCounter.getAndIncrement();
             DynamicTexture texture = new DynamicTexture(() -> "xmusic_art_" + texId, image);
+            texture.upload();
+            texture.setFilter(true, false);
             Identifier loc = Identifier.fromNamespaceAndPath("xmusic", "art_" + texId);
             Minecraft.getInstance().getTextureManager().register(loc, texture);
             TEXTURE_CACHE.put(artworkUrl, loc);
@@ -262,9 +275,3 @@ public final class ArtworkRenderer {
         TEXTURE_CACHE.clear();
     }
 }
-
-
-
-
-
-
