@@ -2,7 +2,6 @@ package com.codexceed.xmusic.gui.render;
 
 import com.codexceed.xmusic.XMusic;
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.texture.DynamicTexture;
@@ -94,13 +93,8 @@ public final class ArtworkRenderer {
 
         Identifier loc = TEXTURE_CACHE.get(artworkUrl);
         if (loc != null) {
-            RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
             var texture = Minecraft.getInstance().getTextureManager().getTexture(loc);
-            if (texture != null) {
-                texture.setFilter(true, false);
-            }
-            g.blit(loc, x, y, 0f, 0f, w, h, w, h);
-            RenderSystem.setShaderColor(1f, 1f, 1f, 1f); // Reset color shader immediately!
+            g.blit(loc, x, y, 0, 0, w, h, w, h);
             
             // Draw a subtle border overlay to frame the artwork
             GuiRender.outline(g, x, y, w, h, (int)(0x30 * alpha) << 24 | 0xFFFFFF);
@@ -259,7 +253,6 @@ public final class ArtworkRenderer {
             int texId = textureCounter.getAndIncrement();
             DynamicTexture texture = new DynamicTexture(() -> "xmusic_art_" + texId, image);
             texture.upload();
-            texture.setFilter(true, false);
             Identifier loc = Identifier.fromNamespaceAndPath("xmusic", "art_" + texId);
             Minecraft.getInstance().getTextureManager().register(loc, texture);
             TEXTURE_CACHE.put(artworkUrl, loc);
