@@ -97,7 +97,7 @@ public final class ArtworkRenderer {
             if (texture != null) {
                 texture.setFilter(true, false);
             }
-            g.blit(loc, x, y, x + w, y + h, 0.0f, 1.0f, 0.0f, 1.0f);
+            g.blit(loc, x, y, 0, 0, w, h, w, h);
             
             // Draw a subtle border overlay to frame the artwork
             GuiRender.outline(g, x, y, w, h, (int)(0x30 * alpha) << 24 | 0xFFFFFF);
