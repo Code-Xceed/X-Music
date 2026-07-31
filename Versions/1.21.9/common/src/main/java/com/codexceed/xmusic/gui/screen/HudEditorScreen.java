@@ -120,38 +120,34 @@ public class HudEditorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean isHandled) {
-        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (GuiRender.inside(mouseX, mouseY, dragHudX, dragHudY, getHudW(), getHudH())) {
             dragging = true;
             dragOffsetX = (int) mouseX - dragHudX;
             dragOffsetY = (int) mouseY - dragHudY;
             return true;
         }
-        return super.mouseClicked(event, isHandled);
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
-        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (dragging) { dragging = false; return true; }
-        return super.mouseReleased(event);
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dragX, double dragY) {
-        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         if (dragging) {
             dragHudX = Math.max(0, Math.min(this.width - getHudW(), (int) mouseX - dragOffsetX));
             dragHudY = Math.max(0, Math.min(this.height - getHudH(), (int) mouseY - dragOffsetY));
             return true;
         }
-        return super.mouseDragged(event, dragX, dragY);
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        int keyCode = event.key(); int scanCode = event.scancode(); int modifiers = event.modifiers();
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
             XMusicConfig cfg = ConfigManager.get();
             cfg.hudX = dragHudX;
@@ -173,7 +169,7 @@ public class HudEditorScreen extends Screen {
             }
             return true;
         }
-        return super.keyPressed(event);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
@@ -221,4 +217,3 @@ public class HudEditorScreen extends Screen {
         }
     }
 }
-

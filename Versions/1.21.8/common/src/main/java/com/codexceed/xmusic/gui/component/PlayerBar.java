@@ -1064,4 +1064,3 @@ public final class PlayerBar {
         return String.format("%d:%02d", totalSeconds / 60, totalSeconds % 60);
     }
 }
-

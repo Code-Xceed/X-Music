@@ -916,4 +916,3 @@ public final class DownloadsTab {
         return true;
     }
 }
-

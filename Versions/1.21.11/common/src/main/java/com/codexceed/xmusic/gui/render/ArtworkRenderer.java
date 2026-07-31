@@ -2,10 +2,12 @@ package com.codexceed.xmusic.gui.render;
 
 import com.codexceed.xmusic.XMusic;
 import com.mojang.blaze3d.platform.NativeImage;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import com.codexceed.xmusic.source.TrackRef;
 import com.codexceed.xmusic.download.DownloadManager;
 import com.codexceed.xmusic.download.DownloadState;
@@ -36,9 +38,9 @@ public final class ArtworkRenderer {
         t.setDaemon(true);
         return t;
     });
-    private static final Map<String, Identifier> TEXTURE_CACHE = new java.util.LinkedHashMap<String, Identifier>(16, 0.75f, true) {
+    private static final Map<String, ResourceLocation> TEXTURE_CACHE = new java.util.LinkedHashMap<String, ResourceLocation>(16, 0.75f, true) {
         @Override
-        protected boolean removeEldestEntry(Map.Entry<String, Identifier> eldest) {
+        protected boolean removeEldestEntry(Map.Entry<String, ResourceLocation> eldest) {
             if (size() > 64) {
                 Minecraft.getInstance().execute(() -> {
                     Minecraft.getInstance().getTextureManager().release(eldest.getValue());
@@ -91,10 +93,15 @@ public final class ArtworkRenderer {
             return;
         }
 
-        Identifier loc = TEXTURE_CACHE.get(artworkUrl);
+        ResourceLocation loc = TEXTURE_CACHE.get(artworkUrl);
         if (loc != null) {
+            
             var texture = Minecraft.getInstance().getTextureManager().getTexture(loc);
+            if (texture != null) {
+                texture.setFilter(true, false);
+            }
             g.blit(loc, x, y, 0, 0, w, h, w, h);
+            
             
             // Draw a subtle border overlay to frame the artwork
             GuiRender.outline(g, x, y, w, h, (int)(0x30 * alpha) << 24 | 0xFFFFFF);
@@ -211,7 +218,7 @@ public final class ArtworkRenderer {
         }
     }
 
-    private static void downloadToFile(String urlStr, Path target) throws IOException {
+        private static void downloadToFile(String urlStr, Path target) throws IOException {
         HttpURLConnection conn = (HttpURLConnection) URI.create(urlStr).toURL().openConnection();
         conn.setConnectTimeout(5000);
         conn.setReadTimeout(10000);
@@ -253,7 +260,8 @@ public final class ArtworkRenderer {
             int texId = textureCounter.getAndIncrement();
             DynamicTexture texture = new DynamicTexture(() -> "xmusic_art_" + texId, image);
             texture.upload();
-            Identifier loc = Identifier.fromNamespaceAndPath("xmusic", "art_" + texId);
+            texture.setFilter(true, false);
+            ResourceLocation loc = ResourceLocation.fromNamespaceAndPath("xmusic", "art_" + texId);
             Minecraft.getInstance().getTextureManager().register(loc, texture);
             TEXTURE_CACHE.put(artworkUrl, loc);
             XMusic.LOGGER.info("Artwork texture loaded: {}", artworkUrl);
@@ -262,9 +270,10 @@ public final class ArtworkRenderer {
 
     /** Clear all cached textures (call on resource reload). */
     public static void clearCache() {
-        for (Identifier loc : TEXTURE_CACHE.values()) {
+        for (ResourceLocation loc : TEXTURE_CACHE.values()) {
             Minecraft.getInstance().getTextureManager().release(loc);
         }
         TEXTURE_CACHE.clear();
     }
 }
+

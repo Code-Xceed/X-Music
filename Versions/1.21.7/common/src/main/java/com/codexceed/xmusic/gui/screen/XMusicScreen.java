@@ -76,7 +76,8 @@ public final class XMusicScreen extends Screen {
         // No dark overlay — game world stays fully visible
     }
 
-        protected void renderBlurredBackground() {
+    @Override
+    protected void renderBlurredBackground() {
         // Intentionally empty
     }
 
@@ -109,6 +110,7 @@ public final class XMusicScreen extends Screen {
             } catch (Throwable t) {
                 XMusic.LOGGER.error("Failed to render parent screen", t);
             }
+            
         }
 
         // Update hover tracker delta
@@ -343,4 +345,3 @@ public final class XMusicScreen extends Screen {
         }
     }
 }
-

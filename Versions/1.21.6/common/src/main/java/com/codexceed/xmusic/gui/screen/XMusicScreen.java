@@ -109,6 +109,7 @@ public final class XMusicScreen extends Screen {
             } catch (Throwable t) {
                 XMusic.LOGGER.error("Failed to render parent screen", t);
             }
+            
         }
 
         // Update hover tracker delta

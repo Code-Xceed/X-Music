@@ -69,6 +69,7 @@ public final class PlayerFacade {
     public void setLastError(String error) { 
         this.lastError = formatUserFriendlyError(error); 
     }
+    public void clearLastError() { this.lastError = null; }
 
     public static String formatUserFriendlyError(String raw) {
         if (raw == null || raw.isBlank()) return "Unknown error occurred";
@@ -94,7 +95,6 @@ public final class PlayerFacade {
         }
         return raw;
     }
-    public void clearLastError() { this.lastError = null; }
 
     // ── History (for < > controls) ─────────────────────────────────────────
     /** Chronological list of all played tracks (most recent last). */

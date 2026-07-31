@@ -873,7 +873,7 @@ public final class SearchTab {
 
     private String getClipboard() {
         try {
-            long window = Minecraft.getInstance().getWindow().handle();
+            long window = Minecraft.getInstance().getWindow().getWindow();
             String clip = GLFW.glfwGetClipboardString(window);
             return clip != null ? clip : "";
         } catch (Exception e) { return ""; }
@@ -881,7 +881,7 @@ public final class SearchTab {
 
     private void setClipboard(String text) {
         try {
-            long window = Minecraft.getInstance().getWindow().handle();
+            long window = Minecraft.getInstance().getWindow().getWindow();
             GLFW.glfwSetClipboardString(window, text);
         } catch (Exception ignored) {}
     }
@@ -974,4 +974,3 @@ public final class SearchTab {
         return true;
     }
 }
-

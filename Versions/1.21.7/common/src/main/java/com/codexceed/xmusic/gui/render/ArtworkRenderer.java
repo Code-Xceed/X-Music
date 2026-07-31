@@ -2,8 +2,10 @@ package com.codexceed.xmusic.gui.render;
 
 import com.codexceed.xmusic.XMusic;
 import com.mojang.blaze3d.platform.NativeImage;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
 import com.codexceed.xmusic.source.TrackRef;
@@ -93,11 +95,13 @@ public final class ArtworkRenderer {
 
         ResourceLocation loc = TEXTURE_CACHE.get(artworkUrl);
         if (loc != null) {
+            
             var texture = Minecraft.getInstance().getTextureManager().getTexture(loc);
             if (texture != null) {
                 texture.setFilter(true, false);
             }
             g.blit(loc, x, y, 0, 0, w, h, w, h);
+            
             
             // Draw a subtle border overlay to frame the artwork
             GuiRender.outline(g, x, y, w, h, (int)(0x30 * alpha) << 24 | 0xFFFFFF);
@@ -214,7 +218,7 @@ public final class ArtworkRenderer {
         }
     }
 
-    private static void downloadToFile(String urlStr, Path target) throws IOException {
+        private static void downloadToFile(String urlStr, Path target) throws IOException {
         HttpURLConnection conn = (HttpURLConnection) URI.create(urlStr).toURL().openConnection();
         conn.setConnectTimeout(5000);
         conn.setReadTimeout(10000);
@@ -272,3 +276,4 @@ public final class ArtworkRenderer {
         TEXTURE_CACHE.clear();
     }
 }
+

@@ -39,7 +39,7 @@ public final class IconRenderer {
     private static final ItemStack STK_RS_TORCH   = new ItemStack(Items.REDSTONE_TORCH);
     private static final ItemStack STK_CHEST      = new ItemStack(Items.CHEST);
     private static final ItemStack STK_BARRIER    = new ItemStack(Items.BARRIER);
-    private static final ItemStack STK_CHAIN      = new ItemStack(Items.IRON_CHAIN);
+    private static final ItemStack STK_CHAIN      = new ItemStack(Items.CHAIN);
     private static final ItemStack STK_PAPER      = new ItemStack(Items.PAPER);
     private static final ItemStack STK_WRITABLE   = new ItemStack(Items.WRITABLE_BOOK);
     private static final ItemStack STK_LEVER      = new ItemStack(Items.LEVER);
@@ -335,5 +335,3 @@ public final class IconRenderer {
         g.pose().popMatrix();
     }
 }
-
-
