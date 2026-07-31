@@ -301,11 +301,7 @@ public final class IconRenderer {
         float drawnH = 16.0f * scale;
         float offX = (areaW - drawnW) / 2.0f;
         float offY = (areaH - drawnH) / 2.0f;
-        g.pose().pushMatrix();
-        g.pose().translate(x + offX, y + offY);
-        g.pose().scale(scale, scale);
-        g.renderItem(stack, 0, 0);
-        g.pose().popMatrix();
+        g.renderItem(stack, (int)(x + offX), (int)(y + offY));
     }
 
     // ── Core: Scaled Unicode Rendering ──────────────────────────────────
