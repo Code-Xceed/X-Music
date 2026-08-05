@@ -30,16 +30,12 @@ public final class IconRenderer {
         if (existing != null) return existing;
 
         try {
-            net.minecraft.world.item.Item it = item.asItem();
-            if (it != null) {
-                net.minecraft.core.Holder.Reference<net.minecraft.world.item.Item> holder = it.builtInRegistryHolder();
-                if (holder != null && !holder.areComponentsBound()) {
-                    return null;
-                }
+            ItemStack stack = item.asItem().getDefaultInstance();
+            if (!stack.isEmpty()) {
+                STACK_CACHE.put(item, stack);
+                return stack;
             }
-            ItemStack stack = new ItemStack(item);
-            STACK_CACHE.put(item, stack);
-            return stack;
+            return null;
         } catch (Throwable t) {
             return null;
         }
@@ -48,27 +44,39 @@ public final class IconRenderer {
     // ── Sidebar Icons (MC items) ────────────────────────────────────────
 
     public static void home(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.RED_BED, x, y, w, h);
+        if (!item(g, Items.RED_BED, x, y, w, h)) {
+            fit(g, f, "\u2302", x, y, w, h, c);
+        }
     }
 
     public static void search(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.COMPASS, x, y, w, h);
+        if (!item(g, Items.COMPASS, x, y, w, h)) {
+            fit(g, f, "\u2315", x, y, w, h, c);
+        }
     }
 
     public static void library(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.BOOK, x, y, w, h);
+        if (!item(g, Items.BOOK, x, y, w, h)) {
+            fit(g, f, "\u2630", x, y, w, h, c);
+        }
     }
 
     public static void groups(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.PLAYER_HEAD, x, y, w, h);
+        if (!item(g, Items.PLAYER_HEAD, x, y, w, h)) {
+            fit(g, f, "\u263B", x, y, w, h, c);
+        }
     }
 
     public static void downloads(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.HOPPER, x, y, w, h);
+        if (!item(g, Items.HOPPER, x, y, w, h)) {
+            fit(g, f, "\u2193", x, y, w, h, c);
+        }
     }
 
     public static void settings(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.COMPARATOR, x, y, w, h);
+        if (!item(g, Items.COMPARATOR, x, y, w, h)) {
+            fit(g, f, "\u2699", x, y, w, h, c);
+        }
     }
 
     // ── Playback Icons (unicode — need color control for active/hover) ──
@@ -100,11 +108,15 @@ public final class IconRenderer {
     // ── PlayerBar Right Icons (MC items) ────────────────────────────────
 
     public static void volume(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.NOTE_BLOCK, x, y, w, h);
+        if (!item(g, Items.NOTE_BLOCK, x, y, w, h)) {
+            fit(g, f, "\u266B", x, y, w, h, c);
+        }
     }
 
     public static void loop(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.REPEATER, x, y, w, h);
+        if (!item(g, Items.REPEATER, x, y, w, h)) {
+            fit(g, f, "\u21BB", x, y, w, h, c);
+        }
     }
 
     // ── Search Tab Icons (MC items where possible) ──────────────────────
@@ -118,19 +130,27 @@ public final class IconRenderer {
     }
 
     public static void durationFilter(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.CLOCK, x, y, w, h);
+        if (!item(g, Items.CLOCK, x, y, w, h)) {
+            fit(g, f, "\u29D6", x, y, w, h, c);
+        }
     }
 
     public static void history(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.SPYGLASS, x, y, w, h);
+        if (!item(g, Items.SPYGLASS, x, y, w, h)) {
+            fit(g, f, "\u231A", x, y, w, h, c);
+        }
     }
 
     public static void recent(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.MUSIC_DISC_13, x, y, w, h);
+        if (!item(g, Items.MUSIC_DISC_13, x, y, w, h)) {
+            fit(g, f, "\u25CE", x, y, w, h, c);
+        }
     }
 
     public static void autoPlay(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.LEVER, x, y, w, h);
+        if (!item(g, Items.LEVER, x, y, w, h)) {
+            fit(g, f, "\u221E", x, y, w, h, c);
+        }
     }
 
     // ── Track Row Icons (unicode heart — needs color; MC item download) ──
@@ -144,7 +164,9 @@ public final class IconRenderer {
     }
 
     public static void download(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.CHEST, x, y, w, h);
+        if (!item(g, Items.CHEST, x, y, w, h)) {
+            fit(g, f, "\u2193", x, y, w, h, c);
+        }
     }
 
     public static void checkmark(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
@@ -158,27 +180,39 @@ public final class IconRenderer {
     // ── Utility Icons (MC items) ────────────────────────────────────────
 
     public static void clear(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.BARRIER, x, y, w, h);
+        if (!item(g, Items.BARRIER, x, y, w, h)) {
+            fit(g, f, "\u2715", x, y, w, h, c);
+        }
     }
 
     public static void url(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.IRON_CHAIN, x, y, w, h);
+        if (!item(g, Items.IRON_CHAIN, x, y, w, h)) {
+            fit(g, f, "\u26D3", x, y, w, h, c);
+        }
     }
 
     public static void paste(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.PAPER, x, y, w, h);
+        if (!item(g, Items.PAPER, x, y, w, h)) {
+            fit(g, f, "\u25A4", x, y, w, h, c);
+        }
     }
 
     public static void copy(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.WRITABLE_BOOK, x, y, w, h);
+        if (!item(g, Items.WRITABLE_BOOK, x, y, w, h)) {
+            fit(g, f, "\u25A3", x, y, w, h, c);
+        }
     }
 
     public static void musicNote(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.NOTE_BLOCK, x, y, w, h);
+        if (!item(g, Items.NOTE_BLOCK, x, y, w, h)) {
+            fit(g, f, "\u266A", x, y, w, h, c);
+        }
     }
 
     public static void nowPlaying(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.MUSIC_DISC_CAT, x, y, w, h);
+        if (!item(g, Items.MUSIC_DISC_CAT, x, y, w, h)) {
+            fit(g, f, "\u25B6", x, y, w, h, c);
+        }
     }
 
     // ── Library Tab Icons ──────────────────────────────────────────────
@@ -196,63 +230,91 @@ public final class IconRenderer {
     }
 
     public static void album(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.MUSIC_DISC_13, x, y, w, h);
+        if (!item(g, Items.MUSIC_DISC_13, x, y, w, h)) {
+            fit(g, f, "\u25A4", x, y, w, h, c);
+        }
     }
 
     public static void source(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.COMPASS, x, y, w, h);
+        if (!item(g, Items.COMPASS, x, y, w, h)) {
+            fit(g, f, "\u2295", x, y, w, h, c);
+        }
     }
 
     public static void playlistBook(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.KNOWLEDGE_BOOK, x, y, w, h);
+        if (!item(g, Items.KNOWLEDGE_BOOK, x, y, w, h)) {
+            fit(g, f, "\u2630", x, y, w, h, c);
+        }
     }
 
     public static void mapIcon(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.FILLED_MAP, x, y, w, h);
+        if (!item(g, Items.FILLED_MAP, x, y, w, h)) {
+            fit(g, f, "\u25A3", x, y, w, h, c);
+        }
     }
 
     public static void delete(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.BARRIER, x, y, w, h);
+        if (!item(g, Items.BARRIER, x, y, w, h)) {
+            fit(g, f, "\u2715", x, y, w, h, c);
+        }
     }
 
     // ── Home Page Icons ────────────────────────────────────────────────
 
     public static void fire(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.BLAZE_POWDER, x, y, w, h);
+        if (!item(g, Items.BLAZE_POWDER, x, y, w, h)) {
+            fit(g, f, "\u2668", x, y, w, h, c);
+        }
     }
 
     public static void clockRecent(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.CLOCK, x, y, w, h);
+        if (!item(g, Items.CLOCK, x, y, w, h)) {
+            fit(g, f, "\u231A", x, y, w, h, c);
+        }
     }
 
     public static void star(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.NETHER_STAR, x, y, w, h);
+        if (!item(g, Items.NETHER_STAR, x, y, w, h)) {
+            fit(g, f, "\u2605", x, y, w, h, c);
+        }
     }
 
     // ── Category Disc Icons (different colored MC discs) ────────────────
 
     public static void discMostPlayed(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.MUSIC_DISC_CHIRP, x, y, w, h);    // red disc — hot/fire
+        if (!item(g, Items.MUSIC_DISC_CHIRP, x, y, w, h)) {
+            fit(g, f, "\u25CE", x, y, w, h, c);
+        }
     }
 
     public static void discRecent(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.MUSIC_DISC_BLOCKS, x, y, w, h);   // orange disc — recent/warm
+        if (!item(g, Items.MUSIC_DISC_BLOCKS, x, y, w, h)) {
+            fit(g, f, "\u25CE", x, y, w, h, c);
+        }
     }
 
     public static void discAlbums(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.MUSIC_DISC_MELLOHI, x, y, w, h);  // pink disc — albums
+        if (!item(g, Items.MUSIC_DISC_MELLOHI, x, y, w, h)) {
+            fit(g, f, "\u25CE", x, y, w, h, c);
+        }
     }
 
     public static void discArtists(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.MUSIC_DISC_STAL, x, y, w, h);     // brown disc — artists
+        if (!item(g, Items.MUSIC_DISC_STAL, x, y, w, h)) {
+            fit(g, f, "\u25CE", x, y, w, h, c);
+        }
     }
 
     public static void discPlaylists(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.MUSIC_DISC_WAIT, x, y, w, h);     // purple disc — playlists
+        if (!item(g, Items.MUSIC_DISC_WAIT, x, y, w, h)) {
+            fit(g, f, "\u25CE", x, y, w, h, c);
+        }
     }
 
     public static void folder(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
-        item(g, Items.CHEST, x, y, w, h);
+        if (!item(g, Items.CHEST, x, y, w, h)) {
+            fit(g, f, "\u25A3", x, y, w, h, c);
+        }
     }
 
     public static void rescan(GuiGraphicsExtractor g, Font f, int x, int y, int w, int h, int c) {
@@ -269,8 +331,8 @@ public final class IconRenderer {
         item(g, stack, x, y, w, h);
     }
 
-    public static void item(GuiGraphicsExtractor g, net.minecraft.world.level.ItemLike item, int x, int y, int areaW, int areaH) {
-        item(g, getStack(item), x, y, areaW, areaH);
+    public static boolean item(GuiGraphicsExtractor g, net.minecraft.world.level.ItemLike item, int x, int y, int areaW, int areaH) {
+        return item(g, getStack(item), x, y, areaW, areaH);
     }
 
     // ── Core: MC Item Rendering ─────────────────────────────────────────
@@ -279,8 +341,8 @@ public final class IconRenderer {
      * Renders a Minecraft ItemStack scaled and centered to fill
      * FILL% of the given area. Items render at 16x16 base size.
      */
-    private static void item(GuiGraphicsExtractor g, ItemStack stack, int x, int y, int areaW, int areaH) {
-        if (stack == null || stack.isEmpty()) return;
+    private static boolean item(GuiGraphicsExtractor g, ItemStack stack, int x, int y, int areaW, int areaH) {
+        if (stack == null || stack.isEmpty()) return false;
         try {
             float scale = Math.min(areaW, areaH) * FILL / 16.0f;
             float drawnW = 16.0f * scale;
@@ -292,7 +354,8 @@ public final class IconRenderer {
             g.pose().scale(scale, scale);
             g.item(stack, 0, 0);
             g.pose().popMatrix();
-        } catch (Throwable ignored) {}
+            return true;
+        } catch (Throwable ignored) { return false; }
     }
 
     // ── Core: Scaled Unicode Rendering ──────────────────────────────────

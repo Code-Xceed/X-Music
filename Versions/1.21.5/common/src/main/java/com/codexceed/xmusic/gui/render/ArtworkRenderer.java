@@ -3,9 +3,10 @@ package com.codexceed.xmusic.gui.render;
 import com.codexceed.xmusic.XMusic;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.RenderType;
+
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
 import com.codexceed.xmusic.source.TrackRef;
@@ -95,20 +96,19 @@ public final class ArtworkRenderer {
 
         ResourceLocation loc = TEXTURE_CACHE.get(artworkUrl);
         if (loc != null) {
-            RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
             var texture = Minecraft.getInstance().getTextureManager().getTexture(loc);
             if (texture != null) {
                 texture.setFilter(true, false);
             }
-            g.blit(RenderType::guiTextured, loc, x, y, 0f, 0f, w, h, w, h);
-            RenderSystem.setShaderColor(1f, 1f, 1f, 1f); // Reset color shader immediately!
+            
+            g.blit(net.minecraft.client.renderer.RenderType::guiTextured, loc, x, y, 0, 0, w, h, w, h);
             
             // Draw a subtle border overlay to frame the artwork
             GuiRender.outline(g, x, y, w, h, (int)(0x30 * alpha) << 24 | 0xFFFFFF);
             return;
         }
 
-        // Not loaded yet — trigger async download if not already in progress
+        // Not loaded yet Ã¢â‚¬â€ trigger async download if not already in progress
         if (!DOWNLOADING.containsKey(artworkUrl)) {
             DOWNLOADING.put(artworkUrl, true);
             EXECUTOR.submit(() -> downloadAndLoad(artworkUrl));
@@ -131,20 +131,20 @@ public final class ArtworkRenderer {
         int bgCol = ((int)(0xFF * alpha) << 24) | 0x0F1014;
         g.fill(x, y, x + w, y + h, bgCol);
         
-        String symbol = "♫";
+        String symbol = "Ã¢â„¢Â«";
         int color = 0x00E5FF; // Default accent cyan
         
         if (track != null) {
             boolean isDownloaded = DownloadManager.getInstance().getState(track) == DownloadState.COMPLETED;
             boolean isLocal = "local".equals(track.getSourceId());
             if (isDownloaded) {
-                symbol = "♫";
+                symbol = "Ã¢â„¢Â«";
                 color = 0x55FF55; // lime green for downloaded
             } else if (isLocal) {
-                symbol = "♪";
+                symbol = "Ã¢â„¢Âª";
                 color = 0xFFB74D; // warm orange/wood for local
             } else {
-                symbol = "♫";
+                symbol = "Ã¢â„¢Â«";
                 color = 0xFF5555; // red for streamed/YouTube
             }
         }
@@ -188,7 +188,7 @@ public final class ArtworkRenderer {
         }
         try {
             String hash = Integer.toHexString(artworkUrl.hashCode());
-            Path cachedFile = CACHE_DIR != null ? CACHE_DIR.resolve(hash + ".png") : null;
+            Path cachedFile = CACHE_DIR != null ? CACHE_DIR.resolve(hash + "_raw.png") : null;
 
             // Download if not cached
             if (cachedFile == null || !Files.exists(cachedFile)) {
@@ -218,45 +218,24 @@ public final class ArtworkRenderer {
         }
     }
 
-        private static void downloadToFile(String urlStr, Path target) throws IOException {
+    private static void downloadToFile(String urlStr, Path target) throws IOException {
         HttpURLConnection conn = (HttpURLConnection) URI.create(urlStr).toURL().openConnection();
         conn.setConnectTimeout(5000);
         conn.setReadTimeout(10000);
         conn.setRequestProperty("User-Agent", "CodeX-Music-Player/1.0");
-        try (InputStream in = conn.getInputStream()) {
-            BufferedImage image = ImageIO.read(in);
-            if (image != null) {
-                // High-quality center-crop to 1:1 square ratio and downscale to 256x256
-                int targetSize = 256;
-                BufferedImage resized = new BufferedImage(targetSize, targetSize, BufferedImage.TYPE_INT_ARGB);
-                java.awt.Graphics2D g2d = resized.createGraphics();
-                g2d.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                g2d.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
-                g2d.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-
-                int srcW = image.getWidth();
-                int srcH = image.getHeight();
-                int cropSize = Math.min(srcW, srcH);
-                int cropX = (srcW - cropSize) / 2;
-                int cropY = (srcH - cropSize) / 2;
-
-                g2d.drawImage(image, 0, 0, targetSize, targetSize, cropX, cropY, cropX + cropSize, cropY + cropSize, null);
-                g2d.dispose();
-
-                try (OutputStream out = Files.newOutputStream(target)) {
-                    ImageIO.write(resized, "png", out);
-                }
-            } else {
-                throw new IOException("Failed to decode image from " + urlStr);
-            }
+        try (InputStream in = conn.getInputStream(); OutputStream out = Files.newOutputStream(target)) {
+            in.transferTo(out);
         } finally {
             conn.disconnect();
         }
     }
 
     private static void loadTexture(String artworkUrl, Path file) throws IOException {
-        try (InputStream is = Files.newInputStream(file)) {
-            NativeImage image = NativeImage.read(is);
+        InputStream is = Files.newInputStream(file);
+        NativeImage image = NativeImage.read(is);
+        is.close();
+        
+        Minecraft.getInstance().execute(() -> {
             int texId = textureCounter.getAndIncrement();
             DynamicTexture texture = new DynamicTexture(() -> "xmusic_art_" + texId, image);
             texture.upload();
@@ -264,8 +243,8 @@ public final class ArtworkRenderer {
             ResourceLocation loc = ResourceLocation.fromNamespaceAndPath("xmusic", "art_" + texId);
             Minecraft.getInstance().getTextureManager().register(loc, texture);
             TEXTURE_CACHE.put(artworkUrl, loc);
-            XMusic.LOGGER.info("Artwork texture loaded: {}", artworkUrl);
-        }
+            XMusic.LOGGER.info("Artwork texture loaded and registered on render thread: {}", artworkUrl);
+        });
     }
 
     /** Clear all cached textures (call on resource reload). */

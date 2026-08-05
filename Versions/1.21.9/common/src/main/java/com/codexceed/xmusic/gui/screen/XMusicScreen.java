@@ -76,8 +76,7 @@ public final class XMusicScreen extends Screen {
         // No dark overlay — game world stays fully visible
     }
 
-    @Override
-    protected void renderBlurredBackground() {
+    protected void renderBlurredBackground(float partialTick) {
         // Intentionally empty
     }
 
@@ -210,7 +209,8 @@ public final class XMusicScreen extends Screen {
     // ── Input Events ─────────────────────────────────────────────────────
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
         if (closing) return false;
         GuiRender.soundPlayedThisFrame = false;
         if (isScaleActive()) {
@@ -247,11 +247,12 @@ public final class XMusicScreen extends Screen {
             return true;
         }
 
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
         if (isScaleActive()) {
             mouseX /= 2.0;
             mouseY /= 2.0;
@@ -263,11 +264,12 @@ public final class XMusicScreen extends Screen {
         if (content.mouseReleased(frame, activeRoute, mouseX, mouseY)) {
             return true;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dragX, double dragY) {
+        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
         if (isScaleActive()) {
             mouseX /= 2.0;
             mouseY /= 2.0;
@@ -279,7 +281,7 @@ public final class XMusicScreen extends Screen {
         if (content.mouseDragged(frame, activeRoute, mouseX, mouseY)) {
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     @Override
@@ -299,7 +301,8 @@ public final class XMusicScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        int keyCode = event.key(); int scanCode = event.scancode(); int modifiers = event.modifiers();
         if (playerBar.keyPressed(keyCode, scanCode, modifiers)) {
             return true;
         }
@@ -310,18 +313,19 @@ public final class XMusicScreen extends Screen {
         if (content.keyPressed(activeRoute, keyCode, scanCode, modifiers)) {
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
-    public boolean charTyped(char codePoint, int modifiers) {
+    public boolean charTyped(net.minecraft.client.input.CharacterEvent event) {
+        char codePoint = (char)event.codepoint(); int modifiers = event.modifiers();
         if (playerBar.charTyped(codePoint, modifiers)) {
             return true;
         }
         if (content.charTyped(activeRoute, codePoint, modifiers)) {
             return true;
         }
-        return super.charTyped(codePoint, modifiers);
+        return super.charTyped(event);
     }
 
     @Override

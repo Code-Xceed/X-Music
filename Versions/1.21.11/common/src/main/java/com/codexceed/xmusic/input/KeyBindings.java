@@ -9,7 +9,7 @@ import org.lwjgl.glfw.GLFW;
  * Registered by the loader-specific platform helpers.
  */
 public final class KeyBindings {
-    public static final String CATEGORY = "key.categories.xmusic";
+    public static final net.minecraft.client.KeyMapping.Category CATEGORY = net.minecraft.client.KeyMapping.Category.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("xmusic", "category"));
 
     /** Open the music player GUI. */
     public static final KeyMapping OPEN_PLAYER = new KeyMapping(

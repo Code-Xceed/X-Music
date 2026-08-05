@@ -76,8 +76,7 @@ public final class XMusicScreen extends Screen {
         // No dark overlay — game world stays fully visible
     }
 
-    @Override
-    protected void renderBlurredBackground() {
+    protected void renderBlurredBackground(float partialTick) {
         // Intentionally empty
     }
 

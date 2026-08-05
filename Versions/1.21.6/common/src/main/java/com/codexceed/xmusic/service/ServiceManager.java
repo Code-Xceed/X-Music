@@ -6,6 +6,7 @@ import com.codexceed.xmusic.lavaplayer.LavaPlayerEngine;
 import com.codexceed.xmusic.lavaplayer.LavaSearchService;
 import com.codexceed.xmusic.player.backend.YouTubeNativeBackend;
 import com.codexceed.xmusic.config.ConfigManager;
+import com.codexceed.xmusic.service.spotify.SpotifySearchService;
 import com.codexceed.xmusic.service.local.LocalMusicService;
 import com.codexceed.xmusic.service.youtube.YouTubeAudioResolver;
 import com.codexceed.xmusic.service.youtube.YouTubeDownloadManager;
@@ -25,6 +26,7 @@ import com.codexceed.xmusic.source.youtube.YouTubeMusicSourceAdapter;
 public final class ServiceManager {
     private static LavaPlayerBackend lavaPlayerBackend;
     private static LavaSearchService lavaSearchService;
+    private static SpotifySearchService spotifySearchService;
 
     private static YouTubeAudioResolver youtubeAudioResolver;
     private static YouTubeToolManager youtubeToolManager;
@@ -44,6 +46,7 @@ public final class ServiceManager {
         lavaPlayerBackend = new LavaPlayerBackend();
         lavaEngine.addListener(lavaPlayerBackend);
         lavaSearchService = new LavaSearchService(lavaEngine);
+        spotifySearchService = new SpotifySearchService();
 
         youtubeAudioResolver = new YouTubeAudioResolver();
         youtubeToolManager = new YouTubeToolManager();
@@ -69,6 +72,10 @@ public final class ServiceManager {
 
     public static LavaSearchService getLavaSearch() {
         return lavaSearchService;
+    }
+
+    public static SpotifySearchService getSpotifySearch() {
+        return spotifySearchService;
     }
 
     public static YouTubeService getYouTube() {
