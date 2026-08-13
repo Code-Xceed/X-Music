@@ -7,8 +7,8 @@
   "authors": $mod_authors,
     "contact": {
     "homepage": "https://modrinth.com/mod/xmusic",
-    "sources": "https://github.com/Code-Xceed/X-Music",
-    "issues": "https://github.com/Code-Xceed/X-Music/issues"
+    "sources": "https://github.com/Code-Xceed/X-Music-src",
+    "issues": "https://github.com/Code-Xceed/X-Music-src/issues"
   },
   "license": "${license}",
   "icon": "assets/${mod_id}/icon.png",
