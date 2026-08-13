@@ -55,3 +55,8 @@ scratch/
 *.jar
 !**/gradle/wrapper/gradle-wrapper.jar
 !**/Release_Jars/*.jar
+
+# Additional user ignores
+/website/
+/docs/
+inspect.java
