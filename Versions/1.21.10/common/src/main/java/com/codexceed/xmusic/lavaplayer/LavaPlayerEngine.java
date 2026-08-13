@@ -176,12 +176,12 @@ public final class LavaPlayerEngine {
                     true,  // allowSearch
                     true,  // allowDirectVideoIds
                     true,  // allowDirectPlaylistIds
-                    new dev.lavalink.youtube.clients.TvHtml5Simply(),
+                    new dev.lavalink.youtube.clients.AndroidVr(),
                     new dev.lavalink.youtube.clients.Android(),
+                    new dev.lavalink.youtube.clients.TvHtml5Simply(),
                     new dev.lavalink.youtube.clients.Tv(),
                     new dev.lavalink.youtube.clients.WebEmbedded(),
                     new dev.lavalink.youtube.clients.Music(),
-                    new dev.lavalink.youtube.clients.AndroidVr(),
                     new dev.lavalink.youtube.clients.Web()
             );
             
