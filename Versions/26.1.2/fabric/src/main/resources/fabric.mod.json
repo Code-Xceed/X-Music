@@ -6,7 +6,7 @@
   "description": "The ultimate native in-game music client for Minecraft. Seamlessly stream high-quality audio from YouTube, Spotify, and local files directly within your world.",
   "authors": $mod_authors,
     "contact": {
-    "homepage": "https://modrinth.com/mod/xmusic",
+    "homepage": "https://modrinth.com/project/x-music",
     "sources": "https://github.com/Code-Xceed/X-Music-src",
     "issues": "https://github.com/Code-Xceed/X-Music-src/issues",
     "discord": "https://discord.com/users/1202625841675243524"
