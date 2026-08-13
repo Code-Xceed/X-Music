@@ -31,4 +31,12 @@
   "suggests": {
     "watermedia": "*"
   }
+,
+  "custom": {
+    "modmenu": {
+      "links": {
+        "modmenu.discord": "https://discord.com/users/1202625841675243524"
+      }
+    }
+  }
 }
