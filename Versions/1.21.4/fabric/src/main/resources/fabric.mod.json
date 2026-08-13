@@ -8,7 +8,8 @@
     "contact": {
     "homepage": "https://modrinth.com/mod/xmusic",
     "sources": "https://github.com/Code-Xceed/X-Music-src",
-    "issues": "https://github.com/Code-Xceed/X-Music-src/issues"
+    "issues": "https://github.com/Code-Xceed/X-Music-src/issues",
+    "discord": "https://discord.com/users/1202625841675243524"
   },
   "license": "${license}",
   "icon": "assets/${mod_id}/icon.png",
