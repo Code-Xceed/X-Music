@@ -211,11 +211,6 @@ public final class YouTubeNativeBackend implements PlaybackBackend, AudioEventLi
                         AudioEngine.getInstance().playPcmStream(audioTrack, pcm);
                         resolving = false;
                         XMusic.LOGGER.info("[YT-{}] Now streaming: {}", generation, track.getDisplayName());
-
-                        // Kick off parallel background download so the track is cached for next time
-                        if (downloadManager != null && !downloadManager.isCached(track)) {
-                            downloadManager.cacheInBackground(track);
-                        }
                     } catch (Exception e) {
                         if (isStale(generation)) return;
                         XMusic.LOGGER.warn("[YT-{}] Stream playback failed for {}; falling back: {}",
@@ -267,7 +262,7 @@ public final class YouTubeNativeBackend implements PlaybackBackend, AudioEventLi
                     }
 
                     if (isStale(generation)) return;
-                    AudioPlayer.getInstance().playSingle(audioTrack);
+                    reportFailure("FFmpeg playback failed or ffmpeg is missing.");
                 })
                 .exceptionally(error -> {
                     if (isStale(generation)) return null;
@@ -302,7 +297,7 @@ public final class YouTubeNativeBackend implements PlaybackBackend, AudioEventLi
                     }
 
                     if (isStale(generation)) return;
-                    AudioPlayer.getInstance().playSingle(audioTrack);
+                    reportFailure("FFmpeg playback failed or ffmpeg is missing.");
                 })
                 .exceptionally(error -> {
                     if (isStale(generation)) return null;

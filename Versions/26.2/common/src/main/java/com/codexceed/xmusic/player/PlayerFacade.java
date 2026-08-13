@@ -112,12 +112,13 @@ public final class PlayerFacade {
     private static final int[] LOOP_CYCLE = {0, 3, 5, -1};
 
     private PlayerFacade() {
+        
         lavaBackend = ServiceManager.getLavaPlayerBackend();
         if (lavaBackend != null) {
             lavaBackend.setFacade(this);
             backends.add(lavaBackend);
         } else {
-            XMusic.LOGGER.warn("[Facade] LavaPlayerBackend not available — ServiceManager may not be initialized yet");
+            XMusic.LOGGER.warn("[Facade] LavaPlayerBackend not available -- ServiceManager may not be initialized yet");
         }
         backends.add(nativeBackend);
         activeBackend = nativeBackend;

@@ -101,7 +101,7 @@ public final class ArtworkRenderer {
                 texture.setFilter(true, false);
             }
             
-            g.blit(loc, x, y, 0, 0, w, h, w, h);
+            g.blit(loc, x, y, x + w, y + h, 0.0f, 1.0f, 0.0f, 1.0f);
             
             // Draw a subtle border overlay to frame the artwork
             GuiRender.outline(g, x, y, w, h, (int)(0x30 * alpha) << 24 | 0xFFFFFF);
@@ -219,15 +219,44 @@ public final class ArtworkRenderer {
     }
 
     private static void downloadToFile(String urlStr, Path target) throws IOException {
-        HttpURLConnection conn = (HttpURLConnection) URI.create(urlStr).toURL().openConnection();
+        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
         conn.setConnectTimeout(5000);
         conn.setReadTimeout(10000);
         conn.setRequestProperty("User-Agent", "CodeX-Music-Player/1.0");
-        try (InputStream in = conn.getInputStream()) {
-            BufferedImage image = ImageIO.read(in);
+        try (java.io.InputStream in = conn.getInputStream()) {
+            java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(in);
             if (image != null) {
-                try (OutputStream out = Files.newOutputStream(target)) {
-                    ImageIO.write(image, "png", out);
+                int targetW = 320;
+                int targetH = 180;
+                java.awt.image.BufferedImage resized = new java.awt.image.BufferedImage(targetW, targetH, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+                java.awt.Graphics2D g2d = resized.createGraphics();
+                g2d.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g2d.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
+                g2d.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                int srcW = image.getWidth();
+                int srcH = image.getHeight();
+                
+                double srcAspect = (double) srcW / srcH;
+                double targetAspect = (double) targetW / targetH;
+                
+                int cropW, cropH, cropX, cropY;
+                if (srcAspect > targetAspect) {
+                    cropH = srcH;
+                    cropW = (int) (srcH * targetAspect);
+                    cropX = (srcW - cropW) / 2;
+                    cropY = 0;
+                } else {
+                    cropW = srcW;
+                    cropH = (int) (srcW / targetAspect);
+                    cropX = 0;
+                    cropY = (srcH - cropH) / 2;
+                }
+                
+                g2d.drawImage(image, 0, 0, targetW, targetH, cropX, cropY, cropX + cropW, cropY + cropH, null);
+                g2d.dispose();
+                try (java.io.OutputStream out = java.nio.file.Files.newOutputStream(target)) {
+                    javax.imageio.ImageIO.write(resized, "png", out);
                 }
             } else {
                 throw new IOException("Failed to decode image from " + urlStr);
