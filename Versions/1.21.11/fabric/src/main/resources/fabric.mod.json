@@ -3,11 +3,12 @@
   "id": "${mod_id}",
   "version": "${version}",
   "name": "${mod_name}",
-  "description": "A native in-game music client for Minecraft with YouTube and local file playback.",
+  "description": "The ultimate native in-game music client for Minecraft. Seamlessly stream high-quality audio from YouTube, Spotify, and local files directly within your world.",
   "authors": $mod_authors,
-  "contact": {
-    "homepage": "https://github.com/codexceed/xmusic",
-    "sources": "https://github.com/codexceed/xmusic"
+    "contact": {
+    "homepage": "https://modrinth.com/mod/xmusic",
+    "sources": "https://github.com/Code-Xceed/X-Music",
+    "issues": "https://github.com/Code-Xceed/X-Music/issues"
   },
   "license": "${license}",
   "icon": "assets/${mod_id}/icon.png",
